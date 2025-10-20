@@ -574,6 +574,190 @@
           "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       }
+    },
+    "/api/hero-slides": {
+      "get": {
+        "tags": ["Hero Slide API"],
+        "description": "Get all hero slides.",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Success get all hero slides",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HeroSlideResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      },
+      "post": {
+        "tags": ["Hero Slide API"],
+        "description": "Create a new hero slide (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeroSlideCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hero slide created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/HeroSlideResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/hero-slides/:id": {
+      "get": {
+        "tags": ["Hero Slide API"],
+        "description": "Get a single hero slide by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "hs_abc12345"
+            },
+            "description": "The ID of the hero slide to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get hero slide by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/HeroSlideResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Hero Slide API"],
+        "description": "Update an existing hero slide by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "hs_abc12345"
+            },
+            "description": "The ID of the hero slide to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeroSlideUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hero slide updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/HeroSlideResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Hero Slide API"],
+        "description": "Delete a hero slide by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "hs_abc12345"
+            },
+            "description": "The ID of the hero slide to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hero slide deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
     }
   },
   "components": {
@@ -641,6 +825,35 @@
             "type": "string",
             "example": "Detail pesan error"
           }
+        }
+      },
+      "HeroSlideResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "hs_abc123" },
+          "image_url": { "type": "string", "example": "https://r2.example.com/slide1.png" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": true },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "HeroSlideCreateRequest": {
+        "type": "object",
+        "properties": {
+          "image_url": { "type": "string", "example": "https://r2.example.com/new-slide.png" },
+          "order_index": { "type": "integer", "example": 2 },
+          "is_active": { "type": "boolean", "example": true }
+        },
+        "required": ["image_url", "order_index", "is_active"]
+      },
+      "HeroSlideUpdateRequest": {
+        "type": "object",
+        "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
+        "properties": {
+          "image_url": { "type": "string", "example": "https://r2.example.com/updated-slide.png" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": false }
         }
       }
     },

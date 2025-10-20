@@ -11,6 +11,7 @@ type RouteConfig struct {
 	UserController        *http.UserController
 	StorageController     *http.StorageController
 	TestimonialController *http.TestimonialController
+	HeroSlideController   *http.HeroSlideController
 	AuthMiddleware        fiber.Handler
 }
 
@@ -38,5 +39,11 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/testimonials", c.TestimonialController.Create)
 	c.App.Put("/api/testimonials/:id", c.TestimonialController.Update)
 	c.App.Delete("/api/testimonials/:id", c.TestimonialController.Delete)
+
+	c.App.Get("/api/hero-slides", c.HeroSlideController.GetAll)
+	c.App.Get("/api/hero-slides/:id", c.HeroSlideController.GetByID)
+	c.App.Post("/api/hero-slides", c.HeroSlideController.Create)
+	c.App.Put("/api/hero-slides/:id", c.HeroSlideController.Update)
+	c.App.Delete("/api/hero-slides/:id", c.HeroSlideController.Delete)
 
 }
