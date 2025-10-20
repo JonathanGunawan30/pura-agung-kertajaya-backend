@@ -56,6 +56,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	galleryUseCase := usecase.NewGalleryUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	facilityUseCase := usecase.NewFacilityUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	contactInfoUseCase := usecase.NewContactInfoUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	activityUseCase := usecase.NewActivityUsecase(cfg.DB, cfg.Log, cfg.Validate)
 
 	// Setup controllers
 	userController := http.NewUserController(userUseCase, cfg.Log)
@@ -65,6 +66,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	galleryController := http.NewGalleryController(galleryUseCase, cfg.Log)
 	facilityController := http.NewFacilityController(facilityUseCase, cfg.Log)
 	contactInfoController := http.NewContactInfoController(contactInfoUseCase, cfg.Log)
+	activityController := http.NewActivityController(activityUseCase, cfg.Log)
 
 	// Setup middleware
 	authMiddleware := middleware.AuthMiddleware(tokenUtil)
@@ -79,6 +81,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 		GalleryController:     galleryController,
 		FacilityController:    facilityController,
 		ContactInfoController: contactInfoController,
+		ActivityController:    activityController,
 		AuthMiddleware:        authMiddleware,
 	}
 	routeConfig.Setup()

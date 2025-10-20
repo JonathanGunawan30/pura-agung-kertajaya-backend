@@ -1020,6 +1020,426 @@
           "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       }
+    },
+    "/api/contact-info": {
+      "get": {
+        "tags": ["Contact Info API"],
+        "description": "Get all contact info entries (admin view).",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Success get all contact info entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ContactInfoResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      },
+      "post": {
+        "tags": ["Contact Info API"],
+        "description": "Create a new contact info entry (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactInfoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contact info entry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ContactInfoResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/contact-info/:id": {
+      "get": {
+        "tags": ["Contact Info API"],
+        "description": "Get a single contact info entry by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ci_abc12345"
+            },
+            "description": "The ID of the contact info entry"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get contact info by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ContactInfoResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Contact Info API"],
+        "description": "Update an existing contact info entry by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ci_abc12345"
+            },
+            "description": "The ID of the contact info entry to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactInfoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact info entry updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ContactInfoResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Contact Info API"],
+        "description": "Delete a contact info entry by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "ci_abc12345"
+            },
+            "description": "The ID of the contact info entry to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact info entry deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "example": "Contact info deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/public/contact-info": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all contact info entries for public website display.",
+        "responses": {
+          "200": {
+            "description": "Success get all public contact info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ContactInfoResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/activities": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all active activities for public website display. (is_active = true)",
+        "responses": {
+          "200": {
+            "description": "Success get all active activities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ActivityResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/activities": {
+      "get": {
+        "tags": ["Activity API"],
+        "description": "Get all activities (admin view, includes non-active).",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Success get all activities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ActivityResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      },
+      "post": {
+        "tags": ["Activity API"],
+        "description": "Create a new activity (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Activity created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ActivityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/activities/:id": {
+      "get": {
+        "tags": ["Activity API"],
+        "description": "Get a single activity by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "act_abc12345"
+            },
+            "description": "The ID of the activity to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get activity by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ActivityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Activity API"],
+        "description": "Update an existing activity by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "act_abc12345"
+            },
+            "description": "The ID of the activity to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Activity updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ActivityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Activity API"],
+        "description": "Delete an activity by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "act_abc12345"
+            },
+            "description": "The ID of the activity to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
     }
   },
   "components": {
@@ -1150,6 +1570,69 @@
           "description": { "type": "string", "example": "Deskripsi baru." },
           "image_url": { "type": "string", "example": "https://r2.example.com/galeri-updated.png" },
           "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": false }
+        }
+      },
+      "ContactInfoResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "ci_abc123" },
+          "address": { "type": "string", "example": "Jalan Pura No. 123, Denpasar" },
+          "phone": { "type": "string", "example": "08123456789" },
+          "email": { "type": "string", "format": "email", "example": "info@pura.com" },
+          "visiting_hours": { "type": "string", "example": "Senin - Jumat: 08:00 - 17:00" },
+          "map_embed_url": { "type": "string", "format": "uri", "example": "https://maps.google.com/..." },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "ContactInfoRequest": {
+        "type": "object",
+        "description": "Payload for creating or updating contact info.",
+        "properties": {
+          "address": { "type": "string", "example": "Jalan Pura No. 123, Denpasar" },
+          "phone": { "type": "string", "example": "081234567890" },
+          "email": { "type": "string", "format": "email", "example": "info@puraagungkertajaya.com" },
+          "visiting_hours": { "type": "string", "example": "Setiap Hari: 08:00 - 18:00" },
+          "map_embed_url": { "type": "string", "format": "uri", "example": "https://maps.google.com/..." }
+        },
+        "required": ["address"]
+      },
+      "ActivityResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "act_abc123" },
+          "title": { "type": "string", "example": "Upacara Piodalan" },
+          "description": { "type": "string", "example": "Deskripsi lengkap mengenai upacara piodalan." },
+          "time_info": { "type": "string", "example": "Setiap Purnama Sasih Kapat" },
+          "location": { "type": "string", "example": "Jaba Tengah Pura" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": true },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "ActivityCreateRequest": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "example": "Galungan" },
+          "description": { "type": "string", "example": "Perayaan kemenangan Dharma melawan Adharma." },
+          "time_info": { "type": "string", "example": "Setiap 210 hari" },
+          "location": { "type": "string", "example": "Seluruh Bali" },
+          "order_index": { "type": "integer", "example": 2 },
+          "is_active": { "type": "boolean", "example": true }
+        },
+        "required": ["title", "description", "order_index", "is_active"]
+      },
+      "ActivityUpdateRequest": {
+        "type": "object",
+        "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
+        "properties": {
+          "title": { "type": "string", "example": "Kuningan" },
+          "description": { "type": "string", "example": "Perayaan 10 hari setelah Galungan." },
+          "time_info": { "type": "string", "example": "10 hari setelah Galungan" },
+          "location": { "type": "string", "example": "Seluruh Bali" },
+          "order_index": { "type": "integer", "example": 3 },
           "is_active": { "type": "boolean", "example": false }
         }
       }
