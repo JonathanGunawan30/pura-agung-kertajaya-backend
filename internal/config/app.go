@@ -54,6 +54,8 @@ func Bootstrap(cfg *BootstrapConfig) {
 	testimonialUseCase := usecase.NewTestimonialUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	heroSlideUseCase := usecase.NewHeroSlideUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	galleryUseCase := usecase.NewGalleryUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	facilityUseCase := usecase.NewFacilityUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	contactInfoUseCase := usecase.NewContactInfoUsecase(cfg.DB, cfg.Log, cfg.Validate)
 
 	// Setup controllers
 	userController := http.NewUserController(userUseCase, cfg.Log)
@@ -61,6 +63,8 @@ func Bootstrap(cfg *BootstrapConfig) {
 	testimonialController := http.NewTestimonialController(testimonialUseCase, cfg.Log)
 	heroSlideController := http.NewHeroSlideController(heroSlideUseCase, cfg.Log)
 	galleryController := http.NewGalleryController(galleryUseCase, cfg.Log)
+	facilityController := http.NewFacilityController(facilityUseCase, cfg.Log)
+	contactInfoController := http.NewContactInfoController(contactInfoUseCase, cfg.Log)
 
 	// Setup middleware
 	authMiddleware := middleware.AuthMiddleware(tokenUtil)
@@ -73,6 +77,8 @@ func Bootstrap(cfg *BootstrapConfig) {
 		TestimonialController: testimonialController,
 		HeroSlideController:   heroSlideController,
 		GalleryController:     galleryController,
+		FacilityController:    facilityController,
+		ContactInfoController: contactInfoController,
 		AuthMiddleware:        authMiddleware,
 	}
 	routeConfig.Setup()

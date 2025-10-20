@@ -14,6 +14,7 @@ type RouteConfig struct {
 	HeroSlideController   *http.HeroSlideController
 	GalleryController     *http.GalleryController
 	FacilityController    *http.FacilityController
+	ContactInfoController *http.ContactInfoController
 	AuthMiddleware        fiber.Handler
 }
 
@@ -63,5 +64,11 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/facilities", c.FacilityController.Create)
 	c.App.Put("/api/facilities/:id", c.FacilityController.Update)
 	c.App.Delete("/api/facilities/:id", c.FacilityController.Delete)
+
+	c.App.Get("/api/contact-info", c.ContactInfoController.GetAll)
+	c.App.Get("/api/contact-info/:id", c.ContactInfoController.GetByID)
+	c.App.Post("/api/contact-info", c.ContactInfoController.Create)
+	c.App.Put("/api/contact-info/:id", c.ContactInfoController.Update)
+	c.App.Delete("/api/contact-info/:id", c.ContactInfoController.Delete)
 
 }
