@@ -53,12 +53,14 @@ func Bootstrap(cfg *BootstrapConfig) {
 	storageUseCase := usecase.NewStorageUsecase(storageRepository, cfg.Log, cfg.Validate)
 	testimonialUseCase := usecase.NewTestimonialUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	heroSlideUseCase := usecase.NewHeroSlideUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	galleryUseCase := usecase.NewGalleryUsecase(cfg.DB, cfg.Log, cfg.Validate)
 
 	// Setup controllers
 	userController := http.NewUserController(userUseCase, cfg.Log)
 	storageController := http.NewStorageController(storageUseCase, cfg.Log)
 	testimonialController := http.NewTestimonialController(testimonialUseCase, cfg.Log)
 	heroSlideController := http.NewHeroSlideController(heroSlideUseCase, cfg.Log)
+	galleryController := http.NewGalleryController(galleryUseCase, cfg.Log)
 
 	// Setup middleware
 	authMiddleware := middleware.AuthMiddleware(tokenUtil)
@@ -70,6 +72,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 		StorageController:     storageController,
 		TestimonialController: testimonialController,
 		HeroSlideController:   heroSlideController,
+		GalleryController:     galleryController,
 		AuthMiddleware:        authMiddleware,
 	}
 	routeConfig.Setup()

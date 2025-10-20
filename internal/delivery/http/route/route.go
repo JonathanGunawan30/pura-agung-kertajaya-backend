@@ -12,6 +12,7 @@ type RouteConfig struct {
 	StorageController     *http.StorageController
 	TestimonialController *http.TestimonialController
 	HeroSlideController   *http.HeroSlideController
+	GalleryController     *http.GalleryController
 	AuthMiddleware        fiber.Handler
 }
 
@@ -24,6 +25,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Post("/api/users/_login", c.UserController.Login)
 	c.App.Get("/api/public/testimonials", c.TestimonialController.GetAllPublic)
 	c.App.Get("/api/public/hero-slides", c.HeroSlideController.GetAllPublic)
+	c.App.Get("/api/public/galleries", c.GalleryController.GetAllPublic)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
@@ -47,5 +49,11 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/hero-slides", c.HeroSlideController.Create)
 	c.App.Put("/api/hero-slides/:id", c.HeroSlideController.Update)
 	c.App.Delete("/api/hero-slides/:id", c.HeroSlideController.Delete)
+
+	c.App.Get("/api/galleries", c.GalleryController.GetAll)
+	c.App.Get("/api/galleries/:id", c.GalleryController.GetByID)
+	c.App.Post("/api/galleries", c.GalleryController.Create)
+	c.App.Put("/api/galleries/:id", c.GalleryController.Update)
+	c.App.Delete("/api/galleries/:id", c.GalleryController.Delete)
 
 }

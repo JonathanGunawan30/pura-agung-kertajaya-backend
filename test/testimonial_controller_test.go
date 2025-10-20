@@ -30,6 +30,38 @@ func setupTestimonialController() (*fiber.App, *usecasemock.TestimonialUsecaseMo
 	return app, mockUC
 }
 
+func TestTestimonialController_GetAllPublic_Success(t *testing.T) {
+	mockUC := &usecasemock.TestimonialUsecaseMock{}
+	controller := httpdelivery.NewTestimonialController(mockUC, logrus.New())
+	app := fiber.New()
+	app.Get("/public/testimonials", controller.GetAllPublic)
+
+	items := []model.TestimonialResponse{{ID: 1, Name: "A"}, {ID: 2, Name: "B"}}
+	mockUC.On("GetPublic").Return(items, nil)
+
+	req := httptest.NewRequest("GET", "/public/testimonials", nil)
+	resp, _ := app.Test(req)
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+	var response model.WebResponse[[]model.TestimonialResponse]
+	json.NewDecoder(resp.Body).Decode(&response)
+	assert.Len(t, response.Data, 2)
+	mockUC.AssertExpectations(t)
+}
+
+func TestTestimonialController_GetAllPublic_Error(t *testing.T) {
+	mockUC := &usecasemock.TestimonialUsecaseMock{}
+	controller := httpdelivery.NewTestimonialController(mockUC, logrus.New())
+	app := fiber.New()
+	app.Get("/public/testimonials", controller.GetAllPublic)
+
+	mockUC.On("GetPublic").Return(([]model.TestimonialResponse)(nil), errors.New("db error"))
+
+	req := httptest.NewRequest("GET", "/public/testimonials", nil)
+	resp, _ := app.Test(req)
+	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
+}
+
 func TestTestimonialController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupTestimonialController()
 

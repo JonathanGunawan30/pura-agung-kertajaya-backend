@@ -810,6 +810,216 @@
           }
         }
       }
+    },
+    "/api/public/galleries": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all active gallery items for public website display. (is_active = true)",
+        "responses": {
+          "200": {
+            "description": "Success get all active gallery items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/GalleryResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries": {
+      "get": {
+        "tags": ["Gallery API"],
+        "description": "Get all gallery items (admin view, includes non-active).",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Success get all gallery items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/GalleryResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      },
+      "post": {
+        "tags": ["Gallery API"],
+        "description": "Create a new gallery item (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Gallery item created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/GalleryResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/galleries/:id": {
+      "get": {
+        "tags": ["Gallery API"],
+        "description": "Get a single gallery item by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "g_abc12345"
+            },
+            "description": "The ID of the gallery item to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get gallery item by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/GalleryResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Gallery API"],
+        "description": "Update an existing gallery item by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "g_abc12345"
+            },
+            "description": "The ID of the gallery item to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gallery item updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/GalleryResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Gallery API"],
+        "description": "Delete a gallery item by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "g_abc12345"
+            },
+            "description": "The ID of the gallery item to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gallery item deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
     }
   },
   "components": {
@@ -904,6 +1114,41 @@
         "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
         "properties": {
           "image_url": { "type": "string", "example": "https://r2.example.com/updated-slide.png" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": false }
+        }
+      },
+      "GalleryResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "g_abc123" },
+          "title": { "type": "string", "example": "Galeri Acara 1" },
+          "description": { "type": "string", "example": "Deskripsi singkat acara galeri." },
+          "image_url": { "type": "string", "example": "https://r2.example.com/galeri1.png" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": true },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "GalleryCreateRequest": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "example": "Galeri Acara Baru" },
+          "description": { "type": "string", "example": "Deskripsi opsional." },
+          "image_url": { "type": "string", "example": "https://r2.example.com/galeri-baru.png" },
+          "order_index": { "type": "integer", "example": 2 },
+          "is_active": { "type": "boolean", "example": true }
+        },
+        "required": ["title", "image_url", "order_index", "is_active"]
+      },
+      "GalleryUpdateRequest": {
+        "type": "object",
+        "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
+        "properties": {
+          "title": { "type": "string", "example": "Galeri Acara Updated" },
+          "description": { "type": "string", "example": "Deskripsi baru." },
+          "image_url": { "type": "string", "example": "https://r2.example.com/galeri-updated.png" },
           "order_index": { "type": "integer", "example": 1 },
           "is_active": { "type": "boolean", "example": false }
         }
