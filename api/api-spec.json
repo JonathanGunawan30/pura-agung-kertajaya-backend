@@ -1440,6 +1440,213 @@
           "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       }
+    },
+    "/api/public/site-identity": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get the latest site identity configuration for public website display.",
+        "responses": {
+          "200": {
+            "description": "Success get public site identity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SiteIdentityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/site-identity": {
+      "get": {
+        "tags": ["Site Identity API"],
+        "description": "Get all site identity entries (admin view).",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Success get all site identity entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SiteIdentityResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      },
+      "post": {
+        "tags": ["Site Identity API"],
+        "description": "Create a new site identity entry (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteIdentityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Site identity entry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SiteIdentityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/site-identity/:id": {
+      "get": {
+        "tags": ["Site Identity API"],
+        "description": "Get a single site identity entry by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "si_abc12345"
+            },
+            "description": "The ID of the site identity entry"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get site identity by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SiteIdentityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Site Identity API"],
+        "description": "Update an existing site identity entry by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "si_abc12345"
+            },
+            "description": "The ID of the site identity entry to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteIdentityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site identity entry updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SiteIdentityResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Site Identity API"],
+        "description": "Delete a site identity entry by its ID (requires authentication)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "si_abc12345"
+            },
+            "description": "The ID of the site identity entry to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site identity entry deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "example": "Site identity deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
     }
   },
   "components": {
@@ -1635,6 +1842,35 @@
           "order_index": { "type": "integer", "example": 3 },
           "is_active": { "type": "boolean", "example": false }
         }
+      },
+      "SiteIdentityResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "si_abc123" },
+          "site_name": { "type": "string", "example": "Pura Agung Kertajaya" },
+          "logo_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/logo.png" },
+          "tagline": { "type": "string", "example": "Melayani Umat dengan Sepenuh Hati" },
+          "primary_button_text": { "type": "string", "example": "Donasi Sekarang" },
+          "primary_button_link": { "type": "string", "format": "uri", "example": "/donasi" },
+          "secondary_button_text": { "type": "string", "example": "Jadwal Kegiatan" },
+          "secondary_button_link": { "type": "string", "format": "uri", "example": "/kegiatan" },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "SiteIdentityRequest": {
+        "type": "object",
+        "description": "Payload for creating or updating site identity.",
+        "properties": {
+          "site_name": { "type": "string", "example": "Pura Agung Kertajaya" },
+          "logo_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/new-logo.png" },
+          "tagline": { "type": "string", "example": "Melayani Umat Hindu Dharma" },
+          "primary_button_text": { "type": "string", "example": "Beri Dana Punia" },
+          "primary_button_link": { "type": "string", "format": "uri", "example": "/dana-punia" },
+          "secondary_button_text": { "type": "string", "example": "Galeri Pura" },
+          "secondary_button_link": { "type": "string", "format": "uri", "example": "/galeri" }
+        },
+        "required": ["site_name", "logo_url"]
       }
     },
     "responses": {

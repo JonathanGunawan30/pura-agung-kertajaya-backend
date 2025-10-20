@@ -7,16 +7,17 @@ import (
 )
 
 type RouteConfig struct {
-	App                   *fiber.App
-	UserController        *http.UserController
-	StorageController     *http.StorageController
-	TestimonialController *http.TestimonialController
-	HeroSlideController   *http.HeroSlideController
-	GalleryController     *http.GalleryController
-	FacilityController    *http.FacilityController
-	ContactInfoController *http.ContactInfoController
-	ActivityController    *http.ActivityController
-	AuthMiddleware        fiber.Handler
+	App                    *fiber.App
+	UserController         *http.UserController
+	StorageController      *http.StorageController
+	TestimonialController  *http.TestimonialController
+	HeroSlideController    *http.HeroSlideController
+	GalleryController      *http.GalleryController
+	FacilityController     *http.FacilityController
+	ContactInfoController  *http.ContactInfoController
+	ActivityController     *http.ActivityController
+	SiteIdentityController *http.SiteIdentityController
+	AuthMiddleware         fiber.Handler
 }
 
 func (c *RouteConfig) Setup() {
@@ -32,6 +33,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Get("/api/public/facilities", c.FacilityController.GetAllPublic)
 	c.App.Get("/api/public/contact-info", c.ContactInfoController.GetAll)
 	c.App.Get("/api/public/activities", c.ActivityController.GetAllPublic)
+	c.App.Get("/api/public/site-identity", c.SiteIdentityController.GetPublic)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
@@ -79,5 +81,11 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/activities", c.ActivityController.Create)
 	c.App.Put("/api/activities/:id", c.ActivityController.Update)
 	c.App.Delete("/api/activities/:id", c.ActivityController.Delete)
+
+	c.App.Get("/api/site-identity", c.SiteIdentityController.GetAll)
+	c.App.Get("/api/site-identity/:id", c.SiteIdentityController.GetByID)
+	c.App.Post("/api/site-identity", c.SiteIdentityController.Create)
+	c.App.Put("/api/site-identity/:id", c.SiteIdentityController.Update)
+	c.App.Delete("/api/site-identity/:id", c.SiteIdentityController.Delete)
 
 }
