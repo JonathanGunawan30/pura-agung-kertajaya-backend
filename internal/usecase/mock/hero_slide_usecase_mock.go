@@ -18,6 +18,14 @@ func (m *HeroSlideUsecaseMock) GetAll() ([]model.HeroSlideResponse, error) {
     return args.Get(0).([]model.HeroSlideResponse), args.Error(1)
 }
 
+func (m *HeroSlideUsecaseMock) GetPublic() ([]model.HeroSlideResponse, error) {
+    args := m.Called()
+    if args.Get(0) == nil {
+        return nil, args.Error(1)
+    }
+    return args.Get(0).([]model.HeroSlideResponse), args.Error(1)
+}
+
 func (m *HeroSlideUsecaseMock) GetByID(id string) (*model.HeroSlideResponse, error) {
     args := m.Called(id)
     if args.Get(0) == nil {

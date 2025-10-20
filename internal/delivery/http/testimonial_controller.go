@@ -29,6 +29,16 @@ func (c *TestimonialController) GetAll(ctx *fiber.Ctx) error {
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
 
+// GetAllPublic returns only active testimonials for public consumption
+func (c *TestimonialController) GetAllPublic(ctx *fiber.Ctx) error {
+	data, err := c.UseCase.GetPublic()
+	if err != nil {
+		c.Log.WithError(err).Error("failed to fetch public testimonials")
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+	}
+	return ctx.JSON(model.WebResponse[any]{Data: data})
+}
+
 func (c *TestimonialController) GetByID(ctx *fiber.Ctx) error {
 	id, err := ctx.ParamsInt("id")
 	if err != nil || id <= 0 {

@@ -29,6 +29,16 @@ func (c *HeroSlideController) GetAll(ctx *fiber.Ctx) error {
     return ctx.JSON(model.WebResponse[any]{Data: data})
 }
 
+// GetAllPublic returns only active hero slides for public consumption
+func (c *HeroSlideController) GetAllPublic(ctx *fiber.Ctx) error {
+    data, err := c.UseCase.GetPublic()
+    if err != nil {
+        c.Log.WithError(err).Error("failed to fetch public hero slides")
+        return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+    }
+    return ctx.JSON(model.WebResponse[any]{Data: data})
+}
+
 func (c *HeroSlideController) GetByID(ctx *fiber.Ctx) error {
     id := ctx.Params("id")
     if id == "" {

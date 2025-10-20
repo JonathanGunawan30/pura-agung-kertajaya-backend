@@ -12,6 +12,7 @@ import (
 
 type TestimonialUsecase interface {
 	GetAll() ([]model.TestimonialResponse, error)
+	GetPublic() ([]model.TestimonialResponse, error)
 	GetByID(id int) (*model.TestimonialResponse, error)
 	Create(req model.TestimonialRequest) (*model.TestimonialResponse, error)
 	Update(id int, req model.TestimonialRequest) (*model.TestimonialResponse, error)
@@ -40,6 +41,28 @@ func (u *testimonialUsecase) GetAll() ([]model.TestimonialResponse, error) {
 		return nil, err
 	}
 
+	responses := make([]model.TestimonialResponse, 0, len(testimonials))
+	for _, t := range testimonials {
+		responses = append(responses, model.TestimonialResponse{
+			ID:         t.ID,
+			Name:       t.Name,
+			AvatarURL:  t.AvatarURL,
+			Rating:     t.Rating,
+			Comment:    t.Comment,
+			IsActive:   t.IsActive,
+			OrderIndex: t.OrderIndex,
+			CreatedAt:  t.CreatedAt,
+			UpdatedAt:  t.UpdatedAt,
+		})
+	}
+	return responses, nil
+}
+
+func (u *testimonialUsecase) GetPublic() ([]model.TestimonialResponse, error) {
+	var testimonials []entity.Testimonial
+	if err := u.db.Where("is_active = ?", true).Order("order_index ASC").Find(&testimonials).Error; err != nil {
+		return nil, err
+	}
 	responses := make([]model.TestimonialResponse, 0, len(testimonials))
 	for _, t := range testimonials {
 		responses = append(responses, model.TestimonialResponse{

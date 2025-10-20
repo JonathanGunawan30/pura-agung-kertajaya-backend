@@ -22,6 +22,8 @@ func (c *RouteConfig) Setup() {
 
 func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Post("/api/users/_login", c.UserController.Login)
+	c.App.Get("/api/public/testimonials", c.TestimonialController.GetAllPublic)
+	c.App.Get("/api/public/hero-slides", c.HeroSlideController.GetAllPublic)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {

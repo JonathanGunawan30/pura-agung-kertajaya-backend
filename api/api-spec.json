@@ -758,6 +758,58 @@
           "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       }
+    },
+    "/api/public/testimonials": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all active testimonials for public website display. (is_active = true)",
+        "responses": {
+          "200": {
+            "description": "Success get all active testimonials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TestimonialResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/hero-slides": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all active hero slides for public website display. (is_active = true)",
+        "responses": {
+          "200": {
+            "description": "Success get all active hero slides",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HeroSlideResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

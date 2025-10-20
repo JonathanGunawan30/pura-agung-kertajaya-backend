@@ -14,6 +14,7 @@ import (
 
 type HeroSlideUsecase interface {
     GetAll() ([]model.HeroSlideResponse, error)
+    GetPublic() ([]model.HeroSlideResponse, error)
     GetByID(id string) (*model.HeroSlideResponse, error)
     Create(req model.HeroSlideRequest) (*model.HeroSlideResponse, error)
     Update(id string, req model.HeroSlideRequest) (*model.HeroSlideResponse, error)
@@ -39,6 +40,18 @@ func NewHeroSlideUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Va
 func (u *heroSlideUsecase) GetAll() ([]model.HeroSlideResponse, error) {
     var slides []entity.HeroSlide
     if err := u.db.Order("order_index ASC").Find(&slides).Error; err != nil {
+        return nil, err
+    }
+    responses := make([]model.HeroSlideResponse, 0, len(slides))
+    for _, s := range slides {
+        responses = append(responses, converter.ToHeroSlideResponse(s))
+    }
+    return responses, nil
+}
+
+func (u *heroSlideUsecase) GetPublic() ([]model.HeroSlideResponse, error) {
+    var slides []entity.HeroSlide
+    if err := u.db.Where("is_active = ?", true).Order("order_index ASC").Find(&slides).Error; err != nil {
         return nil, err
     }
     responses := make([]model.HeroSlideResponse, 0, len(slides))
