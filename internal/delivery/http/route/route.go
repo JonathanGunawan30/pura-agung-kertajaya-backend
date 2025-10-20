@@ -17,6 +17,7 @@ type RouteConfig struct {
 	ContactInfoController  *http.ContactInfoController
 	ActivityController     *http.ActivityController
 	SiteIdentityController *http.SiteIdentityController
+	AboutController        *http.AboutController
 	AuthMiddleware         fiber.Handler
 }
 
@@ -34,6 +35,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Get("/api/public/contact-info", c.ContactInfoController.GetAll)
 	c.App.Get("/api/public/activities", c.ActivityController.GetAllPublic)
 	c.App.Get("/api/public/site-identity", c.SiteIdentityController.GetPublic)
+	c.App.Get("/api/public/about", c.AboutController.GetAllPublic)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
@@ -88,4 +90,9 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Put("/api/site-identity/:id", c.SiteIdentityController.Update)
 	c.App.Delete("/api/site-identity/:id", c.SiteIdentityController.Delete)
 
+	c.App.Get("/api/about", c.AboutController.GetAll)
+	c.App.Get("/api/about/:id", c.AboutController.GetByID)
+	c.App.Post("/api/about", c.AboutController.Create)
+	c.App.Put("/api/about/:id", c.AboutController.Update)
+	c.App.Delete("/api/about/:id", c.AboutController.Delete)
 }

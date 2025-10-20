@@ -1647,6 +1647,216 @@
           "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       }
+    },
+    "/api/public/about": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all active 'About' sections with their values for public display. Sorted by creation date.",
+        "responses": {
+          "200": {
+            "description": "Success get all active about sections with values",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AboutSectionResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/about": {
+      "get": {
+        "tags": ["About API"],
+        "description": "Get all 'About' sections (admin view, includes non-active), each with its associated values.",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Success get all about sections with values",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AboutSectionResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      },
+      "post": {
+        "tags": ["About API"],
+        "description": "Create a new 'About' section along with its associated values (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AboutSectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "About section and values created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AboutSectionResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/about/:id": {
+      "get": {
+        "tags": ["About API"],
+        "description": "Get a single 'About' section by its ID, including its associated values (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "abt_abc12345"
+            },
+            "description": "The ID of the about section to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get about section by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AboutSectionResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["About API"],
+        "description": "Update an existing 'About' section. This operation *replaces* all existing associated values with the ones provided in the request body (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "abt_abc12345"
+            },
+            "description": "The ID of the about section to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AboutSectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "About section and values updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AboutSectionResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["About API"],
+        "description": "Delete an 'About' section by its ID. Associated values will also be deleted due to cascade (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "abt_abc12345"
+            },
+            "description": "The ID of the about section to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "About section deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "example": "About section deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
     }
   },
   "components": {
@@ -1871,6 +2081,63 @@
           "secondary_button_link": { "type": "string", "format": "uri", "example": "/galeri" }
         },
         "required": ["site_name", "logo_url"]
+      },
+      "AboutValueResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "val_123" },
+          "about_id": { "type": "string", "example": "abt_abc12345" },
+          "title": { "type": "string", "example": "Visi" },
+          "value": { "type": "string", "example": "Menjadi pusat spiritual..." },
+          "order_index": { "type": "integer", "example": 1 },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "AboutSectionResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "abt_abc12345" },
+          "title": { "type": "string", "example": "Tentang Kami" },
+          "description": { "type": "string", "example": "Deskripsi lengkap tentang pura..." },
+          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/about.png" },
+          "is_active": { "type": "boolean", "example": true },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AboutValueResponse"
+            }
+          }
+        }
+      },
+      "AboutValueRequest": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "example": "Misi" },
+          "value": { "type": "string", "example": "Melayani umat..." },
+          "order_index": { "type": "integer", "example": 2 }
+        },
+        "required": ["title", "value", "order_index"]
+      },
+      "AboutSectionRequest": {
+        "type": "object",
+        "description": "Payload for creating or updating an about section with its values.",
+        "properties": {
+          "title": { "type": "string", "example": "Sejarah Pura" },
+          "description": { "type": "string", "example": "Penjelasan sejarah..." },
+          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/sejarah.png" },
+          "is_active": { "type": "boolean", "example": true },
+          "values": {
+            "type": "array",
+            "description": "List of key-value pairs associated with this section (e.g., Visi, Misi). When updating, this list *replaces* all existing values.",
+            "items": {
+              "$ref": "#/components/schemas/AboutValueRequest"
+            }
+          }
+        },
+        "required": ["title", "description", "is_active"]
       }
     },
     "responses": {
