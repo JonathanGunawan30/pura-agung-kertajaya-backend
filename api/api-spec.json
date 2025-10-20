@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Golang Clean Architecture",
-    "description": "Golang Clean Architecture",
-    "version": "1.0.0"
+    "title": "Pura Agung Kertajaya API",
+    "description": "Pura Agung Kertajaya API Specification",
+    "version": "1.0.1"
   },
   "servers": [
     {
@@ -11,40 +11,38 @@
     }
   ],
   "paths": {
-    "/api/users": {
+    "/api/users/_login": {
       "post": {
-        "tags": [
-          "User API"
-        ],
-        "description": "Register new user",
+        "tags": ["User API"],
+        "description": "Login admin user (internal only). Token is returned via HttpOnly cookie.",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
+                  "email": { "type": "string", "example": "admin@example.com" },
+                  "password": { "type": "string", "example": "12345678" },
+                  "recaptcha_token": {
+                    "type": "string",
+                    "description": "reCAPTCHA v3 token"
                   }
                 },
-                "required": [
-                  "id",
-                  "name",
-                  "password"
-                ]
+                "required": ["email", "password", "recaptcha_token"]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success register new user",
+            "description": "Login success — JWT set in HttpOnly cookie",
+            "headers": {
+              "Set-Cookie": {
+                "description": "JWT Access Token (HttpOnly, Secure, SameSite=Strict)",
+                "schema": { "type": "string" }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -53,17 +51,9 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
+                        "message": {
+                          "type": "string",
+                          "example": "Login successful"
                         }
                       }
                     }
@@ -71,36 +61,23 @@
                 }
               }
             }
-          }
-        }
-      },
-      "delete": {
-        "description": "Logout user",
-        "tags": [
-          "User API"
-        ],
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success logout user",
+          },
+          "401": {
+            "description": "Invalid email or password",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "boolean"
-                    }
-                  }
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many login attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -108,118 +85,73 @@
         }
       }
     },
-    "/api/users/_login": {
+    "/api/users/_logout": {
       "post": {
-        "description": "Login user",
-        "tags": [
-          "User API"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "password"
-                ]
-              }
-            }
+        "tags": ["User API"],
+        "description": "Logout user and revoke JWT (invalidate cookie + Redis blacklist)",
+        "security": [
+          {
+            "cookieAuth": []
           }
-        },
+        ],
         "responses": {
           "200": {
-            "description": "Success login",
+            "description": "Logout success — JWT cookie cleared",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Clears JWT cookie",
+                "schema": { "type": "string" }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "token": {
-                          "type": "string"
-                        }
-                      }
-                    }
+                    "data": { "type": "boolean", "example": true }
                   }
                 }
               }
             }
-          }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
         }
       }
     },
     "/api/users/_current": {
       "get": {
-        "tags": [
-          "User API"
-        ],
-        "description": "Get current user",
-        "parameters": [
+        "tags": ["User API"],
+        "description": "Get current logged-in user info (based on HttpOnly cookie)",
+        "security": [
           {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "cookieAuth": []
           }
         ],
         "responses": {
           "200": {
-            "description": "Success register new user",
+            "description": "Success get current user",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
-                        }
-                      }
+                      "$ref": "#/components/schemas/UserResponse"
                     }
                   }
                 }
               }
             }
-          }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
         }
       },
       "patch": {
-        "tags": [
-          "User API"
-        ],
-        "description": "Update current user",
-        "parameters": [
+        "tags": ["User API"],
+        "description": "Update current user profile (name or password)",
+        "security": [
           {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "cookieAuth": []
           }
         ],
         "requestBody": {
@@ -228,11 +160,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "name": { "type": "string", "example": "Admin Baru" },
                   "password": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "newpassword123"
                   }
                 }
               }
@@ -241,79 +172,54 @@
         },
         "responses": {
           "200": {
-            "description": "Success register new user",
+            "description": "Success update current user",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
-                        }
-                      }
+                      "$ref": "#/components/schemas/UserResponse"
                     }
                   }
                 }
               }
             }
-          }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
         }
       }
     },
-    "/api/contacts": {
+    "/api/storage/upload": {
       "post": {
-        "tags": [
-          "Contact API"
-        ],
-        "description": "Create new contact",
-        "parameters": [
+        "tags": ["Storage API"],
+        "description": "Upload file to Cloudflare R2 storage (requires authentication)",
+        "security": [
           {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "cookieAuth": []
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "first_name": {
-                    "type": "string"
-                  },
-                  "last_name": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
-                  },
-                  "phone": {
-                    "type": "string"
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to upload (max size depends on server configuration)"
                   }
-                }
+                },
+                "required": ["file"]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success create new contact",
+            "description": "File uploaded successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -322,26 +228,15 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": {
-                          "type": "string"
+                        "url": {
+                          "type": "string",
+                          "example": "https://your-domain.com/uploads/filename_1234567890.jpg",
+                          "description": "Public URL of uploaded file"
                         },
-                        "first_name": {
-                          "type": "string"
-                        },
-                        "last_name": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "phone": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
+                        "filename": {
+                          "type": "string",
+                          "example": "filename.jpg",
+                          "description": "Original filename"
                         }
                       }
                     }
@@ -349,69 +244,145 @@
                 }
               }
             }
-          }
+          },
+          "400": {
+            "description": "Bad request — no file uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "string",
+                      "example": "No file uploaded"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
         }
-      },
-      "get": {
-        "tags": [
-          "Contact API"
+      }
+    },
+    "/api/storage/delete": {
+      "delete": {
+        "tags": ["Storage API"],
+        "description": "Delete file from Cloudflare R2 storage (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
         ],
-        "description": "Get all contacts",
         "parameters": [
           {
-            "name": "Authorization",
-            "in": "header",
+            "name": "key",
+            "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "number",
-              "default": 1
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "number",
-              "default": 10
-            }
-          },
-          {
-            "name": "name",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "phone",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "email",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
+              "type": "string",
+              "example": "uploads/filename_1234567890.jpg"
+            },
+            "description": "Storage key/path of the file to delete"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success get list of contacts",
+            "description": "File deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "example": "File deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/storage/presigned-url": {
+      "get": {
+        "tags": ["Storage API"],
+        "description": "Generate presigned URL for temporary file access (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "uploads/filename_1234567890.jpg"
+            },
+            "description": "Storage key/path of the file"
+          },
+          {
+            "name": "expiration",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 3600,
+              "example": 3600
+            },
+            "description": "URL expiration time in seconds (default: 3600 = 1 hour)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Presigned URL generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "example": "https://your-account-id.r2.cloudflarestorage.com/bucket/uploads/filename_1234567890.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...",
+                          "description": "Presigned URL with temporary access token"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/testimonials": {
+      "get": {
+        "tags": ["Testimonial API"],
+        "description": "Get all testimonials.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get all testimonials",
             "content": {
               "application/json": {
                 "schema": {
@@ -420,636 +391,312 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "first_name": {
-                            "type": "string"
-                          },
-                          "last_name": {
-                            "type": "string"
-                          },
-                          "email": {
-                            "type": "string"
-                          },
-                          "phone": {
-                            "type": "string"
-                          },
-                          "created_at": {
-                            "type": "number"
-                          },
-                          "updated_at": {
-                            "type": "number"
-                          }
-                        }
-                      }
-                    },
-                    "paging": {
-                      "type": "object",
-                      "properties": {
-                        "page": {
-                          "type": "number"
-                        },
-                        "size": {
-                          "type": "number"
-                        },
-                        "total_item": {
-                          "type": "number"
-                        },
-                        "total_page": {
-                          "type": "number"
-                        }
+                        "$ref": "#/components/schemas/TestimonialResponse"
                       }
                     }
                   }
                 }
               }
-            }
-          }
-        }
-      }
-    },
-    "/api/contacts/{contactId}": {
-      "get": {
-        "tags": [
-          "Contact API"
-        ],
-        "description": "Get contact by id",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
             }
           },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success get contact",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "first_name": {
-                          "type": "string"
-                        },
-                        "last_name": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "phone": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
         }
       },
-      "put": {
-        "tags": [
-          "Contact API"
-        ],
-        "description": "Update contact by id",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "first_name": {
-                    "type": "string"
-                  },
-                  "last_name": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
-                  },
-                  "phone": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success update contact",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "first_name": {
-                          "type": "string"
-                        },
-                        "last_name": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "phone": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Contact API"
-        ],
-        "description": "Delete contact by id",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success delete contact",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/contacts/{contactId}/addresses": {
       "post": {
-        "tags": [
-          "Address API"
-        ],
-        "description": "Create new address",
-        "parameters": [
+        "tags": ["Testimonial API"],
+        "description": "Create a new testimonial (requires authentication)",
+        "security": [
           {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "cookieAuth": []
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "street": {
-                    "type": "string"
-                  },
-                  "city": {
-                    "type": "string"
-                  },
-                  "province": {
-                    "type": "string"
-                  },
-                  "country": {
-                    "type": "string"
-                  },
-                  "postal_code": {
-                    "type": "string"
+                "$ref": "#/components/schemas/TestimonialCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Testimonial created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TestimonialResponse"
+                    }
                   }
                 }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/testimonials/:id": {
+      "get": {
+        "tags": ["Testimonial API"],
+        "description": "Get a single testimonial by its ID (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "t_abc12345"
+            },
+            "description": "The ID of the testimonial to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get testimonial by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TestimonialResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Testimonial API"],
+        "description": "Update an existing testimonial by its ID (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "t_abc12345"
+            },
+            "description": "The ID of the testimonial to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestimonialUpdateRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success create new address",
+            "description": "Testimonial updated successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "street": {
-                          "type": "string"
-                        },
-                        "city": {
-                          "type": "string"
-                        },
-                        "province": {
-                          "type": "string"
-                        },
-                        "country": {
-                          "type": "string"
-                        },
-                        "postal_code": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
-                        }
-                      }
+                      "$ref": "#/components/schemas/TestimonialResponse"
                     }
                   }
                 }
               }
             }
-          }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       },
-      "get": {
-        "tags": [
-          "Address API"
+      "delete": {
+        "tags": ["Testimonial API"],
+        "description": "Delete a testimonial by its ID (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
         ],
-        "description": "Get all addresses",
         "parameters": [
           {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            }
+              "type": "string",
+              "example": "t_abc12345"
+            },
+            "description": "The ID of the testimonial to delete"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success get list of addresses",
+            "description": "Testimonial deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "street": {
-                            "type": "string"
-                          },
-                          "city": {
-                            "type": "string"
-                          },
-                          "province": {
-                            "type": "string"
-                          },
-                          "country": {
-                            "type": "string"
-                          },
-                          "postal_code": {
-                            "type": "string"
-                          },
-                          "created_at": {
-                            "type": "number"
-                          },
-                          "updated_at": {
-                            "type": "number"
-                          }
-                        }
-                      }
+                      "type": "boolean",
+                      "example": true
                     }
                   }
                 }
               }
             }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "access_token",
+        "description": "JWT token stored in HttpOnly cookie"
+      }
+    },
+    "schemas": {
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "u_123" },
+          "name": { "type": "string", "example": "Admin CMS" },
+          "email": { "type": "string", "example": "admin@example.com" },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "TestimonialResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "t_abc123" },
+          "name": { "type": "string", "example": "John Doe" },
+          "avatar_url": { "type": "string", "example": "https://r2.example.com/avatar.png" },
+          "rating": { "type": "integer", "example": 5 },
+          "comment": { "type": "string", "example": "Pelayanan sangat memuaskan!" },
+          "is_active": { "type": "boolean", "example": true },
+          "order_index": { "type": "integer", "example": 1 },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "TestimonialCreateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "Jane Doe" },
+          "avatar_url": { "type": "string", "example": "https://r2.example.com/avatar.png" },
+          "rating": { "type": "integer", "example": 4 },
+          "comment": { "type": "string", "example": "Sangat membantu." },
+          "is_active": { "type": "boolean", "example": true },
+          "order_index": { "type": "integer", "example": 2 }
+        },
+        "required": ["name", "rating", "comment", "is_active", "order_index"]
+      },
+      "TestimonialUpdateRequest": {
+        "type": "object",
+        "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
+        "properties": {
+          "name": { "type": "string", "example": "Jane Doe Updated" },
+          "avatar_url": { "type": "string", "example": "https://r2.example.com/new-avatar.png" },
+          "rating": { "type": "integer", "example": 5 },
+          "comment": { "type": "string", "example": "Sangat membantu (updated)." },
+          "is_active": { "type": "boolean", "example": false },
+          "order_index": { "type": "integer", "example": 1 }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "string",
+            "example": "Detail pesan error"
           }
         }
       }
     },
-    "/api/contacts/{contactId}/addresses/{addressId}": {
-      "get": {
-        "tags": [
-          "Address API"
-        ],
-        "description": "Get address by id",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Unauthorized — Missing or invalid JWT cookie",
+        "content": {
+          "application/json": {
             "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "addressId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success create new address",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "street": {
-                          "type": "string"
-                        },
-                        "city": {
-                          "type": "string"
-                        },
-                        "province": {
-                          "type": "string"
-                        },
-                        "country": {
-                          "type": "string"
-                        },
-                        "postal_code": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
-                        }
-                      }
-                    }
-                  }
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "string",
+                  "example": "Unauthorized"
                 }
               }
             }
           }
         }
       },
-      "put": {
-        "tags": [
-          "Address API"
-        ],
-        "description": "Update address by id",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
+      "BadRequestError": {
+        "description": "Bad Request — Invalid input data or validation failed",
+        "content": {
+          "application/json": {
             "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "addressId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/ErrorResponse"
             }
           }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "street": {
-                    "type": "string"
-                  },
-                  "city": {
-                    "type": "string"
-                  },
-                  "province": {
-                    "type": "string"
-                  },
-                  "country": {
-                    "type": "string"
-                  },
-                  "postal_code": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success create new address",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "street": {
-                          "type": "string"
-                        },
-                        "city": {
-                          "type": "string"
-                        },
-                        "province": {
-                          "type": "string"
-                        },
-                        "country": {
-                          "type": "string"
-                        },
-                        "postal_code": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "number"
-                        },
-                        "updated_at": {
-                          "type": "number"
-                        }
-                      }
-                    }
-                  }
+        }
+      },
+      "NotFoundError": {
+        "description": "Not Found — Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "string",
+                  "example": "Resource not found"
                 }
               }
             }
           }
         }
       },
-      "delete": {
-        "tags": [
-          "Address API"
-        ],
-        "description": "Delete address by id",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": true,
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
             "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "addressId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success create new address",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "boolean"
-                    }
-                  }
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "string",
+                  "example": "Internal server error"
                 }
               }
             }

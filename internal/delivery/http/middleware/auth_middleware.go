@@ -1,29 +1,36 @@
 package middleware
 
 import (
-	"golang-clean-architecture/internal/model"
-	"golang-clean-architecture/internal/usecase"
+	"pura-agung-kertajaya-backend/internal/util"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func NewAuth(userUserCase *usecase.UserUseCase) fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		request := &model.VerifyUserRequest{Token: ctx.Get("Authorization", "NOT_FOUND")}
-		userUserCase.Log.Debugf("Authorization : %s", request.Token)
+type Auth struct {
+	ID int
+}
 
-		auth, err := userUserCase.Verify(ctx.UserContext(), request)
-		if err != nil {
-			userUserCase.Log.Warnf("Failed find user by token : %+v", err)
+func AuthMiddleware(tokenUtil *util.TokenUtil) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token := c.Cookies("access_token")
+		if token == "" {
 			return fiber.ErrUnauthorized
 		}
 
-		userUserCase.Log.Debugf("User : %+v", auth.ID)
-		ctx.Locals("auth", auth)
-		return ctx.Next()
+		auth, _, err := tokenUtil.ParseToken(c.Context(), token)
+		if err != nil {
+			return fiber.ErrUnauthorized
+		}
+
+		c.Locals("user", &Auth{ID: auth.ID})
+		return c.Next()
 	}
 }
 
-func GetUser(ctx *fiber.Ctx) *model.Auth {
-	return ctx.Locals("auth").(*model.Auth)
+func GetUser(c *fiber.Ctx) *Auth {
+	user, ok := c.Locals("user").(*Auth)
+	if !ok {
+		return nil
+	}
+	return user
 }

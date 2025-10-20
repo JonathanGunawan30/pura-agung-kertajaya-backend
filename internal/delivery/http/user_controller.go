@@ -1,9 +1,9 @@
 package http
 
 import (
-	"golang-clean-architecture/internal/delivery/http/middleware"
-	"golang-clean-architecture/internal/model"
-	"golang-clean-architecture/internal/usecase"
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
+	"pura-agung-kertajaya-backend/internal/model"
+	"pura-agung-kertajaya-backend/internal/usecase"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -21,34 +21,16 @@ func NewUserController(useCase *usecase.UserUseCase, logger *logrus.Logger) *Use
 	}
 }
 
-func (c *UserController) Register(ctx *fiber.Ctx) error {
-	request := new(model.RegisterUserRequest)
-	err := ctx.BodyParser(request)
-	if err != nil {
-		c.Log.Warnf("Failed to parse request body : %+v", err)
-		return fiber.ErrBadRequest
-	}
-
-	response, err := c.UseCase.Create(ctx.UserContext(), request)
-	if err != nil {
-		c.Log.Warnf("Failed to register user : %+v", err)
-		return err
-	}
-
-	return ctx.JSON(model.WebResponse[*model.UserResponse]{Data: response})
-}
-
 func (c *UserController) Login(ctx *fiber.Ctx) error {
-	request := new(model.LoginUserRequest)
-	err := ctx.BodyParser(request)
-	if err != nil {
-		c.Log.Warnf("Failed to parse request body : %+v", err)
+	req := new(model.LoginUserRequest)
+	if err := ctx.BodyParser(req); err != nil {
+		c.Log.Warnf("Failed to parse request body: %+v", err)
 		return fiber.ErrBadRequest
 	}
 
-	response, err := c.UseCase.Login(ctx.UserContext(), request)
+	response, err := c.UseCase.Login(ctx.UserContext(), req, ctx)
 	if err != nil {
-		c.Log.Warnf("Failed to login user : %+v", err)
+		c.Log.Warnf("Failed to login user: %+v", err)
 		return err
 	}
 
@@ -58,13 +40,9 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 func (c *UserController) Current(ctx *fiber.Ctx) error {
 	auth := middleware.GetUser(ctx)
 
-	request := &model.GetUserRequest{
-		ID: auth.ID,
-	}
-
-	response, err := c.UseCase.Current(ctx.UserContext(), request)
+	response, err := c.UseCase.Current(ctx.UserContext(), auth.ID)
 	if err != nil {
-		c.Log.WithError(err).Warnf("Failed to get current user")
+		c.Log.WithError(err).Warn("Failed to get current user")
 		return err
 	}
 
@@ -72,34 +50,31 @@ func (c *UserController) Current(ctx *fiber.Ctx) error {
 }
 
 func (c *UserController) Logout(ctx *fiber.Ctx) error {
-	auth := middleware.GetUser(ctx)
-
-	request := &model.LogoutUserRequest{
-		ID: auth.ID,
-	}
-
-	response, err := c.UseCase.Logout(ctx.UserContext(), request)
+	success, err := c.UseCase.Logout(ctx.UserContext(), ctx)
 	if err != nil {
-		c.Log.WithError(err).Warnf("Failed to logout user")
+		c.Log.WithError(err).Warn("Failed to logout user")
 		return err
 	}
 
-	return ctx.JSON(model.WebResponse[bool]{Data: response})
+	return ctx.JSON(model.WebResponse[bool]{Data: success})
 }
 
-func (c *UserController) Update(ctx *fiber.Ctx) error {
+func (c *UserController) UpdateProfile(ctx *fiber.Ctx) error {
 	auth := middleware.GetUser(ctx)
+	if auth == nil {
+		return fiber.ErrUnauthorized
+	}
 
-	request := new(model.UpdateUserRequest)
-	if err := ctx.BodyParser(request); err != nil {
-		c.Log.Warnf("Failed to parse request body : %+v", err)
+	req := new(model.UpdateUserRequest)
+	req.ID = auth.ID
+	if err := ctx.BodyParser(req); err != nil {
+		c.Log.Warnf("Failed to parse request body: %+v", err)
 		return fiber.ErrBadRequest
 	}
 
-	request.ID = auth.ID
-	response, err := c.UseCase.Update(ctx.UserContext(), request)
+	response, err := c.UseCase.UpdateProfile(ctx.UserContext(), auth.ID, req)
 	if err != nil {
-		c.Log.WithError(err).Warnf("Failed to update user")
+		c.Log.WithError(err).Warn("Failed to update profile")
 		return err
 	}
 

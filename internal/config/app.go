@@ -1,16 +1,16 @@
 package config
 
 import (
-	"golang-clean-architecture/internal/delivery/http"
-	"golang-clean-architecture/internal/delivery/http/middleware"
-	"golang-clean-architecture/internal/delivery/http/route"
-	"golang-clean-architecture/internal/gateway/messaging"
-	"golang-clean-architecture/internal/repository"
-	"golang-clean-architecture/internal/usecase"
+	"pura-agung-kertajaya-backend/internal/delivery/http"
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
+	"pura-agung-kertajaya-backend/internal/delivery/http/route"
+	"pura-agung-kertajaya-backend/internal/repository"
+	"pura-agung-kertajaya-backend/internal/usecase"
+	"pura-agung-kertajaya-backend/internal/util"
 
-	"github.com/IBM/sarama"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -22,45 +22,52 @@ type BootstrapConfig struct {
 	Log      *logrus.Logger
 	Validate *validator.Validate
 	Config   *viper.Viper
-	Producer sarama.SyncProducer
 }
 
-func Bootstrap(config *BootstrapConfig) {
-	// setup repositories
-	userRepository := repository.NewUserRepository(config.Log)
-	contactRepository := repository.NewContactRepository(config.Log)
-	addressRepository := repository.NewAddressRepository(config.Log)
+func Bootstrap(cfg *BootstrapConfig) {
+	// Setup Redis client
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     cfg.Config.GetString("redis.host"),
+		Password: cfg.Config.GetString("redis.password"),
+		DB:       cfg.Config.GetInt("redis.db"),
+	})
 
-	// setup producer
-	var userProducer *messaging.UserProducer
-	var contactProducer *messaging.ContactProducer
-	var addressProducer *messaging.AddressProducer
+	// Setup TokenUtil (JWT + Redis)
+	secretKey := cfg.Config.GetString("jwt.secret")
+	tokenUtil := util.NewTokenUtil(secretKey, redisClient)
 
-	if config.Producer != nil {
-		userProducer = messaging.NewUserProducer(config.Producer, config.Log)
-		contactProducer = messaging.NewContactProducer(config.Producer, config.Log)
-		addressProducer = messaging.NewAddressProducer(config.Producer, config.Log)
+	// Setup RecaptchaUtil
+	recaptchaUtil := util.NewRecaptchaUtil(cfg.Config)
+
+	r2Client, err := util.NewR2Client(cfg.Config)
+	if err != nil {
+		cfg.Log.WithError(err).Fatal("failed to initialize R2 client")
 	}
 
-	// setup use cases
-	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validate, userRepository, userProducer)
-	contactUseCase := usecase.NewContactUseCase(config.DB, config.Log, config.Validate, contactRepository, contactProducer)
-	addressUseCase := usecase.NewAddressUseCase(config.DB, config.Log, config.Validate, contactRepository, addressRepository, addressProducer)
+	// Setup repositories
+	userRepository := repository.NewUserRepository(cfg.Log)
+	storageRepository := repository.NewStorageRepository(r2Client, cfg.Config, cfg.Log)
 
-	// setup controller
-	userController := http.NewUserController(userUseCase, config.Log)
-	contactController := http.NewContactController(contactUseCase, config.Log)
-	addressController := http.NewAddressController(addressUseCase, config.Log)
+	// Setup usecases
+	userUseCase := usecase.NewUserUseCase(cfg.DB, cfg.Log, cfg.Validate, userRepository, tokenUtil, recaptchaUtil)
+	storageUseCase := usecase.NewStorageUsecase(storageRepository, cfg.Log, cfg.Validate)
+	testimonialUseCase := usecase.NewTestimonialUsecase(cfg.DB, cfg.Log, cfg.Validate)
 
-	// setup middleware
-	authMiddleware := middleware.NewAuth(userUseCase)
+	// Setup controllers
+	userController := http.NewUserController(userUseCase, cfg.Log)
+	storageController := http.NewStorageController(storageUseCase, cfg.Log)
+	testimonialController := http.NewTestimonialController(testimonialUseCase, cfg.Log)
 
+	// Setup middleware
+	authMiddleware := middleware.AuthMiddleware(tokenUtil)
+
+	// Setup routes
 	routeConfig := route.RouteConfig{
-		App:               config.App,
-		UserController:    userController,
-		ContactController: contactController,
-		AddressController: addressController,
-		AuthMiddleware:    authMiddleware,
+		App:                   cfg.App,
+		UserController:        userController,
+		StorageController:     storageController,
+		TestimonialController: testimonialController,
+		AuthMiddleware:        authMiddleware,
 	}
 	routeConfig.Setup()
 }

@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"golang-clean-architecture/internal/config"
+	"pura-agung-kertajaya-backend/db/seeder"
+	"pura-agung-kertajaya-backend/internal/config"
 )
 
 func main() {
@@ -11,7 +12,6 @@ func main() {
 	db := config.NewDatabase(viperConfig, log)
 	validate := config.NewValidator(viperConfig)
 	app := config.NewFiber(viperConfig)
-	producer := config.NewKafkaProducer(viperConfig, log)
 
 	config.Bootstrap(&config.BootstrapConfig{
 		DB:       db,
@@ -19,8 +19,9 @@ func main() {
 		Log:      log,
 		Validate: validate,
 		Config:   viperConfig,
-		Producer: producer,
 	})
+
+	seeder.SeedUsers(db)
 
 	webPort := viperConfig.GetInt("web.port")
 	err := app.Listen(fmt.Sprintf(":%d", webPort))

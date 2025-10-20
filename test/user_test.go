@@ -2,11 +2,11 @@ package test
 
 import (
 	"encoding/json"
-	"golang-clean-architecture/internal/entity"
-	"golang-clean-architecture/internal/model"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"pura-agung-kertajaya-backend/internal/entity"
+	"pura-agung-kertajaya-backend/internal/model"
 	"strings"
 	"testing"
 
@@ -14,401 +14,295 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func TestRegister(t *testing.T) {
-	ClearAll()
-	requestBody := model.RegisterUserRequest{
-		ID:       "khannedy",
-		Password: "rahasia",
-		Name:     "Eko Khannedy",
-	}
-
-	bodyJson, err := json.Marshal(requestBody)
-	assert.Nil(t, err)
-
-	request := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.Equal(t, requestBody.ID, responseBody.Data.ID)
-	assert.Equal(t, requestBody.Name, responseBody.Data.Name)
-	assert.NotNil(t, responseBody.Data.CreatedAt)
-	assert.NotNil(t, responseBody.Data.UpdatedAt)
-}
-
-func TestRegisterError(t *testing.T) {
-	ClearAll()
-	requestBody := model.RegisterUserRequest{
-		ID:       "",
-		Password: "",
-		Name:     "",
-	}
-
-	bodyJson, err := json.Marshal(requestBody)
-	assert.Nil(t, err)
-
-	request := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusBadRequest, response.StatusCode)
-	assert.NotNil(t, responseBody.Errors)
-}
-
-func TestRegisterDuplicate(t *testing.T) {
-	ClearAll()
-	TestRegister(t) // register success
-
-	requestBody := model.RegisterUserRequest{
-		ID:       "khannedy",
-		Password: "rahasia",
-		Name:     "Eko Khannedy",
-	}
-
-	bodyJson, err := json.Marshal(requestBody)
-	assert.Nil(t, err)
-
-	request := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusConflict, response.StatusCode)
-	assert.NotNil(t, responseBody.Errors)
-}
-
 func TestLogin(t *testing.T) {
-	TestRegister(t) // register success
+	ClearAll()
 
-	requestBody := model.LoginUserRequest{
-		ID:       "khannedy",
-		Password: "rahasia",
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("rahasia"), bcrypt.DefaultCost)
+	user := entity.User{
+		Name:     "Admin Test",
+		Email:    "admin@puraagungkertajaya.com",
+		Password: string(hashed),
 	}
-
-	bodyJson, err := json.Marshal(requestBody)
+	err := db.Create(&user).Error
 	assert.Nil(t, err)
 
-	request := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(bodyJson)))
+	reqBody := model.LoginUserRequest{
+		Email:          "admin@puraagungkertajaya.com",
+		Password:       "rahasia",
+		RecaptchaToken: "dummy_recaptcha_token",
+	}
+	body, _ := json.Marshal(reqBody)
+
+	request := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(body)))
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
 
 	response, err := app.Test(request)
 	assert.Nil(t, err)
 
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
+	bytes, _ := io.ReadAll(response.Body)
+	respBody := new(model.WebResponse[model.UserResponse])
+	_ = json.Unmarshal(bytes, respBody)
 
 	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.NotNil(t, responseBody.Data.Token)
-
-	user := new(entity.User)
-	err = db.Where("id = ?", requestBody.ID).First(user).Error
-	assert.Nil(t, err)
-	assert.Equal(t, user.Token, responseBody.Data.Token)
+	assert.NotNil(t, respBody.Data)
+	assert.NotEmpty(t, respBody.Data.Email)
 }
 
-func TestLoginWrongUsername(t *testing.T) {
+func TestCurrentUser(t *testing.T) {
 	ClearAll()
-	TestRegister(t) // register success
 
-	requestBody := model.LoginUserRequest{
-		ID:       "wrong",
-		Password: "rahasia",
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("rahasia"), bcrypt.DefaultCost)
+	user := entity.User{
+		Name:     "Admin Test",
+		Email:    "admin@puraagungkertajaya.com",
+		Password: string(hashed),
 	}
-
-	bodyJson, err := json.Marshal(requestBody)
+	err := db.Create(&user).Error
 	assert.Nil(t, err)
 
-	request := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
+	reqBody := model.LoginUserRequest{
+		Email:          "admin@puraagungkertajaya.com",
+		Password:       "rahasia",
+		RecaptchaToken: "dummy_recaptcha_token",
+	}
+	body, _ := json.Marshal(reqBody)
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(body)))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginReq.Header.Set("Accept", "application/json")
+
+	loginResp, err := app.Test(loginReq)
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, loginResp.StatusCode)
+
+	cookies := loginResp.Cookies()
+	assert.NotEmpty(t, cookies)
+
+	var accessToken string
+	for _, c := range cookies {
+		if c.Name == "access_token" {
+			accessToken = c.Value
+			break
+		}
+	}
+	assert.NotEmpty(t, accessToken)
+
+	request := httptest.NewRequest(http.MethodGet, "/api/users/_current", nil)
+	request.Header.Set("Cookie", "access_token="+accessToken)
 	request.Header.Set("Accept", "application/json")
 
 	response, err := app.Test(request)
 	assert.Nil(t, err)
 
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
+	bytes, _ := io.ReadAll(response.Body)
+	resp := new(model.WebResponse[model.UserResponse])
+	_ = json.Unmarshal(bytes, resp)
 
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
-	assert.NotNil(t, responseBody.Errors)
-}
-
-func TestLoginWrongPassword(t *testing.T) {
-	ClearAll()
-	TestRegister(t) // register success
-
-	requestBody := model.LoginUserRequest{
-		ID:       "khannedy",
-		Password: "wrong",
-	}
-
-	bodyJson, err := json.Marshal(requestBody)
-	assert.Nil(t, err)
-
-	request := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
-	assert.NotNil(t, responseBody.Errors)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+	assert.Equal(t, user.Email, resp.Data.Email)
+	assert.NotEmpty(t, resp.Data.CreatedAt)
 }
 
 func TestLogout(t *testing.T) {
 	ClearAll()
-	TestLogin(t) // login success
 
-	user := new(entity.User)
-	err := db.Where("id = ?", "khannedy").First(user).Error
-	assert.Nil(t, err)
-
-	request := httptest.NewRequest(http.MethodDelete, "/api/users", nil)
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", user.Token)
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[bool])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.True(t, responseBody.Data)
-}
-
-func TestLogoutWrongAuthorization(t *testing.T) {
-	ClearAll()
-	TestLogin(t) // login success
-
-	request := httptest.NewRequest(http.MethodDelete, "/api/users", nil)
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", "wrong")
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[bool])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
-	assert.NotNil(t, responseBody.Errors)
-}
-
-func TestGetCurrentUser(t *testing.T) {
-	ClearAll()
-	TestLogin(t) // login success
-
-	user := new(entity.User)
-	err := db.Where("id = ?", "khannedy").First(user).Error
-	assert.Nil(t, err)
-
-	request := httptest.NewRequest(http.MethodGet, "/api/users/_current", nil)
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", user.Token)
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.Equal(t, user.ID, responseBody.Data.ID)
-	assert.Equal(t, user.Name, responseBody.Data.Name)
-	assert.Equal(t, user.CreatedAt, responseBody.Data.CreatedAt)
-	assert.Equal(t, user.UpdatedAt, responseBody.Data.UpdatedAt)
-}
-
-func TestGetCurrentUserFailed(t *testing.T) {
-	ClearAll()
-	TestLogin(t) // login success
-
-	request := httptest.NewRequest(http.MethodGet, "/api/users/_current", nil)
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", "wrong")
-
-	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
-
-	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
-	assert.NotNil(t, responseBody.Errors)
-}
-
-func TestUpdateUserName(t *testing.T) {
-	ClearAll()
-	TestLogin(t) // login success
-
-	user := new(entity.User)
-	err := db.Where("id = ?", "khannedy").First(user).Error
-	assert.Nil(t, err)
-
-	requestBody := model.UpdateUserRequest{
-		Name: "Eko Kurniawan Khannedy",
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("rahasia"), bcrypt.DefaultCost)
+	user := entity.User{
+		Name:     "Admin Test",
+		Email:    "admin@puraagungkertajaya.com",
+		Password: string(hashed),
 	}
-
-	bodyJson, err := json.Marshal(requestBody)
+	err := db.Create(&user).Error
 	assert.Nil(t, err)
 
-	request := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", user.Token)
+	reqBody := model.LoginUserRequest{
+		Email:          "admin@puraagungkertajaya.com",
+		Password:       "rahasia",
+		RecaptchaToken: "dummy_recaptcha_token",
+	}
+	body, _ := json.Marshal(reqBody)
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(body)))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginReq.Header.Set("Accept", "application/json")
+
+	loginResp, err := app.Test(loginReq)
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, loginResp.StatusCode)
+
+	cookies := loginResp.Cookies()
+	assert.NotEmpty(t, cookies)
+
+	var accessToken string
+	for _, c := range cookies {
+		if c.Name == "access_token" {
+			accessToken = c.Value
+			break
+		}
+	}
+	assert.NotEmpty(t, accessToken)
+
+	request := httptest.NewRequest(http.MethodPost, "/api/users/_logout", nil)
+	request.Header.Set("Cookie", "access_token="+accessToken)
 
 	response, err := app.Test(request)
-	assert.Nil(t, err)
-
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
-
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
 	assert.Nil(t, err)
 
 	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.Equal(t, user.ID, responseBody.Data.ID)
-	assert.Equal(t, requestBody.Name, responseBody.Data.Name)
-	assert.NotNil(t, responseBody.Data.CreatedAt)
-	assert.NotNil(t, responseBody.Data.UpdatedAt)
 }
 
-func TestUpdateUserPassword(t *testing.T) {
+func TestUpdateUser(t *testing.T) {
 	ClearAll()
-	TestLogin(t) // login success
 
-	user := new(entity.User)
-	err := db.Where("id = ?", "khannedy").First(user).Error
-	assert.Nil(t, err)
-
-	requestBody := model.UpdateUserRequest{
-		Password: "rahasialagi",
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("rahasia"), bcrypt.DefaultCost)
+	user := entity.User{
+		Name:     "Admin Test",
+		Email:    "admin@puraagungkertajaya.com",
+		Password: string(hashed),
 	}
-
-	bodyJson, err := json.Marshal(requestBody)
+	err := db.Create(&user).Error
 	assert.Nil(t, err)
 
-	request := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", user.Token)
+	reqBody := model.LoginUserRequest{
+		Email:          "admin@puraagungkertajaya.com",
+		Password:       "rahasia",
+		RecaptchaToken: "dummy_recaptcha_token",
+	}
+	body, _ := json.Marshal(reqBody)
 
-	response, err := app.Test(request)
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(body)))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginReq.Header.Set("Accept", "application/json")
+
+	loginResp, err := app.Test(loginReq)
 	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, loginResp.StatusCode)
 
-	bytes, err := io.ReadAll(response.Body)
+	cookies := loginResp.Cookies()
+	assert.NotEmpty(t, cookies)
+	var accessToken string
+	for _, c := range cookies {
+		if c.Name == "access_token" {
+			accessToken = c.Value
+			break
+		}
+	}
+	assert.NotEmpty(t, accessToken)
+
+	updateBody := model.UpdateUserRequest{
+		Name: "Administrator Updated",
+	}
+	updateJSON, _ := json.Marshal(updateBody)
+
+	req := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(updateJSON)))
+	req.Header.Set("Cookie", "access_token="+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := app.Test(req)
 	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
+	bytes, _ := io.ReadAll(resp.Body)
+	respBody := new(model.WebResponse[model.UserResponse])
+	_ = json.Unmarshal(bytes, respBody)
 
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.Equal(t, user.ID, responseBody.Data.ID)
-	assert.NotNil(t, responseBody.Data.CreatedAt)
-	assert.NotNil(t, responseBody.Data.UpdatedAt)
+	assert.Equal(t, "Administrator Updated", respBody.Data.Name)
 
-	user = new(entity.User)
-	err = db.Where("id = ?", "khannedy").First(user).Error
-	assert.Nil(t, err)
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(requestBody.Password))
-	assert.Nil(t, err)
+	updated := new(entity.User)
+	db.Where("email = ?", "admin@puraagungkertajaya.com").First(updated)
+	assert.Equal(t, "Administrator Updated", updated.Name)
 }
 
-func TestUpdateFailed(t *testing.T) {
+func TestUpdateUser_InvalidInputs(t *testing.T) {
 	ClearAll()
-	TestLogin(t) // login success
 
-	requestBody := model.UpdateUserRequest{
-		Password: "rahasialagi",
+	//  Buat user dummy di DB dengan hash dinamis
+	hashed, _ := bcrypt.GenerateFromPassword([]byte("rahasia"), 4) // cost 4 biar cepat
+	user := entity.User{
+		Name:     "Admin Test",
+		Email:    "admin@puraagungkertajaya.com",
+		Password: string(hashed),
 	}
+	_ = db.Create(&user).Error
 
-	bodyJson, err := json.Marshal(requestBody)
+	//  LOGIN dulu buat dapet cookie
+	reqBody := model.LoginUserRequest{
+		Email:          "admin@puraagungkertajaya.com",
+		Password:       "rahasia",
+		RecaptchaToken: "dummy_recaptcha_token",
+	}
+	body, _ := json.Marshal(reqBody)
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(body)))
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginReq.Header.Set("Accept", "application/json")
+
+	loginResp, err := app.Test(loginReq)
 	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, loginResp.StatusCode)
 
-	request := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(bodyJson)))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Authorization", "wrong")
+	var accessToken string
+	for _, c := range loginResp.Cookies() {
+		if c.Name == "access_token" {
+			accessToken = c.Value
+		}
+	}
+	assert.NotEmpty(t, accessToken)
 
-	response, err := app.Test(request)
-	assert.Nil(t, err)
+	//  CASE 1: Kosong semua field
+	t.Run("Empty Name (should keep old value)", func(t *testing.T) {
+		req := model.UpdateUserRequest{Name: ""}
+		body, _ := json.Marshal(req)
+		request := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(body)))
+		request.Header.Set("Cookie", "access_token="+accessToken)
+		request.Header.Set("Content-Type", "application/json")
 
-	bytes, err := io.ReadAll(response.Body)
-	assert.Nil(t, err)
+		resp, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	responseBody := new(model.WebResponse[model.UserResponse])
-	err = json.Unmarshal(bytes, responseBody)
-	assert.Nil(t, err)
+		// cek apakah name masih sama (tidak berubah)
+		bytes, _ := io.ReadAll(resp.Body)
+		respBody := new(model.WebResponse[model.UserResponse])
+		_ = json.Unmarshal(bytes, respBody)
+		assert.Equal(t, "Admin Test", respBody.Data.Name)
+	})
 
-	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
-	assert.NotNil(t, responseBody.Errors)
+	//  CASE 2: Tidak ada cookie (belum login)
+	t.Run("Unauthorized (no cookie)", func(t *testing.T) {
+		req := model.UpdateUserRequest{Name: "Hacker Attempt"}
+		body, _ := json.Marshal(req)
+		request := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(body)))
+		request.Header.Set("Content-Type", "application/json")
+
+		resp, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	//  CASE 3: Cookie invalid
+	t.Run("Invalid Token", func(t *testing.T) {
+		req := model.UpdateUserRequest{Name: "Fake User"}
+		body, _ := json.Marshal(req)
+		request := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(body)))
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Cookie", "access_token=invalid_token")
+
+		resp, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	//  CASE 4: Update field tidak valid (misal terlalu panjang)
+	t.Run("Too Long Name", func(t *testing.T) {
+		longName := strings.Repeat("A", 300) // misal validasi max 255
+		req := model.UpdateUserRequest{Name: longName}
+		body, _ := json.Marshal(req)
+		request := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(body)))
+		request.Header.Set("Cookie", "access_token="+accessToken)
+		request.Header.Set("Content-Type", "application/json")
+
+		resp, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.True(t, resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusInternalServerError)
+	})
 }

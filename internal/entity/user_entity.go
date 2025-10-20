@@ -1,16 +1,17 @@
 package entity
 
-// User is a struct that represents a user entity
+import "time"
+
+// User represents an admin user in the CMS
 type User struct {
-	ID        string    `gorm:"column:id;primaryKey"`
-	Password  string    `gorm:"column:password"`
-	Name      string    `gorm:"column:name"`
-	Token     string    `gorm:"column:token"`
-	CreatedAt int64     `gorm:"column:created_at;autoCreateTime:milli"`
-	UpdatedAt int64     `gorm:"column:updated_at;autoCreateTime:milli;autoUpdateTime:milli"`
-	Contacts  []Contact `gorm:"foreignKey:user_id;references:id"`
+	ID        int       `gorm:"column:id;primaryKey;autoIncrement"`
+	Name      string    `gorm:"column:name;size:100;not null"`
+	Email     string    `gorm:"column:email;size:100;unique;not null"`
+	Password  string    `gorm:"column:password;size:100;not null"`
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"`
 }
 
-func (u *User) TableName() string {
+func (User) TableName() string {
 	return "users"
 }

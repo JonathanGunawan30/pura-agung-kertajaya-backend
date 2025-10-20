@@ -1,10 +1,9 @@
-create table users
+CREATE TABLE users
 (
-    id         varchar(100) not null,
-    name       varchar(100) not null,
-    password   varchar(100) not null,
-    token      varchar(100) null,
-    created_at bigint       not null,
-    updated_at bigint       not null,
-    primary key (id)
-) engine = InnoDB;
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    name       VARCHAR(100) NOT NULL,
+    email      VARCHAR(100) NOT NULL UNIQUE,
+    password   VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
