@@ -18,6 +18,7 @@ type RouteConfig struct {
 	ActivityController     *http.ActivityController
 	SiteIdentityController *http.SiteIdentityController
 	AboutController        *http.AboutController
+	OrganizationController *http.OrganizationController
 	AuthMiddleware         fiber.Handler
 }
 
@@ -36,6 +37,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Get("/api/public/activities", c.ActivityController.GetAllPublic)
 	c.App.Get("/api/public/site-identity", c.SiteIdentityController.GetPublic)
 	c.App.Get("/api/public/about", c.AboutController.GetAllPublic)
+	c.App.Get("/api/public/organization-members", c.OrganizationController.GetAllPublic)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
@@ -95,4 +97,10 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/about", c.AboutController.Create)
 	c.App.Put("/api/about/:id", c.AboutController.Update)
 	c.App.Delete("/api/about/:id", c.AboutController.Delete)
+
+	c.App.Get("/api/organization-members", c.OrganizationController.GetAll)
+	c.App.Get("/api/organization-members/:id", c.OrganizationController.GetByID)
+	c.App.Post("/api/organization-members", c.OrganizationController.Create)
+	c.App.Put("/api/organization-members/:id", c.OrganizationController.Update)
+	c.App.Delete("/api/organization-members/:id", c.OrganizationController.Delete)
 }

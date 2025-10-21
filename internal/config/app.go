@@ -59,6 +59,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	activityUseCase := usecase.NewActivityUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	siteIdentityUseCase := usecase.NewSiteIdentityUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	aboutUseCase := usecase.NewAboutUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	organizationUsecase := usecase.NewOrganizationRequest(cfg.DB, cfg.Log, cfg.Validate)
 
 	// Setup controllers
 	userController := http.NewUserController(userUseCase, cfg.Log)
@@ -71,6 +72,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	activityController := http.NewActivityController(activityUseCase, cfg.Log)
 	siteIdentityController := http.NewSiteIdentityController(siteIdentityUseCase, cfg.Log)
 	aboutController := http.NewAboutController(aboutUseCase, cfg.Log)
+	organizationController := http.NewOrganizationController(organizationUsecase, cfg.Log)
 
 	// Setup middleware
 	authMiddleware := middleware.AuthMiddleware(tokenUtil)
@@ -88,6 +90,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 		ActivityController:     activityController,
 		SiteIdentityController: siteIdentityController,
 		AboutController:        aboutController,
+		OrganizationController: organizationController,
 		AuthMiddleware:         authMiddleware,
 	}
 	routeConfig.Setup()

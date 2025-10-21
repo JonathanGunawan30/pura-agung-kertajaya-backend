@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000"
+      "url": "http://localhost:8080"
     }
   ],
   "paths": {
@@ -1857,6 +1857,216 @@
           "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       }
+    },
+    "/api/public/organization-members": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all active organization members for public display, ordered hierarchically.",
+        "responses": {
+          "200": {
+            "description": "Success get active organization members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrganizationMemberResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/organization-members": {
+      "get": {
+        "tags": ["Organization Member API"],
+        "description": "Get all organization members (admin view, includes non-active).",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Success get all organization members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrganizationMemberResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      },
+      "post": {
+        "tags": ["Organization Member API"],
+        "description": "Create a new organization member (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationMemberRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organization member created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationMemberResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+        }
+      }
+    },
+    "/api/organization-members/:id": {
+      "get": {
+        "tags": ["Organization Member API"],
+        "description": "Get a single organization member by ID (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "om_abc12345"
+            },
+            "description": "The ID of the organization member"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get organization member by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationMemberResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Organization Member API"],
+        "description": "Update an existing organization member by ID (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "om_abc12345"
+            },
+            "description": "The ID of the organization member to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationMemberRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organization member updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationMemberResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Organization Member API"],
+        "description": "Delete an organization member by ID (requires authentication).",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "om_abc12345"
+            },
+            "description": "The ID of the organization member to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization member deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
     }
   },
   "components": {
@@ -2138,6 +2348,35 @@
           }
         },
         "required": ["title", "description", "is_active"]
+      },
+      "OrganizationMemberResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "om_abc123" },
+          "name": { "type": "string", "example": "I Wayan S." },
+          "position": { "type": "string", "example": "Ketua" },
+          "position_order": { "type": "integer", "example": 1 },
+          "order_index": { "type": "integer", "example": 1 },
+          "photo_url": { "type": "string", "format": "uri", "nullable": true, "example": "https://r2.example.com/wayan.png" },
+          "description": { "type": "string", "nullable": true, "example": "Bertanggung jawab atas..." },
+          "is_active": { "type": "boolean", "example": true },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "OrganizationMemberRequest": {
+        "type": "object",
+        "description": "Payload for creating or updating an organization member.",
+        "properties": {
+          "name": { "type": "string", "example": "Ni Made L." },
+          "position": { "type": "string", "example": "Sekretaris" },
+          "position_order": { "type": "integer", "example": 3 },
+          "order_index": { "type": "integer", "example": 1 },
+          "photo_url": { "type": "string", "format": "uri", "nullable": true, "example": "https://r2.example.com/made.png" },
+          "description": { "type": "string", "nullable": true, "example": "Mencatat hasil rapat..." },
+          "is_active": { "type": "boolean", "example": true }
+        },
+        "required": ["name", "position", "position_order", "is_active"]
       }
     },
     "responses": {
