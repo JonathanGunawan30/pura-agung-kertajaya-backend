@@ -71,9 +71,7 @@ func (c *StorageController) Delete(ctx *fiber.Ctx) error {
 	err := c.UseCase.DeleteFile(ctx.Context(), key)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to delete file")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
-			Errors: err.Error(),
-		})
+		return err
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[string]{
@@ -94,9 +92,7 @@ func (c *StorageController) GetPresignedURL(ctx *fiber.Ctx) error {
 	url, err := c.UseCase.GetPresignedURL(ctx.Context(), key, expiration)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to generate presigned URL")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
-			Errors: err.Error(),
-		})
+		return err
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[fiber.Map]{

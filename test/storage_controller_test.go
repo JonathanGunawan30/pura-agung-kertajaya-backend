@@ -16,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"gorm.io/gorm"
 )
 
 func TestStorageController_Upload_Success(t *testing.T) {
@@ -134,24 +135,39 @@ func TestStorageController_Delete_NoKey(t *testing.T) {
 }
 
 func TestStorageController_Delete_Error(t *testing.T) {
-	mockUsecase := usecasemock.NewMockStorageUsecase()
+	mockUsecase := &usecasemock.MockStorageUsecase{}
 	log := logrus.New()
 	controller := http.NewStorageController(mockUsecase, log)
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			message := "An internal server error occurred. Please try again later."
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				code = fiber.StatusNotFound
+				message = "The requested resource was not found."
+			}
+			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
+		},
+	})
+
+	app.Delete("/api/storage/delete", controller.Delete)
 
 	key := "uploads/test_1234567890.jpg"
 	expectedError := errors.New("delete failed")
 	mockUsecase.On("DeleteFile", mock.Anything, key).Return(expectedError)
 
-	app.Delete("/delete", controller.Delete)
-	req := httptest.NewRequest("DELETE", "/delete?key="+key, nil)
-	resp, _ := app.Test(req)
+	req := httptest.NewRequest("DELETE", "/api/storage/delete?key="+key, nil)
+
+	resp, err := app.Test(req, -1)
+	assert.NoError(t, err)
 
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
 
 	var response model.WebResponse[any]
-	json.NewDecoder(resp.Body).Decode(&response)
-	assert.Equal(t, "delete failed", response.Errors)
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Equal(t, "An internal server error occurred. Please try again later.", response.Errors)
+
 	mockUsecase.AssertExpectations(t)
 }
 

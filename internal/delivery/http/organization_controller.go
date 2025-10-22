@@ -21,7 +21,7 @@ func (c *OrganizationController) GetAll(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.GetAll()
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch organization members")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -31,7 +31,7 @@ func (c *OrganizationController) GetAllPublic(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.GetPublic()
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public organization members")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -44,7 +44,7 @@ func (c *OrganizationController) GetByID(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.GetByID(id)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to get organization member by id")
-		return ctx.Status(fiber.StatusNotFound).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -57,7 +57,7 @@ func (c *OrganizationController) Create(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.Create(req)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to create organization member")
-		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse[any]{Data: data})
 }
@@ -74,7 +74,7 @@ func (c *OrganizationController) Update(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.Update(id, req)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to update organization member")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -86,7 +86,7 @@ func (c *OrganizationController) Delete(ctx *fiber.Ctx) error {
 	}
 	if err := c.UseCase.Delete(id); err != nil {
 		c.Log.WithError(err).Error("failed to delete organization member")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
-	return ctx.JSON(model.WebResponse[string]{Data: "Gallery deleted successfully"})
+	return ctx.JSON(model.WebResponse[string]{Data: "Organization member deleted successfully"})
 }

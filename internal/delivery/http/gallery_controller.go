@@ -21,7 +21,7 @@ func (c *GalleryController) GetAll(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.GetAll()
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch galleries")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -31,7 +31,7 @@ func (c *GalleryController) GetAllPublic(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.GetPublic()
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public galleries")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -44,7 +44,7 @@ func (c *GalleryController) GetByID(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.GetByID(id)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to get gallery by id")
-		return ctx.Status(fiber.StatusNotFound).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -57,7 +57,7 @@ func (c *GalleryController) Create(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.Create(req)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to create gallery")
-		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse[any]{Data: data})
 }
@@ -74,7 +74,7 @@ func (c *GalleryController) Update(ctx *fiber.Ctx) error {
 	data, err := c.UseCase.Update(id, req)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to update gallery")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -86,7 +86,7 @@ func (c *GalleryController) Delete(ctx *fiber.Ctx) error {
 	}
 	if err := c.UseCase.Delete(id); err != nil {
 		c.Log.WithError(err).Error("failed to delete gallery")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: err.Error()})
+		return err
 	}
 	return ctx.JSON(model.WebResponse[string]{Data: "Gallery deleted successfully"})
 }

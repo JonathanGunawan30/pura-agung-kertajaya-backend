@@ -25,7 +25,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	req := new(model.LoginUserRequest)
 	if err := ctx.BodyParser(req); err != nil {
 		c.Log.Warnf("Failed to parse request body: %+v", err)
-		return fiber.ErrBadRequest
+		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body format"})
 	}
 
 	response, err := c.UseCase.Login(ctx.UserContext(), req, ctx)
@@ -40,6 +40,10 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 func (c *UserController) Current(ctx *fiber.Ctx) error {
 	auth := middleware.GetUser(ctx)
 
+	if auth == nil {
+		c.Log.Warn("Auth user not found in context")
+		return ctx.Status(fiber.StatusUnauthorized).JSON(model.WebResponse[any]{Errors: fiber.ErrUnauthorized.Message})
+	}
 	response, err := c.UseCase.Current(ctx.UserContext(), auth.ID)
 	if err != nil {
 		c.Log.WithError(err).Warn("Failed to get current user")
@@ -62,7 +66,8 @@ func (c *UserController) Logout(ctx *fiber.Ctx) error {
 func (c *UserController) UpdateProfile(ctx *fiber.Ctx) error {
 	auth := middleware.GetUser(ctx)
 	if auth == nil {
-		return fiber.ErrUnauthorized
+		c.Log.Warn("Auth user not found in context for update")
+		return ctx.Status(fiber.StatusUnauthorized).JSON(model.WebResponse[any]{Errors: fiber.ErrUnauthorized.Message})
 	}
 
 	req := new(model.UpdateUserRequest)

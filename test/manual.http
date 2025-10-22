@@ -3,7 +3,7 @@ POST http://localhost:8080/api/users/_login
 Content-Type: application/json
 
 {
-  "email": "joko@example.com",
+  "email": "admin@puraagungkertajaya.com",
   "password": "rahasia"
 }
 
@@ -17,9 +17,318 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "name": "Joko Updated"
+  "name": "Admin Updateds"
 }
 
 ### LOGOUT USER
 POST http://localhost:8080/api/users/_logout
 Accept: application/json
+
+
+### GET ORGANIZATION
+GET http://localhost:8080/api/organization-members
+Accept: application/json
+
+### POST ORGANIZATION
+POST http://localhost:8080/api/organization-members
+Content-Type: application/json
+
+{
+  "name": "test",
+  "position": "ketua",
+  "position_order": 1
+}
+
+### GET BY ID
+GET http://localhost:8080/api/organization-members/16fba676-44fc-4652-bf9b-3b594684dd8a
+Content-Type: application/json
+
+### UPDATE BY ID
+PUT http://localhost:8080/api/organization-members/16fba676-44fc-4652-bf9b-3b594684dd8a
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "test updated",
+  "position": "ketua",
+  "position_order": 1,
+  "is_active": true
+}
+
+### DELETE BY ID
+DELETE http://localhost:8080/api/organization-members/16fba676-44fc-4652-bf9b-3b594684dd8a
+Content-Type: application/json
+Accept: application/json
+
+
+### GET ABOUT
+GET http://localhost:8080/api/about
+Accept: application/json
+Content-Type: application/json
+
+### POST ABOUT
+POST http://localhost:8080/api/about
+Content-Type: application/json
+
+{
+  "title": "Test About Title",
+  "description": "Description About",
+  "is_active": true
+}
+
+### GET ABOUT ID
+GET http://localhost:8080/api/about/168ad985-7833-4293-b311-975f1ae3f5aa
+Content-Type: application/json
+
+### UPDATE ABOUT
+PUT http://localhost:8080/api/about/168ad985-7833-4293-b311-975f1ae3f5aa
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Tentang Kami (Updated)",
+  "description": "Deskripsi yang sudah diperbarui.",
+  "image_url": "https://example.com/new_about_image.jpg",
+  "is_active": true,
+  "values": [
+    {
+      "title": "Visi Baru",
+      "value": "Menjadi pusat spiritual terdepan.",
+      "order_index": 1
+    },
+    {
+      "title": "Misi Baru",
+      "value": "Melayani umat dengan sepenuh hati dan teknologi.",
+      "order_index": 2
+    },
+    {
+      "title": "Tujuan",
+      "value": "Meningkatkan sradha bhakti umat.",
+      "order_index": 3
+    }
+  ]
+}
+
+### DELETE ABOUT
+DELETE http://localhost:8080/api/about/168ad985-7833-4293-b311-975f1ae3f5aa
+Content-Type: application/json
+Accept: application/json
+
+
+### GET SITE IDENTITY
+GET http://localhost:8080/api/site-identity
+Content-Type: application/json
+
+### POST SITE IDENTITY
+POST http://localhost:8080/api/site-identity
+Content-Type: application/json
+
+{
+  "site_name": "site belum ada",
+  "tagline": "tagline belum tau",
+  "primary_button_text": "tombol belum ada",
+  "secondary_button_text": "tombol belum ada juga",
+  "primary_button_link": "/belum-ada",
+  "secondary_button_link": "/belum-tau"
+}
+
+### UPDATE SITE IDENTITY
+PUT http://localhost:8080/api/site-identity/8b312b10-fd78-422c-a659-4a5ca26d481e
+Content-Type: application/json
+
+{
+  "site_name": "site belum ada",
+  "tagline": "tagline belum tau",
+  "primary_button_text": "tombol belum ada",
+  "secondary_button_text": "tombol belum ada juga",
+  "primary_button_link": "/belum-ada",
+  "secondary_button_link": "/belum-tau",
+  "logo_url": "http://belumada.com"
+}
+
+### GET SITE IDENTITY ID
+GET http://localhost:8080/api/site-identity/8b312b10-fd78-422c-a659-4a5ca26d481e
+Content-Type: application/json
+
+### DELETE SITE IDENTITY
+DELETE http://localhost:8080/api/site-identity/8b312b10-fd78-422c-a659-4a5ca26d481e
+Content-Type: application/json
+
+### GET ACTIVITY
+GET http://localhost:8080/api/activities
+Content-Type: application/json
+
+### POST ACTIVITY
+POST http://localhost:8080/api/activities
+Content-Type: application/json
+
+{
+  "order_index": 1,
+  "is_active": true,
+  "description": "test activity desc",
+  "location": "pura",
+  "time_info": "menyusul",
+  "title": "aktivitas"
+}
+
+### GET ACTIVITY ID
+GET http://localhost:8080/api/activities/3613a8bd-579f-4e6f-8317-f069e4520d31
+Content-Type: application/json
+
+### UPDATE ACTIVITY
+PUT http://localhost:8080/api/activities/3613a8bd-579f-4e6f-8317-f069e4520d31
+Content-Type: application/json
+
+{
+  "order_index": 1,
+  "is_active": true,
+  "description": "test activity desc",
+  "location": "pura",
+  "time_info": "menyusul",
+  "title": "aktivitas updated"
+}
+
+### DELETE ACTIVITY
+DELETE http://localhost:8080/api/activities/3613a8bd-579f-4e6f-8317-f069e4520d31
+Content-Type: application/json
+
+### GET CONTACT INFO
+GET http://localhost:8080/api/contact-info
+Content-Type: application/json
+
+### POST CONTACT INFO
+POST http://localhost:8080/api/contact-info
+Content-Type: application/json
+
+{
+  "address": "Jalan belum ada",
+  "phone": "081212121212",
+  "email": "email@belumada.com",
+  "map_embed_url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13341.188909487419!2d106.61525608558966!3d-6.216272116496287!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69fd6b81f00491%3A0xc5927a7be82e23b8!2sSupermal%20Karawaci!5e0!3m2!1sid!2sid!4v1761044849355!5m2!1sid!2sid",
+  "visiting_hours": "jam yang biasa"
+}
+
+### GET CONTACT INFO
+GET http://localhost:8080/api/contact-info/8cb63469-21bf-4724-9466-669cb9f8a352
+Content-Type: application/json
+
+### UPDATE CONTACT INFO
+PUT http://localhost:8080/api/contact-info/8cb63469-21bf-4724-9466-669cb9f8a352
+Content-Type: application/json
+
+{
+  "address": "Jalan belum ada",
+  "phone": "081212121212",
+  "email": "email@belumada.com",
+  "map_embed_url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13341.188909487419!2d106.61525608558966!3d-6.216272116496287!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69fd6b81f00491%3A0xc5927a7be82e23b8!2sSupermal%20Karawaci!5e0!3m2!1sid!2sid!4v1761044849355!5m2!1sid!2sid",
+  "visiting_hours": "jam 5"
+}
+
+### DELETE CONTACT INFO
+DELETE http://localhost:8080/api/contact-info/8cb63469-21bf-4724-9466-669cb9f8a352
+
+### GET GALLERY
+GET http://localhost:8080/api/galleries
+
+### POST GALLERY
+POST http://localhost:8080/api/galleries
+Content-Type: application/json
+
+{
+  "title": "foto saya",
+  "description": "ini foto saya",
+  "is_active": true,
+  "order_index": 1,
+  "image_url": "http://gambarbelumada.com"
+}
+
+### GET GALLERY ID
+GET http://localhost:8080/api/galleries/0ae77d47-1995-441b-a906-3f3f95b861db
+Content-Type: application/json
+
+### UPDATE GALLERY
+PUT http://localhost:8080/api/galleries/0ae77d47-1995-441b-a906-3f3f95b861db
+Content-Type: application/json
+
+{
+  "title": "foto saya",
+  "description": "ini foto saya",
+  "is_active": true,
+  "order_index": 1,
+  "image_url": "http://gambarudahada.com"
+}
+
+### DELETE GALLRY
+DELETE http://localhost:8080/api/galleries/0ae77d47-1995-441b-a906-3f3f95b861db
+Content-Type: application/json
+
+### GET HERO SLIDE
+GET http://localhost:8080/api/hero-slides
+Content-Type: application/json
+
+### POST HERO SLIDE
+POST http://localhost:8080/api/hero-slides
+Content-Type: application/json
+
+{
+  "order_index": 1,
+  "is_active": true,
+  "image_url": "http://gambarbelumada.com"
+}
+
+### GET BY ID
+GET http://localhost:8080/api/hero-slides/10b4059a-d2df-485c-a2dd-0a3c502a084d
+Content-Type: application/json
+
+### UPDATE BY ID
+PUT http://localhost:8080/api/hero-slides/10b4059a-d2df-485c-a2dd-0a3c502a084d
+Content-Type: application/json
+
+{
+  "order_index": 1,
+  "is_active": true,
+  "image_url": "http://gambarudahada.com"
+}
+
+### DELETE BY ID
+DELETE http://localhost:8080/api/hero-slides/10b4059a-d2df-485c-a2dd-0a3c502a084d
+Content-Type: application/json
+
+### GET TESTIMONIAL
+GET http://localhost:8080/api/testimonials
+Content-Type: application/json
+
+### POST TESTIMONIAL
+POST http://localhost:8080/api/testimonials
+Content-Type: application/json
+
+{
+  "is_active": true,
+  "order_index": 1,
+  "rating": 5,
+  "comment": "halo",
+  "name": "jonathan",
+  "avatar_url": "http://belumada.com"
+}
+
+### GET BY ID
+GET http://localhost:8080/api/testimonials/31
+Content-Type: application/json
+
+### UPDATE BY ID
+PUT http://localhost:8080/api/testimonials/31
+Content-Type: application/json
+
+{
+  "is_active": true,
+  "order_index": 1,
+  "rating": 5,
+  "comment": "halo",
+  "name": "jonathan",
+  "avatar_url": "http://udahada.com"
+}
+
+### DELETE BY ID
+DELETE http://localhost:8080/api/testimonials/31
+Content-Type: application/json
+

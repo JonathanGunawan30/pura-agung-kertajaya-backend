@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pura-agung-kertajaya-backend/db/seeder"
 	"pura-agung-kertajaya-backend/internal/config"
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 )
 
 func main() {
@@ -12,6 +13,8 @@ func main() {
 	db := config.NewDatabase(viperConfig, log)
 	validate := config.NewValidator(viperConfig)
 	app := config.NewFiber(viperConfig)
+
+	app.Use(middleware.ErrorHandlerMiddleware(log))
 
 	config.Bootstrap(&config.BootstrapConfig{
 		DB:       db,
