@@ -1,8 +1,14 @@
-# Golang Clean Architecture Template
+# Golang Clean Architecture - Pura Agung Kertajaya
 
 ## Description
 
-This is golang clean architecture template.
+This repository contains the backend service for the Pura Agung Kertajaya website. It is built using a Clean Architecture in Golang to ensure maintainability and scalability.
+
+The service operates in two main capacities:
+
+Public API: Provides all necessary data for the public-facing website.
+
+Private CMS API: A secure, authenticated API for administrators to manage all site content.
 
 ## Architecture
 
@@ -24,17 +30,19 @@ This is golang clean architecture template.
 
 - Golang : https://github.com/golang/go
 - MySQL (Database) : https://github.com/mysql/mysql-server
-- Apache Kafka : https://github.com/apache/kafka
+- Redis (Cache, Sessions, Rate Limiter) : https://redis.io/
+- Cloudflare R2 (S3-Compatible Object Storage) : https://developers.cloudflare.com/r2/
 
 ## Framework & Library
 
 - GoFiber (HTTP Framework) : https://github.com/gofiber/fiber
 - GORM (ORM) : https://github.com/go-gorm/gorm
 - Viper (Configuration) : https://github.com/spf13/viper
+- GoDotEnv (Environment Loader) : https://github.com/joho/godotenv
 - Golang Migrate (Database Migration) : https://github.com/golang-migrate/migrate
 - Go Playground Validator (Validation) : https://github.com/go-playground/validator
-- Logrus (Logger) : https://github.com/sirupsen/logrus
-- Sarama (Kafka Client) : https://github.com/IBM/sarama
+- Go-Redis (Redis Client) : https://github.com/redis/go-redis
+- AWS SDK for Go (Cloudflare R2 Client) : https://github.com/aws/aws-sdk-go
 
 ## Configuration
 
@@ -72,10 +80,4 @@ go test -v ./test/
 
 ```bash
 go run cmd/web/main.go
-```
-
-### Run worker
-
-```bash
-go run cmd/worker/main.go
 ```
