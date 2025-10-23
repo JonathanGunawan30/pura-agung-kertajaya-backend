@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -26,15 +25,16 @@ type BootstrapConfig struct {
 
 func Bootstrap(cfg *BootstrapConfig) {
 	// Setup Redis client
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     cfg.Config.GetString("redis.host"),
-		Password: cfg.Config.GetString("redis.password"),
-		DB:       cfg.Config.GetInt("redis.db"),
-	})
+	redisHost := cfg.Config.GetString("redis.host")
+	redisPort := cfg.Config.GetInt("redis.port")
+	redisPass := cfg.Config.GetString("redis.password")
+	redisDB := cfg.Config.GetInt("redis.db")
+	rateLimiterDB := cfg.Config.GetInt("redis.rate_limiter_db")
+	redisClient := NewRedisClient(redisHost, redisPort, redisPass, redisDB)
 
 	// Setup TokenUtil (JWT + Redis)
 	secretKey := cfg.Config.GetString("jwt.secret")
-	tokenUtil := util.NewTokenUtil(secretKey, redisClient)
+	tokenUtil := util.NewTokenUtil(secretKey, redisClient.RDB)
 
 	// Setup RecaptchaUtil
 	recaptchaUtil := util.NewRecaptchaUtil(cfg.Config)
@@ -74,8 +74,19 @@ func Bootstrap(cfg *BootstrapConfig) {
 	aboutController := http.NewAboutController(aboutUseCase, cfg.Log)
 	organizationController := http.NewOrganizationController(organizationUsecase, cfg.Log)
 
+	// Setup redis storage
+	storage := NewFiberRedisStorage(redisHost, redisPort, redisPass, rateLimiterDB)
+
 	// Setup middleware
 	authMiddleware := middleware.AuthMiddleware(tokenUtil)
+
+	// Rate Limiter
+	publicRateLimiter := middleware.PublicRateLimiter(storage)
+	authRateLimiter := middleware.AuthRateLimiter(storage)
+	cmsReadRateLimiter := middleware.CMSReadRateLimiter(storage)
+	cmsWriteRateLimiter := middleware.CMSWriteRateLimiter(storage)
+	storageRateLimiter := middleware.StorageRateLimiter(storage)
+	deleteRateLimiter := middleware.DeleteRateLimiter(storage)
 
 	// Setup routes
 	routeConfig := route.RouteConfig{
@@ -92,6 +103,13 @@ func Bootstrap(cfg *BootstrapConfig) {
 		AboutController:        aboutController,
 		OrganizationController: organizationController,
 		AuthMiddleware:         authMiddleware,
+
+		PublicRateLimiter:   publicRateLimiter,
+		AuthRateLimiter:     authRateLimiter,
+		CMSReadRateLimiter:  cmsReadRateLimiter,
+		CMSWriteRateLimiter: cmsWriteRateLimiter,
+		StorageRateLimiter:  storageRateLimiter,
+		DeleteRateLimiter:   deleteRateLimiter,
 	}
 	routeConfig.Setup()
 }

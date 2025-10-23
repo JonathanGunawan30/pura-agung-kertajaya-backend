@@ -1,40 +1,50 @@
 {
   "app": {
-    "name": "golang-clean-architecture"
+    "name": "",
+    "env": "development"
   },
   "web": {
     "prefork": false,
-    "port": 3000
+    "port": 0
   },
   "log": {
-    "level": 6
+    "level": 0
   },
   "database": {
-    "username": "root",
+    "username": "",
     "password": "",
-    "host": "localhost",
-    "port": 3306,
-    "name": "golang_clean_architecture",
+    "host": "",
+    "port": 0,
+    "name": "",
     "pool": {
-      "idle": 10,
-      "max": 100,
-      "lifetime": 300
+      "idle": 0,
+      "max": 0,
+      "lifetime": 0
     }
   },
-  "kafka": {
-    "bootstrap": {
-      "servers": "localhost:9092"
-    },
-    "group": {
-      "id": "golang-clean-architecture"
-    },
-    "auto": {
-      "offset": {
-        "reset": "earliest"
-      }
-    },
-    "producer": {
-      "enabled": false
-    }
+  "redis": {
+    "host": "",
+    "port": 0,
+    "password": "",
+    "db": 0,
+    "db_rate_limiter": 0
+  },
+  "jwt": {
+    "secret": ""
+  },
+  "recaptcha": {
+    "site_key": "",
+    "secret": ""
+  },
+  "cloudflare_r2": {
+    "bucket": "",
+    "endpoint": "",
+    "access_key": "",
+    "secret_key": "",
+    "public_url": "",
+    "account_id": ""
+  },
+  "cors": {
+    "allow_origins": ""
   }
 }

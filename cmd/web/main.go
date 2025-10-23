@@ -5,6 +5,8 @@ import (
 	"pura-agung-kertajaya-backend/db/seeder"
 	"pura-agung-kertajaya-backend/internal/config"
 	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
+
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
@@ -15,6 +17,13 @@ func main() {
 	app := config.NewFiber(viperConfig)
 
 	app.Use(middleware.ErrorHandlerMiddleware(log))
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     viperConfig.GetString("cors.allow_origins"),
+		AllowCredentials: true,
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+	}))
 
 	config.Bootstrap(&config.BootstrapConfig{
 		DB:       db,

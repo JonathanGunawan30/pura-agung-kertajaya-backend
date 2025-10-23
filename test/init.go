@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"pura-agung-kertajaya-backend/internal/config"
 	"pura-agung-kertajaya-backend/internal/util"
 
@@ -28,9 +29,14 @@ func init() {
 	app = config.NewFiber(viperConfig)
 	db = config.NewDatabase(viperConfig, log)
 
+	redisHost := viperConfig.GetString("redis.host")
+	redisPort := viperConfig.GetInt("redis.port")
+
+	redisAddr := fmt.Sprintf("%s:%d", redisHost, redisPort)
+
 	// Setup Redis
 	redisClient = redis.NewClient(&redis.Options{
-		Addr:     viperConfig.GetString("redis.host"),
+		Addr:     redisAddr,
 		Password: viperConfig.GetString("redis.password"),
 		DB:       viperConfig.GetInt("redis.db"),
 	})

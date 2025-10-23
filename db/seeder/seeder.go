@@ -25,8 +25,8 @@ func SeedUsers(db *gorm.DB) {
 			Password: string(password),
 		},
 		{
-			Name:     "Joko",
-			Email:    "joko@example.com",
+			Name:     "Jonathan",
+			Email:    "jonathan@puraagungkertajaya.com",
 			Password: string(password),
 		},
 	}
