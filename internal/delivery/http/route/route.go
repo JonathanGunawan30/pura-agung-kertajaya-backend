@@ -46,6 +46,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 	public.Get("/site-identity", c.SiteIdentityController.GetPublic)
 	public.Get("/about", c.AboutController.GetAllPublic)
 	public.Get("/organization-members", c.OrganizationController.GetAllPublic)
+	public.Get("/facilities", c.FacilityController.GetAllPublic)
 
 	c.App.Post("/api/users/_login", c.AuthRateLimiter, c.UserController.Login)
 }

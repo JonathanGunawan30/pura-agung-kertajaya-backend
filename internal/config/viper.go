@@ -8,36 +8,18 @@ import (
 	"github.com/spf13/viper"
 )
 
-// NewViper is a function to load config from config.json
-// You can change the implementation, for example load from env file, consul, etcd, etc
 func NewViper() *viper.Viper {
 	log := logrus.New()
-	config := viper.New()
+	v := viper.New()
 
-	err := godotenv.Load()
-	if err != nil {
-		err = godotenv.Load("../.env")
-		if err != nil {
-			log.Warnf("Failed to load .env file from current or parent directory: %v", err)
-		}
+	if err := godotenv.Load(".env"); err != nil {
+		log.Warn(".env file not found or unreadable")
+	} else {
+		log.Info(".env loaded via godotenv")
 	}
 
-	config.AutomaticEnv()
-	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	config.SetConfigName("config")
-	config.SetConfigType("json")
-	config.AddConfigPath("./../")
-	config.AddConfigPath("./")
-	config.AddConfigPath("./config")
-	config.AddConfigPath("/")
-
-	err = config.ReadInConfig()
-
-	if err != nil {
-		log.Fatalf("Fatal error config file: %v \n", err)
-	}
-
-	log.Infof("Configuration loaded successfully")
-	return config
+	return v
 }

@@ -11,9 +11,9 @@ import (
 )
 
 func NewR2Client(cfg *viper.Viper) (*s3.Client, error) {
-	accessKey := cfg.GetString("r2.access_key")
-	secretKey := cfg.GetString("r2.secret_key")
-	endpoint := cfg.GetString("r2.endpoint")
+	accessKey := cfg.GetString("cloudflare_r2.access_key")
+	secretKey := cfg.GetString("cloudflare_r2.secret_key")
+	endpoint := cfg.GetString("cloudflare_r2.endpoint")
 
 	customResolver := aws.EndpointResolverWithOptionsFunc(
 		func(service, region string, options ...interface{}) (aws.Endpoint, error) {

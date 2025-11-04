@@ -29,8 +29,8 @@ type storageRepository struct {
 func NewStorageRepository(client *s3.Client, cfg *viper.Viper, log *logrus.Logger) StorageRepository {
 	return &storageRepository{
 		client:    client,
-		bucket:    cfg.GetString("r2.bucket_name"),
-		publicURL: cfg.GetString("r2.public_url"),
+		bucket:    cfg.GetString("cloudflare_r2.bucket"),
+		publicURL: cfg.GetString("cloudflare_r2.public_url"),
 		log:       log,
 	}
 }

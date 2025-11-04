@@ -2067,6 +2067,199 @@
           "404": { "$ref": "#/components/responses/NotFoundError" }
         }
       }
+    },
+    "/api/public/facilities": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Retrieves all 'active' facilities for public website display.",
+        "operationId": "getPublicFacilities",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacilityResponse"
+                  }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/facilities": {
+      "get": {
+        "tags": ["Facilities API"],
+        "summary": "Get All Facilities (Admin)",
+        "description": "Retrieves all facilities, including inactive ones (for admin dashboard).",
+        "operationId": "getAllFacilitiesAdmin",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacilityResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "post": {
+        "tags": ["Admin: Facilities"],
+        "summary": "Create New Facility (Admin)",
+        "description": "Creates a new facility entry.",
+        "operationId": "createFacility",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FacilityCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacilityResponse"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/facilities/{id}": {
+      "get": {
+        "tags": ["Facilities API"],
+        "summary": "Get Facility by ID (Admin)",
+        "description": "Retrieves a single facility's details by its ID.",
+        "operationId": "getFacilityById",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "fac_abc123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacilityResponse"
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "put": {
+        "tags": ["Admin: Facilities"],
+        "summary": "Update Facility by ID (Admin)",
+        "description": "Updates a facility's data by its ID.",
+        "operationId": "updateFacility",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "fac_abc123"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FacilityUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacilityResponse"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin: Facilities"],
+        "summary": "Delete Facility by ID (Admin)",
+        "description": "Deletes a facility by its ID.",
+        "operationId": "deleteFacility",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "fac_abc123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "example": "Facility deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
     }
   },
   "components": {
@@ -2377,6 +2570,41 @@
           "is_active": { "type": "boolean", "example": true }
         },
         "required": ["name", "position", "position_order", "is_active"]
+      },
+      "FacilityResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "fac_abc123" },
+          "name": { "type": "string", "example": "Bale Kulkul" },
+          "description": { "type": "string", "example": "A gathering place and announcement tower." },
+          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/bale-kulkul.png" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": true },
+          "created_at": { "type": "number", "example": 1739650180 },
+          "updated_at": { "type": "number", "example": 1739650180 }
+        }
+      },
+      "FacilityCreateRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "Wantilan" },
+          "description": { "type": "string", "example": "A multi-purpose hall." },
+          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/wantilan.png" },
+          "order_index": { "type": "integer", "example": 2 },
+          "is_active": { "type": "boolean", "example": true }
+        },
+        "required": ["name", "image_url", "order_index", "is_active"]
+      },
+      "FacilityUpdateRequest": {
+        "type": "object",
+        "description": "All fields are optional. Send only the fields you want to update.",
+        "properties": {
+          "name": { "type": "string", "example": "Wantilan (Renovated)" },
+          "description": { "type": "string", "example": "Multi-purpose hall (renovated)." },
+          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/wantilan-baru.png" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": false }
+        }
       }
     },
     "responses": {
