@@ -2550,8 +2550,6 @@
           "position": { "type": "string", "example": "Ketua" },
           "position_order": { "type": "integer", "example": 1 },
           "order_index": { "type": "integer", "example": 1 },
-          "photo_url": { "type": "string", "format": "uri", "nullable": true, "example": "https://r2.example.com/wayan.png" },
-          "description": { "type": "string", "nullable": true, "example": "Bertanggung jawab atas..." },
           "is_active": { "type": "boolean", "example": true },
           "created_at": { "type": "number", "example": 1739650180 },
           "updated_at": { "type": "number", "example": 1739650180 }
@@ -2565,8 +2563,6 @@
           "position": { "type": "string", "example": "Sekretaris" },
           "position_order": { "type": "integer", "example": 3 },
           "order_index": { "type": "integer", "example": 1 },
-          "photo_url": { "type": "string", "format": "uri", "nullable": true, "example": "https://r2.example.com/made.png" },
-          "description": { "type": "string", "nullable": true, "example": "Mencatat hasil rapat..." },
           "is_active": { "type": "boolean", "example": true }
         },
         "required": ["name", "position", "position_order", "is_active"]
