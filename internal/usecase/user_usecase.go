@@ -70,9 +70,11 @@ func (c *UserUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fi
 		Name:     "access_token",
 		Value:    token,
 		HTTPOnly: true,
-		SameSite: "Strict",
-		Secure:   false, // ubah ke true di production
+		SameSite: "None",
+		Secure:   true,
 		Path:     "/",
+		Domain:   ".puraagungkertajaya.my.id",
+		MaxAge:   86400,
 	})
 
 	c.Log.Infof("User %s logged in (JTI=%s)", user.Email, jti)
