@@ -73,7 +73,7 @@ func (c *UserUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fi
 		SameSite: "None",
 		Secure:   true,
 		Path:     "/",
-		Domain:   ".puraagungkertajaya.my.id",
+		Domain:   "admin.puraagungkertajaya.my.id",
 		MaxAge:   86400,
 	})
 
