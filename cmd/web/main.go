@@ -5,6 +5,7 @@ import (
 	"pura-agung-kertajaya-backend/db/seeder"
 	"pura-agung-kertajaya-backend/internal/config"
 	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
+	"pura-agung-kertajaya-backend/internal/entity"
 
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
@@ -33,10 +34,30 @@ func main() {
 		Config:   viperConfig,
 	})
 
+	err := db.AutoMigrate(
+		&entity.User{},
+		&entity.Testimonial{},
+		&entity.HeroSlide{},
+		&entity.Gallery{},
+		&entity.Facility{},
+		&entity.ContactInfo{},
+		&entity.Activity{},
+		&entity.SiteIdentity{},
+		&entity.AboutSection{},
+		&entity.AboutValue{},
+		&entity.OrganizationMember{},
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	log.Info("Database migration completed")
+
 	seeder.SeedUsers(db)
 
 	webPort := viperConfig.GetInt("web.port")
-	err := app.Listen(fmt.Sprintf(":%d", webPort))
+	err = app.Listen(fmt.Sprintf(":%d", webPort))
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
