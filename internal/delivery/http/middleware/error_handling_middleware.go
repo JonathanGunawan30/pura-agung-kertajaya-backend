@@ -34,7 +34,6 @@ func ErrorHandlerMiddleware(log *logrus.Logger) fiber.Handler {
 		var numErr *strconv.NumError
 
 		switch {
-		// Fiber errors
 		case errors.As(err, &fiberErr):
 			code = fiberErr.Code
 			message = fiberErr.Message
@@ -42,33 +41,27 @@ func ErrorHandlerMiddleware(log *logrus.Logger) fiber.Handler {
 				message = "Unauthorized access."
 			}
 
-		// Unauthorized error
 		case errors.Is(err, fiber.ErrUnauthorized):
 			code = fiber.StatusUnauthorized
 			message = "Unauthorized access."
 
-		// Validation errors from go-playground/validator
 		case errors.As(err, &validationErrs):
 			code = fiber.StatusBadRequest
 			message = formatValidationErrors(validationErrs)
 
-		// JSON syntax errors
 		case errors.As(err, &syntaxErr):
 			code = fiber.StatusBadRequest
 			message = fmt.Sprintf("Invalid JSON format at position %d", syntaxErr.Offset)
 
-		// JSON unmarshal type errors
 		case errors.As(err, &unmarshalErr):
 			code = fiber.StatusBadRequest
 			message = fmt.Sprintf("Invalid data type for field '%s': expected %s but got %s",
 				unmarshalErr.Field, unmarshalErr.Type.String(), unmarshalErr.Value)
 
-		// Number conversion errors
 		case errors.As(err, &numErr):
 			code = fiber.StatusBadRequest
 			message = fmt.Sprintf("Invalid number format: '%s' cannot be converted to a number", numErr.Num)
 
-		// GORM errors
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			code = fiber.StatusNotFound
 			message = "The requested resource was not found."
@@ -98,7 +91,6 @@ func ErrorHandlerMiddleware(log *logrus.Logger) fiber.Handler {
 			message = "Data validation constraint failed."
 
 		default:
-			// String-based error detection for wrapped/custom errors
 			code, message = detectErrorFromMessage(err.Error())
 		}
 
@@ -116,13 +108,10 @@ func ErrorHandlerMiddleware(log *logrus.Logger) fiber.Handler {
 func detectErrorFromMessage(errMsg string) (int, string) {
 	lowerErr := strings.ToLower(errMsg)
 
-	// Validation errors (must be checked first for specificity)
 	if strings.Contains(lowerErr, "key:") && strings.Contains(lowerErr, "error:field validation") {
-		// Raw validator error format
 		return fiber.StatusBadRequest, parseRawValidationError(errMsg)
 	}
 
-	// Database constraint violations
 	if strings.Contains(lowerErr, "unique constraint") ||
 		strings.Contains(lowerErr, "duplicate key") ||
 		strings.Contains(lowerErr, "violates unique") {
@@ -143,7 +132,6 @@ func detectErrorFromMessage(errMsg string) (int, string) {
 		return fiber.StatusBadRequest, extractNotNullFieldError(errMsg)
 	}
 
-	// Request validation
 	if strings.Contains(lowerErr, "validation failed") ||
 		strings.Contains(lowerErr, "invalid request") ||
 		strings.Contains(lowerErr, "bad request") ||
@@ -153,7 +141,6 @@ func detectErrorFromMessage(errMsg string) (int, string) {
 		return fiber.StatusBadRequest, errMsg
 	}
 
-	// String length validation
 	if strings.Contains(lowerErr, "too long") ||
 		strings.Contains(lowerErr, "exceeds maximum length") ||
 		strings.Contains(lowerErr, "maximum length exceeded") {
@@ -165,7 +152,6 @@ func detectErrorFromMessage(errMsg string) (int, string) {
 		return fiber.StatusBadRequest, errMsg
 	}
 
-	// Authentication & Authorization
 	if strings.Contains(lowerErr, "unauthorized") ||
 		strings.Contains(lowerErr, "token expired") ||
 		strings.Contains(lowerErr, "invalid token") ||
@@ -179,7 +165,6 @@ func detectErrorFromMessage(errMsg string) (int, string) {
 		return fiber.StatusForbidden, "You do not have permission to access this resource."
 	}
 
-	// Resource errors
 	if strings.Contains(lowerErr, "not found") ||
 		strings.Contains(lowerErr, "missing") ||
 		strings.Contains(lowerErr, "no such record") ||
@@ -192,7 +177,6 @@ func detectErrorFromMessage(errMsg string) (int, string) {
 		return fiber.StatusConflict, "The resource already exists or conflicts with existing data."
 	}
 
-	// Performance & Rate limiting
 	if strings.Contains(lowerErr, "timeout") ||
 		strings.Contains(lowerErr, "deadline exceeded") ||
 		strings.Contains(lowerErr, "context deadline") {
@@ -204,20 +188,17 @@ func detectErrorFromMessage(errMsg string) (int, string) {
 		return fiber.StatusTooManyRequests, "Too many requests. Please slow down."
 	}
 
-	// Service availability
 	if strings.Contains(lowerErr, "service unavailable") ||
 		strings.Contains(lowerErr, "temporarily unavailable") {
 		return fiber.StatusServiceUnavailable, "Service temporarily unavailable. Please try again later."
 	}
 
-	// Connection errors
 	if strings.Contains(lowerErr, "connection refused") ||
 		strings.Contains(lowerErr, "connection reset") ||
 		strings.Contains(lowerErr, "broken pipe") {
 		return fiber.StatusServiceUnavailable, "Service connection error. Please try again later."
 	}
 
-	// Database errors (should hide implementation details)
 	if strings.Contains(lowerErr, "db") ||
 		strings.Contains(lowerErr, "sql") ||
 		strings.Contains(lowerErr, "query") ||
@@ -230,7 +211,6 @@ func detectErrorFromMessage(errMsg string) (int, string) {
 		return fiber.StatusInternalServerError, "An internal server error occurred. Please try again later."
 	}
 
-	// Default: return original error message for custom errors
 	return fiber.StatusInternalServerError, errMsg
 }
 
@@ -344,22 +324,17 @@ func formatValidationErrors(errs validator.ValidationErrors) string {
 	return strings.Join(errorMessages, "; ")
 }
 
-// parseRawValidationError parses raw validator error format
-// Example: "Key: 'Request.Name' Error:Field validation for 'Name' failed on the 'max' tag"
 func parseRawValidationError(errMsg string) string {
-	// Try to extract field name and tag
 	if strings.Contains(errMsg, "failed on the '") {
 		parts := strings.Split(errMsg, "failed on the '")
 		if len(parts) >= 2 {
 			tag := strings.Split(parts[1], "'")[0]
 
-			// Extract field name
 			if strings.Contains(errMsg, "Field validation for '") {
 				fieldParts := strings.Split(errMsg, "Field validation for '")
 				if len(fieldParts) >= 2 {
 					field := strings.Split(fieldParts[1], "'")[0]
 
-					// Format based on tag
 					switch tag {
 					case "required":
 						return fmt.Sprintf("'%s' is required", field)
@@ -379,17 +354,13 @@ func parseRawValidationError(errMsg string) string {
 		}
 	}
 
-	// Fallback to generic message
 	return "Validation failed. Please check your input data."
 }
 
-// extractDuplicateFieldError tries to extract field name from duplicate key error
 func extractDuplicateFieldError(errMsg string) string {
 	lowerErr := strings.ToLower(errMsg)
 
-	// Try to find field name in common patterns
 	if strings.Contains(lowerErr, "duplicate key value") {
-		// PostgreSQL format
 		if strings.Contains(errMsg, "(") && strings.Contains(errMsg, ")") {
 			start := strings.Index(errMsg, "(")
 			end := strings.Index(errMsg, ")")
@@ -400,7 +371,6 @@ func extractDuplicateFieldError(errMsg string) string {
 		}
 	}
 
-	// MySQL format
 	if strings.Contains(lowerErr, "for key") {
 		parts := strings.Split(errMsg, "for key")
 		if len(parts) >= 2 {
@@ -413,7 +383,6 @@ func extractDuplicateFieldError(errMsg string) string {
 	return "A record with this data already exists."
 }
 
-// extractNotNullFieldError tries to extract field name from not null constraint error
 func extractNotNullFieldError(errMsg string) string {
 	lowerErr := strings.ToLower(errMsg)
 

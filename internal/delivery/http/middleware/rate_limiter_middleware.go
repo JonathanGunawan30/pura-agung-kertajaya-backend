@@ -9,10 +9,9 @@ import (
 	"github.com/gofiber/storage/redis/v3"
 )
 
-// 1. Public endpoints (read-only)
 func PublicRateLimiter(storage *redis.Storage) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        100,
+		Max:        150,
 		Expiration: 1 * time.Minute,
 		Storage:    storage,
 		KeyGenerator: func(c *fiber.Ctx) string {
@@ -22,11 +21,10 @@ func PublicRateLimiter(storage *redis.Storage) fiber.Handler {
 	})
 }
 
-// 2. Auth endpoints (login, logout)
 func AuthRateLimiter(storage *redis.Storage) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        10,
-		Expiration: 15 * time.Minute,
+		Max:        15,
+		Expiration: 5 * time.Minute,
 		Storage:    storage,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return fmt.Sprintf("auth:%v", c.IP())
@@ -35,7 +33,6 @@ func AuthRateLimiter(storage *redis.Storage) fiber.Handler {
 	})
 }
 
-// 3. CMS Read operations (authenticated)
 func CMSReadRateLimiter(storage *redis.Storage) fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        300,
@@ -51,7 +48,6 @@ func CMSReadRateLimiter(storage *redis.Storage) fiber.Handler {
 	})
 }
 
-// 4. CMS Write operations (create, update, delete)
 func CMSWriteRateLimiter(storage *redis.Storage) fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        100,
@@ -67,11 +63,10 @@ func CMSWriteRateLimiter(storage *redis.Storage) fiber.Handler {
 	})
 }
 
-// 5. Storage/Upload
 func StorageRateLimiter(storage *redis.Storage) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        20,
-		Expiration: 1 * time.Hour,
+		Max:        75,
+		Expiration: 10 * time.Minute,
 		Storage:    storage,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			if userID := c.Locals("user"); userID != nil {
@@ -83,11 +78,10 @@ func StorageRateLimiter(storage *redis.Storage) fiber.Handler {
 	})
 }
 
-// 6. Delete operations
 func DeleteRateLimiter(storage *redis.Storage) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        30,
-		Expiration: 10 * time.Minute,
+		Max:        75,
+		Expiration: 5 * time.Minute,
 		Storage:    storage,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			if userID := c.Locals("user"); userID != nil {
