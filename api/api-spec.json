@@ -759,6 +759,239 @@
         }
       }
     },
+    "/api/remarks": {
+      "get": {
+        "tags": ["Remark API"],
+        "description": "Get all remarks filtered by entity_type (Admin).",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter remarks by entity type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get all remarks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/RemarkResponse" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Remark API"],
+        "description": "Create a new remark",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRemarkRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Remark created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/RemarkResponse" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/remarks/{id}": {
+      "get": {
+        "tags": ["Remark API"],
+        "description": "Get a single remark by its ID (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "UUID of the remark"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get remark by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RemarkResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "put": {
+        "tags": ["Remark API"],
+        "description": "Update an existing remark by its ID (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            },
+            "description": "The ID of the remark to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRemarkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remark updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RemarkResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Remark API"],
+        "description": "Delete a remark by its ID (requires authentication)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            },
+            "description": "The ID of the remark to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Remark deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/public/remarks": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get active remarks for public website.",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter public remarks by entity type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get public remarks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/RemarkResponse" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/public/testimonials": {
       "get": {
         "tags": ["Public API"],
@@ -2117,7 +2350,7 @@
         }
       },
       "post": {
-        "tags": ["Admin: Facilities"],
+        "tags": ["Facilities API"],
         "summary": "Create New Facility (Admin)",
         "description": "Creates a new facility entry.",
         "operationId": "createFacility",
@@ -2182,7 +2415,7 @@
         }
       },
       "put": {
-        "tags": ["Admin: Facilities"],
+        "tags": ["Facilities API"],
         "summary": "Update Facility by ID (Admin)",
         "description": "Updates a facility's data by its ID.",
         "operationId": "updateFacility",
@@ -2224,7 +2457,7 @@
         }
       },
       "delete": {
-        "tags": ["Admin: Facilities"],
+        "tags": ["Facilities API"],
         "summary": "Delete Facility by ID (Admin)",
         "description": "Deletes a facility by its ID.",
         "operationId": "deleteFacility",
@@ -2600,6 +2833,46 @@
           "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/wantilan-baru.png" },
           "order_index": { "type": "integer", "example": 1 },
           "is_active": { "type": "boolean", "example": false }
+        }
+      },
+      "RemarkResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "name": { "type": "string", "example": "I Made Ketua" },
+          "position": { "type": "string", "example": "Ketua Yayasan" },
+          "image_url": { "type": "string", "example": "https://example.com/ketua.jpg" },
+          "content": { "type": "string", "example": "Om Swastyastu..." },
+          "is_active": { "type": "boolean", "example": true },
+          "order_index": { "type": "integer", "example": 1 },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateRemarkRequest": {
+        "type": "object",
+        "required": ["entity_type", "name", "position", "content"],
+        "properties": {
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "name": { "type": "string", "example": "I Made Ketua" },
+          "position": { "type": "string", "example": "Ketua Yayasan" },
+          "image_url": { "type": "string", "example": "https://example.com/ketua.jpg" },
+          "content": { "type": "string", "example": "Om Swastyastu..." },
+          "is_active": { "type": "boolean", "default": true },
+          "order_index": { "type": "integer", "example": 1 }
+        }
+      },
+      "UpdateRemarkRequest": {
+        "type": "object",
+        "required": ["name", "position", "content"],
+        "properties": {
+          "name": { "type": "string", "example": "I Made Ketua" },
+          "position": { "type": "string", "example": "Ketua Yayasan" },
+          "image_url": { "type": "string", "example": "https://example.com/ketua.jpg" },
+          "content": { "type": "string", "example": "Om Swastyastu..." },
+          "is_active": { "type": "boolean", "example": true },
+          "order_index": { "type": "integer", "example": 1 }
         }
       }
     },
