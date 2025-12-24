@@ -60,6 +60,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	siteIdentityUseCase := usecase.NewSiteIdentityUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	aboutUseCase := usecase.NewAboutUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	organizationUsecase := usecase.NewOrganizationRequest(cfg.DB, cfg.Log, cfg.Validate)
+	remarkUseCase := usecase.NewRemarkUsecase(cfg.DB, cfg.Log, cfg.Validate)
 
 	// Setup controllers
 	userController := http.NewUserController(userUseCase, cfg.Log)
@@ -73,6 +74,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	siteIdentityController := http.NewSiteIdentityController(siteIdentityUseCase, cfg.Log)
 	aboutController := http.NewAboutController(aboutUseCase, cfg.Log)
 	organizationController := http.NewOrganizationController(organizationUsecase, cfg.Log)
+	remarkcontroller := http.NewRemarkController(remarkUseCase, cfg.Log)
 
 	// Setup redis storage
 	storage := NewFiberRedisStorage(redisHost, redisPort, redisPass, rateLimiterDB)
@@ -102,6 +104,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 		SiteIdentityController: siteIdentityController,
 		AboutController:        aboutController,
 		OrganizationController: organizationController,
+		RemarkController:       remarkcontroller,
 		AuthMiddleware:         authMiddleware,
 
 		PublicRateLimiter:   publicRateLimiter,

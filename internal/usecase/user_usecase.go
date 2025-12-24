@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserUseCase struct {
+type userUseCase struct {
 	DB             *gorm.DB
 	Log            *logrus.Logger
 	Validate       *validator.Validate
@@ -24,10 +24,15 @@ type UserUseCase struct {
 	RecaptchaUtil  *util.RecaptchaUtil
 }
 
-func NewUserUseCase(db *gorm.DB, logger *logrus.Logger,
-	validate *validator.Validate, userRepository *repository.UserRepository,
-	tokenUtil *util.TokenUtil, recaptchaUtil *util.RecaptchaUtil) *UserUseCase {
-	return &UserUseCase{
+type UserUseCase interface {
+	Login(ctx context.Context, req *model.LoginUserRequest, fiberCtx *fiber.Ctx) (*model.UserResponse, error)
+	Current(ctx context.Context, userID int) (*model.UserResponse, error)
+	UpdateProfile(ctx context.Context, userID int, req *model.UpdateUserRequest) (*model.UserResponse, error)
+	Logout(ctx context.Context, fiberCtx *fiber.Ctx) (bool, error)
+}
+
+func NewUserUseCase(db *gorm.DB, logger *logrus.Logger, validate *validator.Validate, userRepository *repository.UserRepository, tokenUtil *util.TokenUtil, recaptchaUtil *util.RecaptchaUtil) UserUseCase {
+	return &userUseCase{
 		DB:             db,
 		Log:            logger,
 		Validate:       validate,
@@ -37,7 +42,7 @@ func NewUserUseCase(db *gorm.DB, logger *logrus.Logger,
 	}
 }
 
-func (c *UserUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fiberCtx *fiber.Ctx) (*model.UserResponse, error) {
+func (c *userUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fiberCtx *fiber.Ctx) (*model.UserResponse, error) {
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()
 
@@ -86,7 +91,7 @@ func (c *UserUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fi
 	return converter.UserToResponse(&user), nil
 }
 
-func (c *UserUseCase) Logout(ctx context.Context, fiberCtx *fiber.Ctx) (bool, error) {
+func (c *userUseCase) Logout(ctx context.Context, fiberCtx *fiber.Ctx) (bool, error) {
 	jwtToken := fiberCtx.Cookies("access_token")
 	_, jti, err := c.TokenUtil.ParseToken(ctx, jwtToken)
 	if err != nil {
@@ -101,7 +106,7 @@ func (c *UserUseCase) Logout(ctx context.Context, fiberCtx *fiber.Ctx) (bool, er
 	return true, nil
 }
 
-func (c *UserUseCase) Current(ctx context.Context, userID int) (*model.UserResponse, error) {
+func (c *userUseCase) Current(ctx context.Context, userID int) (*model.UserResponse, error) {
 	var user entity.User
 	if err := c.UserRepository.FindById(c.DB, &user, userID); err != nil {
 		return nil, fiber.ErrNotFound
@@ -109,7 +114,7 @@ func (c *UserUseCase) Current(ctx context.Context, userID int) (*model.UserRespo
 	return converter.UserToResponse(&user), nil
 }
 
-func (c *UserUseCase) UpdateProfile(ctx context.Context, userID int, req *model.UpdateUserRequest) (*model.UserResponse, error) {
+func (c *userUseCase) UpdateProfile(ctx context.Context, userID int, req *model.UpdateUserRequest) (*model.UserResponse, error) {
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()
 

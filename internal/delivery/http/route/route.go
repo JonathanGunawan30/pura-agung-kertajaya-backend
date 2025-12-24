@@ -19,6 +19,7 @@ type RouteConfig struct {
 	SiteIdentityController *http.SiteIdentityController
 	AboutController        *http.AboutController
 	OrganizationController *http.OrganizationController
+	RemarkController       *http.RemarkController
 	AuthMiddleware         fiber.Handler
 
 	PublicRateLimiter   fiber.Handler
@@ -47,6 +48,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 	public.Get("/about", c.AboutController.GetAllPublic)
 	public.Get("/organization-members", c.OrganizationController.GetAllPublic)
 	public.Get("/facilities", c.FacilityController.GetAllPublic)
+	public.Get("/remarks", c.RemarkController.GetAllPublic)
 
 	c.App.Post("/api/users/_login", c.AuthRateLimiter, c.UserController.Login)
 }
@@ -116,4 +118,10 @@ func (c *RouteConfig) SetupAuthRoute() {
 	auth.Post("/organization-members", c.CMSWriteRateLimiter, c.OrganizationController.Create)
 	auth.Put("/organization-members/:id", c.CMSWriteRateLimiter, c.OrganizationController.Update)
 	auth.Delete("/organization-members/:id", c.DeleteRateLimiter, c.OrganizationController.Delete)
+
+	auth.Get("/remarks", c.CMSReadRateLimiter, c.RemarkController.GetAll)
+	auth.Get("/remarks/:id", c.CMSReadRateLimiter, c.RemarkController.GetByID)
+	auth.Post("/remarks", c.CMSWriteRateLimiter, c.RemarkController.Create)
+	auth.Put("/remarks/:id", c.CMSWriteRateLimiter, c.RemarkController.Update)
+	auth.Delete("/remarks/:id", c.DeleteRateLimiter, c.RemarkController.Delete)
 }

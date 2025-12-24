@@ -6,18 +6,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type GalleryUsecaseMock struct{ mock.Mock }
+type GalleryUsecaseMock struct {
+	mock.Mock
+}
 
-func (m *GalleryUsecaseMock) GetAll() ([]model.GalleryResponse, error) {
-	args := m.Called()
+func (m *GalleryUsecaseMock) GetAll(entityType string) ([]model.GalleryResponse, error) {
+	args := m.Called(entityType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]model.GalleryResponse), args.Error(1)
 }
 
-func (m *GalleryUsecaseMock) GetPublic() ([]model.GalleryResponse, error) {
-	args := m.Called()
+func (m *GalleryUsecaseMock) GetPublic(entityType string) ([]model.GalleryResponse, error) {
+	args := m.Called(entityType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -32,7 +34,7 @@ func (m *GalleryUsecaseMock) GetByID(id string) (*model.GalleryResponse, error) 
 	return args.Get(0).(*model.GalleryResponse), args.Error(1)
 }
 
-func (m *GalleryUsecaseMock) Create(req model.GalleryRequest) (*model.GalleryResponse, error) {
+func (m *GalleryUsecaseMock) Create(req model.CreateGalleryRequest) (*model.GalleryResponse, error) {
 	args := m.Called(req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -40,7 +42,7 @@ func (m *GalleryUsecaseMock) Create(req model.GalleryRequest) (*model.GalleryRes
 	return args.Get(0).(*model.GalleryResponse), args.Error(1)
 }
 
-func (m *GalleryUsecaseMock) Update(id string, req model.GalleryRequest) (*model.GalleryResponse, error) {
+func (m *GalleryUsecaseMock) Update(id string, req model.UpdateGalleryRequest) (*model.GalleryResponse, error) {
 	args := m.Called(id, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

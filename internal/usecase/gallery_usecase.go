@@ -13,11 +13,11 @@ import (
 )
 
 type GalleryUsecase interface {
-	GetAll() ([]model.GalleryResponse, error)
-	GetPublic() ([]model.GalleryResponse, error)
+	GetAll(entityType string) ([]model.GalleryResponse, error)
+	GetPublic(entityType string) ([]model.GalleryResponse, error)
 	GetByID(id string) (*model.GalleryResponse, error)
-	Create(req model.GalleryRequest) (*model.GalleryResponse, error)
-	Update(id string, req model.GalleryRequest) (*model.GalleryResponse, error)
+	Create(req model.CreateGalleryRequest) (*model.GalleryResponse, error)
+	Update(id string, req model.UpdateGalleryRequest) (*model.GalleryResponse, error)
 	Delete(id string) error
 }
 
@@ -37,28 +37,36 @@ func NewGalleryUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Vali
 	}
 }
 
-func (u *galleryUsecase) GetAll() ([]model.GalleryResponse, error) {
+func (u *galleryUsecase) GetAll(entityType string) ([]model.GalleryResponse, error) {
 	var items []entity.Gallery
-	if err := u.db.Order("order_index ASC").Find(&items).Error; err != nil {
+
+	if entityType == "" {
+		entityType = "pura"
+	}
+
+	query := u.db.Where("entity_type = ?", entityType).Order("order_index ASC")
+
+	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
 	}
-	resp := make([]model.GalleryResponse, 0, len(items))
-	for _, g := range items {
-		resp = append(resp, converter.ToGalleryResponse(g))
-	}
-	return resp, nil
+
+	return converter.ToGalleryResponses(items), nil
 }
 
-func (u *galleryUsecase) GetPublic() ([]model.GalleryResponse, error) {
+func (u *galleryUsecase) GetPublic(entityType string) ([]model.GalleryResponse, error) {
 	var items []entity.Gallery
-	if err := u.db.Where("is_active = ?", true).Order("order_index ASC").Find(&items).Error; err != nil {
+
+	if entityType == "" {
+		entityType = "pura"
+	}
+
+	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
+
+	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
 	}
-	resp := make([]model.GalleryResponse, 0, len(items))
-	for _, g := range items {
-		resp = append(resp, converter.ToGalleryResponse(g))
-	}
-	return resp, nil
+
+	return converter.ToGalleryResponses(items), nil
 }
 
 func (u *galleryUsecase) GetByID(id string) (*model.GalleryResponse, error) {
@@ -66,16 +74,17 @@ func (u *galleryUsecase) GetByID(id string) (*model.GalleryResponse, error) {
 	if err := u.repo.FindById(u.db, &g, id); err != nil {
 		return nil, err
 	}
-	r := converter.ToGalleryResponse(g)
+	r := converter.ToGalleryResponse(&g)
 	return &r, nil
 }
 
-func (u *galleryUsecase) Create(req model.GalleryRequest) (*model.GalleryResponse, error) {
+func (u *galleryUsecase) Create(req model.CreateGalleryRequest) (*model.GalleryResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 	g := entity.Gallery{
 		ID:          uuid.New().String(),
+		EntityType:  req.EntityType,
 		Title:       req.Title,
 		Description: req.Description,
 		ImageURL:    req.ImageURL,
@@ -85,11 +94,11 @@ func (u *galleryUsecase) Create(req model.GalleryRequest) (*model.GalleryRespons
 	if err := u.repo.Create(u.db, &g); err != nil {
 		return nil, err
 	}
-	r := converter.ToGalleryResponse(g)
+	r := converter.ToGalleryResponse(&g)
 	return &r, nil
 }
 
-func (u *galleryUsecase) Update(id string, req model.GalleryRequest) (*model.GalleryResponse, error) {
+func (u *galleryUsecase) Update(id string, req model.UpdateGalleryRequest) (*model.GalleryResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
@@ -105,7 +114,7 @@ func (u *galleryUsecase) Update(id string, req model.GalleryRequest) (*model.Gal
 	if err := u.repo.Update(u.db, &g); err != nil {
 		return nil, err
 	}
-	r := converter.ToGalleryResponse(g)
+	r := converter.ToGalleryResponse(&g)
 	return &r, nil
 }
 

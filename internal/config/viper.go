@@ -12,10 +12,20 @@ func NewViper() *viper.Viper {
 	log := logrus.New()
 	v := viper.New()
 
-	if err := godotenv.Load(".env"); err != nil {
-		log.Warn(".env file not found or unreadable")
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		err = godotenv.Load("../.env")
+	}
+
+	if err != nil {
+		err = godotenv.Load("../../.env")
+	}
+
+	if err != nil {
+		log.Warn(".env file not found in current or parent directory, utilizing system environment variables")
 	} else {
-		log.Info(".env loaded via godotenv")
+		log.Info(".env loaded successfully via godotenv")
 	}
 
 	v.AutomaticEnv()

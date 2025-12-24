@@ -5,9 +5,10 @@ import (
 	"pura-agung-kertajaya-backend/internal/model"
 )
 
-func ToGalleryResponse(g entity.Gallery) model.GalleryResponse {
+func ToGalleryResponse(g *entity.Gallery) model.GalleryResponse {
 	return model.GalleryResponse{
 		ID:          g.ID,
+		EntityType:  g.EntityType,
 		Title:       g.Title,
 		Description: g.Description,
 		ImageURL:    g.ImageURL,
@@ -16,4 +17,13 @@ func ToGalleryResponse(g entity.Gallery) model.GalleryResponse {
 		CreatedAt:   g.CreatedAt,
 		UpdatedAt:   g.UpdatedAt,
 	}
+}
+
+func ToGalleryResponses(galleries []entity.Gallery) []model.GalleryResponse {
+	var responses []model.GalleryResponse
+	for _, gallery := range galleries {
+		responses = append(responses, ToGalleryResponse(&gallery))
+	}
+
+	return responses
 }
