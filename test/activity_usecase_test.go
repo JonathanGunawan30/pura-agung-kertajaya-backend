@@ -1,127 +1,176 @@
 package test
 
 import (
-    "testing"
+	"regexp"
+	"testing"
 
-    "github.com/go-playground/validator/v10"
-    "github.com/sirupsen/logrus"
-    "github.com/stretchr/testify/assert"
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/go-playground/validator/v10"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 
-    "pura-agung-kertajaya-backend/internal/entity"
-    "pura-agung-kertajaya-backend/internal/model"
-    "pura-agung-kertajaya-backend/internal/usecase"
+	"pura-agung-kertajaya-backend/internal/model"
+	"pura-agung-kertajaya-backend/internal/usecase"
 )
 
-func newActivityUsecase() usecase.ActivityUsecase {
-    return usecase.NewActivityUsecase(db, logrus.New(), validator.New())
-}
+func setupMockActivityUsecase(t *testing.T) (usecase.ActivityUsecase, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open stub db: %v", err)
+	}
 
-func ClearActivities() {
-    if err := db.Where("id IS NOT NULL").Delete(&entity.Activity{}).Error; err != nil {
-        log.Fatalf("Failed clear activities: %+v", err)
-    }
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open gorm: %v", err)
+	}
+
+	u := usecase.NewActivityUsecase(gormDB, logrus.New(), validator.New())
+	return u, mock
 }
 
 func TestActivityUsecase_Create_Success(t *testing.T) {
-    ClearActivities()
-    u := newActivityUsecase()
+	u, mock := setupMockActivityUsecase(t)
 
-    req := model.ActivityRequest{
-        Title:       "Upacara",
-        Description: "Deskripsi",
-        TimeInfo:    "08:00",
-        Location:    "Pura",
-        OrderIndex:  1,
-        IsActive:    true,
-    }
+	req := model.ActivityRequest{
+		Title:       "Upacara",
+		Description: "Deskripsi",
+		TimeInfo:    "08:00",
+		Location:    "Pura",
+		OrderIndex:  1,
+		IsActive:    true,
+	}
 
-    res, err := u.Create(req)
-    assert.NoError(t, err)
-    assert.NotNil(t, res)
-    assert.Equal(t, req.Title, res.Title)
-    assert.Equal(t, req.Description, res.Description)
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `activities`")).
+		WithArgs(sqlmock.AnyArg(), "Upacara", "Deskripsi", "08:00", "Pura", 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	rows := sqlmock.NewRows([]string{"id", "title", "description", "time_info", "location", "order_index", "is_active"}).
+		AddRow("act-1", "Upacara", "Deskripsi", "08:00", "Pura", 1, true)
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities`")).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+		WillReturnRows(rows)
+
+	res, err := u.Create(req)
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	assert.NotNil(t, res)
+	if res == nil {
+		return
+	}
+	assert.Equal(t, req.Title, res.Title)
+	assert.Equal(t, req.Description, res.Description)
 }
 
 func TestActivityUsecase_Create_ValidationError(t *testing.T) {
-    ClearActivities()
-    u := newActivityUsecase()
+	u, _ := setupMockActivityUsecase(t)
 
-    req := model.ActivityRequest{} // missing required fields
-    res, err := u.Create(req)
-    assert.Error(t, err)
-    assert.Nil(t, res)
+	req := model.ActivityRequest{}
+	res, err := u.Create(req)
+	assert.Error(t, err)
+	assert.Nil(t, res)
 }
 
 func TestActivityUsecase_GetAll_OrderedByIndex(t *testing.T) {
-    ClearActivities()
+	u, mock := setupMockActivityUsecase(t)
 
-    a1 := entity.Activity{ID: "a2", Title: "B", Description: "d", OrderIndex: 2, IsActive: true}
-    a2 := entity.Activity{ID: "a1", Title: "A", Description: "d", OrderIndex: 1, IsActive: true}
-    assert.NoError(t, db.Create(&a1).Error)
-    assert.NoError(t, db.Create(&a2).Error)
+	rows := sqlmock.NewRows([]string{"id", "title", "description", "order_index", "is_active"}).
+		AddRow("a1", "A", "d", 1, true).
+		AddRow("a2", "B", "d", 2, true)
 
-    u := newActivityUsecase()
-    list, err := u.GetAll()
-    assert.NoError(t, err)
-    assert.Len(t, list, 2)
-    assert.Equal(t, "A", list[0].Title)
-    assert.Equal(t, "B", list[1].Title)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` ORDER BY order_index ASC")).
+		WillReturnRows(rows)
+
+	list, err := u.GetAll()
+	assert.NoError(t, err)
+	assert.Len(t, list, 2)
+	assert.Equal(t, "A", list[0].Title)
+	assert.Equal(t, "B", list[1].Title)
 }
 
 func TestActivityUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
-    ClearActivities()
+	u, mock := setupMockActivityUsecase(t)
 
-    a1 := entity.Activity{ID: "a1", Title: "B", Description: "d", OrderIndex: 2, IsActive: true}
-    a2 := entity.Activity{ID: "a2", Title: "X", Description: "d", OrderIndex: 1, IsActive: false}
-    a3 := entity.Activity{ID: "a3", Title: "A", Description: "d", OrderIndex: 1, IsActive: true}
-    assert.NoError(t, db.Create(&a1).Error)
-    assert.NoError(t, db.Create(&a2).Error)
-    assert.NoError(t, db.Create(&a3).Error)
+	rows := sqlmock.NewRows([]string{"id", "title", "description", "order_index", "is_active"}).
+		AddRow("a3", "A", "d", 1, true).
+		AddRow("a1", "B", "d", 2, true)
 
-    u := newActivityUsecase()
-    list, err := u.GetPublic()
-    assert.NoError(t, err)
-    assert.Len(t, list, 2)
-    assert.Equal(t, "A", list[0].Title)
-    assert.Equal(t, "B", list[1].Title)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE is_active = ? ORDER BY order_index ASC")).
+		WithArgs(true).
+		WillReturnRows(rows)
+
+	list, err := u.GetPublic()
+	assert.NoError(t, err)
+	assert.Len(t, list, 2)
+	assert.Equal(t, "A", list[0].Title)
+	assert.Equal(t, "B", list[1].Title)
 }
 
 func TestActivityUsecase_GetByID_NotFound(t *testing.T) {
-    ClearActivities()
-    u := newActivityUsecase()
+	u, mock := setupMockActivityUsecase(t)
 
-    res, err := u.GetByID("missing")
-    assert.Error(t, err)
-    assert.Nil(t, res)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE id = ?")).
+		WithArgs("missing", 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.GetByID("missing")
+	assert.Error(t, err)
+	assert.Nil(t, res)
 }
 
 func TestActivityUsecase_Update_Success(t *testing.T) {
-    ClearActivities()
+	u, mock := setupMockActivityUsecase(t)
+	targetID := "act-1"
 
-    seed := entity.Activity{ID: "act-1", Title: "Old", Description: "d", OrderIndex: 1, IsActive: true}
-    assert.NoError(t, db.Create(&seed).Error)
+	req := model.ActivityRequest{Title: "New", Description: "new d", TimeInfo: "09:00", Location: "Pura", OrderIndex: 5, IsActive: false}
 
-    u := newActivityUsecase()
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE id = ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title"}).AddRow(targetID, "Old"))
 
-    req := model.ActivityRequest{Title: "New", Description: "new d", TimeInfo: "09:00", Location: "Pura", OrderIndex: 5, IsActive: false}
-    res, err := u.Update(seed.ID, req)
-    assert.NoError(t, err)
-    assert.NotNil(t, res)
-    assert.Equal(t, "New", res.Title)
-    assert.Equal(t, false, res.IsActive)
-    assert.Equal(t, 5, res.OrderIndex)
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE `activities`")).
+		WithArgs("New", "new d", "09:00", "Pura", 5, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	res, err := u.Update(targetID, req)
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	assert.NotNil(t, res)
+	if res == nil {
+		return
+	}
+	assert.Equal(t, "New", res.Title)
+	assert.Equal(t, false, res.IsActive)
+	assert.Equal(t, 5, res.OrderIndex)
 }
 
 func TestActivityUsecase_Delete_Success(t *testing.T) {
-    ClearActivities()
-    seed := entity.Activity{ID: "to-del", Title: "Del", Description: "d", OrderIndex: 1, IsActive: true}
-    assert.NoError(t, db.Create(&seed).Error)
+	u, mock := setupMockActivityUsecase(t)
+	targetID := "to-del"
 
-    u := newActivityUsecase()
-    err := u.Delete(seed.ID)
-    assert.NoError(t, err)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE id = ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title"}).AddRow(targetID, "Del"))
 
-    var count int64
-    assert.NoError(t, db.Model(&entity.Activity{}).Where("id = ?", seed.ID).Count(&count).Error)
-    assert.Equal(t, int64(0), count)
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `activities` WHERE `activities`.`id` = ?")).
+		WithArgs(targetID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	err := u.Delete(targetID)
+	assert.NoError(t, err)
 }

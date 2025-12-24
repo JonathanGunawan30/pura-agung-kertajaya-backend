@@ -18,7 +18,7 @@ import (
 )
 
 func setupContactInfoController() (*fiber.App, *usecasemock.ContactInfoUsecaseMock) {
-	log = logrus.New()
+	log := logrus.New()
 	mockUC := &usecasemock.ContactInfoUsecaseMock{}
 	controller := httpdelivery.NewContactInfoController(mockUC, logrus.New())
 	app := fiber.New(fiber.Config{

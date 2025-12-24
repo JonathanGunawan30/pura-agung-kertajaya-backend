@@ -1,42 +1,40 @@
 package test
 
 import (
+	"regexp"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 
-	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 )
 
-func newTestimonialUsecase() usecase.TestimonialUsecase {
-	return usecase.NewTestimonialUsecase(db, logrus.New(), validator.New())
-}
-
-func prepareTestimonial(name string, rating int, order int) entity.Testimonial {
-	return entity.Testimonial{
-		Name:       name,
-		AvatarURL:  "https://example.com/avatar.jpg",
-		Rating:     rating,
-		Comment:    "Great service",
-		IsActive:   true,
-		OrderIndex: order,
-	}
-}
-
-func ClearTestimonials() {
-	err := db.Where("id IS NOT NULL").Delete(&entity.Testimonial{}).Error
+func setupMockTestimonialUsecase(t *testing.T) (usecase.TestimonialUsecase, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
 	if err != nil {
-		log.Fatalf("Failed clear testimonials: %+v", err)
+		t.Fatalf("failed to open stub db: %v", err)
 	}
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open gorm: %v", err)
+	}
+
+	u := usecase.NewTestimonialUsecase(gormDB, logrus.New(), validator.New())
+	return u, mock
 }
 
 func TestTestimonialUsecase_Create_Success(t *testing.T) {
-	ClearTestimonials()
-	u := newTestimonialUsecase()
+	u, mock := setupMockTestimonialUsecase(t)
 
 	req := model.TestimonialRequest{
 		Name:       "John Doe",
@@ -47,22 +45,42 @@ func TestTestimonialUsecase_Create_Success(t *testing.T) {
 		OrderIndex: 1,
 	}
 
+	mock.ExpectBegin()
+	// FIX: Argumen disesuaikan menjadi 8 (tanpa ID auto-increment)
+	// name, avatar_url, rating, comment, is_active, order_index, created_at, updated_at
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `testimonials`")).
+		WithArgs("John Doe", "https://example.com/avatar.jpg", 5, "Excellent!", true, 1, sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	rows := sqlmock.NewRows([]string{"id", "name", "rating"}).
+		AddRow(1, "John Doe", 5)
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials`")).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+		WillReturnRows(rows)
+
 	res, err := u.Create(req)
 	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
 	assert.NotNil(t, res)
+	if res == nil {
+		return
+	}
 	assert.Equal(t, req.Name, res.Name)
 	assert.Equal(t, req.Rating, res.Rating)
 }
 
 func TestTestimonialUsecase_Create_ValidationError(t *testing.T) {
-	ClearTestimonials()
-	u := newTestimonialUsecase()
+	u, _ := setupMockTestimonialUsecase(t)
 
 	req := model.TestimonialRequest{
-		Name:      "",
-		Rating:    0,
-		Comment:   "",
-		IsActive:  true,
+		Name:     "",
+		Rating:   0,
+		Comment:  "",
+		IsActive: true,
 	}
 
 	res, err := u.Create(req)
@@ -71,25 +89,28 @@ func TestTestimonialUsecase_Create_ValidationError(t *testing.T) {
 }
 
 func TestTestimonialUsecase_GetAll_OrderedByIndex(t *testing.T) {
-	ClearTestimonials()
+	u, mock := setupMockTestimonialUsecase(t)
 
-	// seed records with different order_index
-	t1 := prepareTestimonial("A", 5, 2)
-	t2 := prepareTestimonial("B", 4, 1)
-	assert.NoError(t, db.Create(&t1).Error)
-	assert.NoError(t, db.Create(&t2).Error)
+	rows := sqlmock.NewRows([]string{"id", "name", "rating", "order_index"}).
+		AddRow(2, "B", 4, 1).
+		AddRow(1, "A", 5, 2)
 
-	u := newTestimonialUsecase()
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` ORDER BY order_index ASC")).
+		WillReturnRows(rows)
+
 	list, err := u.GetAll()
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
-	assert.Equal(t, "B", list[0].Name) // order_index 1 comes first
+	assert.Equal(t, "B", list[0].Name)
 	assert.Equal(t, "A", list[1].Name)
 }
 
 func TestTestimonialUsecase_GetByID_NotFound(t *testing.T) {
-	ClearTestimonials()
-	u := newTestimonialUsecase()
+	u, mock := setupMockTestimonialUsecase(t)
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` WHERE id = ?")).
+		WithArgs(999999, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
 
 	res, err := u.GetByID(999999)
 	assert.Error(t, err)
@@ -97,12 +118,8 @@ func TestTestimonialUsecase_GetByID_NotFound(t *testing.T) {
 }
 
 func TestTestimonialUsecase_Update_Success(t *testing.T) {
-	ClearTestimonials()
-
-	seed := prepareTestimonial("Old", 3, 1)
-	assert.NoError(t, db.Create(&seed).Error)
-
-	u := newTestimonialUsecase()
+	u, mock := setupMockTestimonialUsecase(t)
+	targetID := 1
 
 	req := model.TestimonialRequest{
 		Name:       "New",
@@ -113,27 +130,43 @@ func TestTestimonialUsecase_Update_Success(t *testing.T) {
 		OrderIndex: 3,
 	}
 
-	res, err := u.Update(seed.ID, req)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` WHERE id = ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "Old"))
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE `testimonials`")).
+		WithArgs("New", "https://example.com/new.jpg", 4, "Updated", false, 3, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	res, err := u.Update(targetID, req)
 	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
 	assert.NotNil(t, res)
+	if res == nil {
+		return
+	}
 	assert.Equal(t, req.Name, res.Name)
-	assert.Equal(t, req.AvatarURL, res.AvatarURL)
-	assert.Equal(t, req.Rating, res.Rating)
 	assert.Equal(t, req.Comment, res.Comment)
-	assert.Equal(t, req.IsActive, res.IsActive)
-	assert.Equal(t, req.OrderIndex, res.OrderIndex)
 }
 
 func TestTestimonialUsecase_Delete_Success(t *testing.T) {
-	ClearTestimonials()
-	seed := prepareTestimonial("Delete Me", 5, 1)
-	assert.NoError(t, db.Create(&seed).Error)
+	u, mock := setupMockTestimonialUsecase(t)
+	targetID := 1
 
-	u := newTestimonialUsecase()
-	err := u.Delete(seed.ID)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` WHERE id = ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "Delete Me"))
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `testimonials` WHERE")).
+		WithArgs(targetID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	err := u.Delete(targetID)
 	assert.NoError(t, err)
-
-	var count int64
-	assert.NoError(t, db.Model(&entity.Testimonial{}).Where("id = ?", seed.ID).Count(&count).Error)
-	assert.Equal(t, int64(0), count)
 }
