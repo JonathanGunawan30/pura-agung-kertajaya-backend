@@ -15,6 +15,7 @@ import "time"
 
 type Facility struct {
 	ID          string    `gorm:"column:id;primaryKey;type:varchar(100)"`
+	EntityType  string    `gorm:"column:entity_type;type:enum('pura','yayasan','pasraman');default:pura';not null;index"`
 	Name        string    `gorm:"column:name;type:text;not null"`
 	Description string    `gorm:"column:description;type:text"`
 	ImageURL    string    `gorm:"column:image_url;type:text;not null"`

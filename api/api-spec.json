@@ -2264,17 +2264,32 @@
     "/api/public/facilities": {
       "get": {
         "tags": ["Public API"],
-        "description": "Retrieves all 'active' facilities for public website display.",
+        "description": "Retrieves all 'active' facilities for public display, filtered by entity type.",
         "operationId": "getPublicFacilities",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter facilities by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FacilityResponse"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/FacilityResponse" }
+                    }
                   }
                 }
               }
@@ -2288,18 +2303,33 @@
       "get": {
         "tags": ["Facilities API"],
         "summary": "Get All Facilities (Admin)",
-        "description": "Retrieves all facilities, including inactive ones (for admin dashboard).",
+        "description": "Retrieves all facilities, including inactive ones (admin dashboard).",
         "operationId": "getAllFacilitiesAdmin",
         "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter facilities by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FacilityResponse"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/FacilityResponse" }
+                    }
                   }
                 }
               }
@@ -2319,9 +2349,7 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FacilityCreateRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/FacilityCreateRequest" }
             }
           }
         },
@@ -2331,7 +2359,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FacilityResponse"
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/FacilityResponse" }
+                  }
                 }
               }
             }
@@ -2343,28 +2374,31 @@
       }
     },
     "/api/facilities/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "UUID of the facility"
+        }
+      ],
       "get": {
         "tags": ["Facilities API"],
         "summary": "Get Facility by ID (Admin)",
         "description": "Retrieves a single facility's details by its ID.",
         "operationId": "getFacilityById",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" },
-            "example": "fac_abc123"
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FacilityResponse"
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/FacilityResponse" }
+                  }
                 }
               }
             }
@@ -2380,22 +2414,11 @@
         "description": "Updates a facility's data by its ID.",
         "operationId": "updateFacility",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" },
-            "example": "fac_abc123"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FacilityUpdateRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/FacilityUpdateRequest" }
             }
           }
         },
@@ -2405,7 +2428,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FacilityResponse"
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/FacilityResponse" }
+                  }
                 }
               }
             }
@@ -2422,15 +2448,6 @@
         "description": "Deletes a facility by its ID.",
         "operationId": "deleteFacility",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" },
-            "example": "fac_abc123"
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2439,10 +2456,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "type": "string",
-                      "example": "Facility deleted successfully"
-                    }
+                    "data": { "type": "boolean", "example": true }
                   }
                 }
               }
@@ -2787,36 +2801,35 @@
       "FacilityResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "fac_abc123" },
-          "name": { "type": "string", "example": "Bale Kulkul" },
-          "description": { "type": "string", "example": "A gathering place and announcement tower." },
-          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/bale-kulkul.png" },
-          "order_index": { "type": "integer", "example": 1 },
+          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "name": { "type": "string", "example": "Gedung Wantilan" },
+          "description": { "type": "string", "example": "Gedung serbaguna kapasitas 500 orang." },
+          "image_url": { "type": "string", "example": "http://img.com/wantilan.jpg" },
           "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
       "FacilityCreateRequest": {
         "type": "object",
+        "required": ["entity_type", "name"],
         "properties": {
-          "name": { "type": "string", "example": "Wantilan" },
-          "description": { "type": "string", "example": "A multi-purpose hall." },
-          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/wantilan.png" },
-          "order_index": { "type": "integer", "example": 2 },
-          "is_active": { "type": "boolean", "example": true }
-        },
-        "required": ["name", "image_url", "order_index", "is_active"]
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "name": { "type": "string", "example": "Parkir Luas" },
+          "description": { "type": "string", "example": "Area parkir untuk 100 mobil." },
+          "image_url": { "type": "string", "example": "http://img.com/parkir.jpg" },
+          "is_active": { "type": "boolean", "default": true }
+        }
       },
       "FacilityUpdateRequest": {
         "type": "object",
-        "description": "All fields are optional. Send only the fields you want to update.",
+        "required": ["name"],
         "properties": {
-          "name": { "type": "string", "example": "Wantilan (Renovated)" },
-          "description": { "type": "string", "example": "Multi-purpose hall (renovated)." },
-          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/wantilan-baru.png" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": false }
+          "name": { "type": "string", "example": "Parkir Luas (Renovasi)" },
+          "description": { "type": "string", "example": "Area parkir untuk 150 mobil." },
+          "image_url": { "type": "string", "example": "http://img.com/parkir-baru.jpg" },
+          "is_active": { "type": "boolean", "example": true }
         }
       },
       "RemarkResponse": {

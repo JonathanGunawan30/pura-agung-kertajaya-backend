@@ -8,6 +8,7 @@ import (
 func ToFacilityResponse(g entity.Facility) model.FacilityResponse {
 	return model.FacilityResponse{
 		ID:          g.ID,
+		EntityType:  g.EntityType,
 		Name:        g.Name,
 		Description: g.Description,
 		ImageURL:    g.ImageURL,
@@ -16,4 +17,13 @@ func ToFacilityResponse(g entity.Facility) model.FacilityResponse {
 		CreatedAt:   g.CreatedAt,
 		UpdatedAt:   g.UpdatedAt,
 	}
+}
+
+func ToFacilityResponses(facilities []entity.Facility) []model.FacilityResponse {
+	var responses []model.FacilityResponse
+	for _, facility := range facilities {
+		responses = append(responses, ToFacilityResponse(facility))
+	}
+
+	return responses
 }

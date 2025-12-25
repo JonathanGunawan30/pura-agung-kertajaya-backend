@@ -18,7 +18,8 @@ func NewFacilityController(usecase usecase.FacilityUsecase, log *logrus.Logger) 
 }
 
 func (c *FacilityController) GetAll(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetAll()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch facilities")
 		return err
@@ -28,7 +29,8 @@ func (c *FacilityController) GetAll(ctx *fiber.Ctx) error {
 
 // GetAllPublic returns only active facilities for public consumption
 func (c *FacilityController) GetAllPublic(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetPublic()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetPublic(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public facilities")
 		return err
@@ -50,7 +52,7 @@ func (c *FacilityController) GetByID(ctx *fiber.Ctx) error {
 }
 
 func (c *FacilityController) Create(ctx *fiber.Ctx) error {
-	var req model.FacilityRequest
+	var req model.CreateFacilityRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
@@ -67,7 +69,7 @@ func (c *FacilityController) Update(ctx *fiber.Ctx) error {
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
-	var req model.FacilityRequest
+	var req model.UpdateFacilityRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}

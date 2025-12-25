@@ -1,0 +1,1 @@
+ALTER TABLE `facilities` DROP COLUMN `entity_type`;

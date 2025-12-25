@@ -40,11 +40,11 @@ func TestFacilityUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
 		AddRow("g3", "C", "https://img3", true, 1).
 		AddRow("g1", "B", "https://img1", true, 2)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE is_active = ? ORDER BY order_index ASC")).
-		WithArgs(true).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE entity_type = ? AND is_active = ? ORDER BY order_index ASC")).
+		WithArgs("pura", true).
 		WillReturnRows(rows)
 
-	list, err := u.GetPublic()
+	list, err := u.GetPublic("pura")
 
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
@@ -55,12 +55,13 @@ func TestFacilityUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
 func TestFacilityUsecase_Create(t *testing.T) {
 	u, mock := setupMockFacilityUsecase(t)
 
-	req := model.FacilityRequest{Name: "Name", ImageURL: "https://img", IsActive: true, OrderIndex: 3}
+	req := model.CreateFacilityRequest{EntityType: "pura", Name: "Name", ImageURL: "https://img", IsActive: true, OrderIndex: 3}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `facilities`")).
 		WithArgs(
 			sqlmock.AnyArg(),
+			req.EntityType,
 			"Name",
 			"",
 			"https://img",
@@ -72,11 +73,11 @@ func TestFacilityUsecase_Create(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "image_url", "order_index", "is_active"}).
-		AddRow("uuid-1", "Name", "", "https://img", 3, true)
+	rows := sqlmock.NewRows([]string{"id", "entity_type", "name", "description", "image_url", "order_index", "is_active"}).
+		AddRow("uuid-1", "pura", "Name", "", "https://img", 3, true)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities`")).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
+		WithArgs(sqlmock.AnyArg(), 1).
 		WillReturnRows(rows)
 
 	created, err := u.Create(req)
@@ -95,15 +96,15 @@ func TestFacilityUsecase_Update(t *testing.T) {
 	u, mock := setupMockFacilityUsecase(t)
 	targetID := "g1"
 
-	req := model.FacilityRequest{Name: "New Name", ImageURL: "https://img2", IsActive: false, OrderIndex: 5}
+	req := model.UpdateFacilityRequest{Name: "New Name", ImageURL: "https://img2", IsActive: false, OrderIndex: 5}
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "Old Name"))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `facilities`")).
-		WithArgs("New Name", "", "https://img2", 5, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs(sqlmock.AnyArg(), "New Name", "", "https://img2", 5, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -125,7 +126,7 @@ func TestFacilityUsecase_Delete(t *testing.T) {
 	u, mock := setupMockFacilityUsecase(t)
 	targetID := "g1"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "Name"))
 

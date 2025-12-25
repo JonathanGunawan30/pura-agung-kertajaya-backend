@@ -22,7 +22,7 @@ func TestFacilityController_GetAllPublic_Success(t *testing.T) {
 	app.Get("/public/facilities", controller.GetAllPublic)
 
 	items := []model.FacilityResponse{{ID: "1", Name: "A"}, {ID: "2", Name: "B"}}
-	mockUC.On("GetPublic").Return(items, nil)
+	mockUC.On("GetPublic", "").Return(items, nil)
 
 	req := httptest.NewRequest("GET", "/public/facilities", nil)
 	resp, _ := app.Test(req)
@@ -40,7 +40,7 @@ func TestFacilityController_GetAllPublic_Error(t *testing.T) {
 	app := fiber.New()
 	app.Get("/public/facilities", controller.GetAllPublic)
 
-	mockUC.On("GetPublic").Return(([]model.FacilityResponse)(nil), errors.New("db error"))
+	mockUC.On("GetPublic", "").Return(([]model.FacilityResponse)(nil), errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/public/facilities", nil)
 	resp, _ := app.Test(req)

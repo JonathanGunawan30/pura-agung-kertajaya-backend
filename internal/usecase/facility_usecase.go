@@ -13,11 +13,11 @@ import (
 )
 
 type FacilityUsecase interface {
-	GetAll() ([]model.FacilityResponse, error)
-	GetPublic() ([]model.FacilityResponse, error)
+	GetAll(entityType string) ([]model.FacilityResponse, error)
+	GetPublic(entityType string) ([]model.FacilityResponse, error)
 	GetByID(id string) (*model.FacilityResponse, error)
-	Create(req model.FacilityRequest) (*model.FacilityResponse, error)
-	Update(id string, req model.FacilityRequest) (*model.FacilityResponse, error)
+	Create(req model.CreateFacilityRequest) (*model.FacilityResponse, error)
+	Update(id string, req model.UpdateFacilityRequest) (*model.FacilityResponse, error)
 	Delete(id string) error
 }
 
@@ -37,28 +37,32 @@ func NewFacilityUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Val
 	}
 }
 
-func (u *facilityUsecase) GetAll() ([]model.FacilityResponse, error) {
+func (u *facilityUsecase) GetAll(entityType string) ([]model.FacilityResponse, error) {
 	var items []entity.Facility
-	if err := u.db.Order("order_index ASC").Find(&items).Error; err != nil {
+	if entityType == "" {
+		entityType = "pura"
+	}
+
+	query := u.db.Where("entity_type = ?", entityType).Order("order_index ASC")
+	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
 	}
-	resp := make([]model.FacilityResponse, 0, len(items))
-	for _, g := range items {
-		resp = append(resp, converter.ToFacilityResponse(g))
-	}
-	return resp, nil
+
+	return converter.ToFacilityResponses(items), nil
 }
 
-func (u *facilityUsecase) GetPublic() ([]model.FacilityResponse, error) {
+func (u *facilityUsecase) GetPublic(entityType string) ([]model.FacilityResponse, error) {
 	var items []entity.Facility
-	if err := u.db.Where("is_active = ?", true).Order("order_index ASC").Find(&items).Error; err != nil {
+	if entityType == "" {
+		entityType = "pura"
+	}
+
+	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
+	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
 	}
-	resp := make([]model.FacilityResponse, 0, len(items))
-	for _, g := range items {
-		resp = append(resp, converter.ToFacilityResponse(g))
-	}
-	return resp, nil
+
+	return converter.ToFacilityResponses(items), nil
 }
 
 func (u *facilityUsecase) GetByID(id string) (*model.FacilityResponse, error) {
@@ -70,12 +74,13 @@ func (u *facilityUsecase) GetByID(id string) (*model.FacilityResponse, error) {
 	return &r, nil
 }
 
-func (u *facilityUsecase) Create(req model.FacilityRequest) (*model.FacilityResponse, error) {
+func (u *facilityUsecase) Create(req model.CreateFacilityRequest) (*model.FacilityResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 	g := entity.Facility{
 		ID:          uuid.New().String(),
+		EntityType:  req.EntityType,
 		Name:        req.Name,
 		Description: req.Description,
 		ImageURL:    req.ImageURL,
@@ -89,7 +94,7 @@ func (u *facilityUsecase) Create(req model.FacilityRequest) (*model.FacilityResp
 	return &r, nil
 }
 
-func (u *facilityUsecase) Update(id string, req model.FacilityRequest) (*model.FacilityResponse, error) {
+func (u *facilityUsecase) Update(id string, req model.UpdateFacilityRequest) (*model.FacilityResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
