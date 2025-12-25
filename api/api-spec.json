@@ -2520,6 +2520,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "example": "hs_abc123" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "image_url": { "type": "string", "example": "https://r2.example.com/slide1.png" },
           "order_index": { "type": "integer", "example": 1 },
           "is_active": { "type": "boolean", "example": true },
@@ -2530,16 +2531,18 @@
       "HeroSlideCreateRequest": {
         "type": "object",
         "properties": {
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "image_url": { "type": "string", "example": "https://r2.example.com/new-slide.png" },
           "order_index": { "type": "integer", "example": 2 },
           "is_active": { "type": "boolean", "example": true }
         },
-        "required": ["image_url", "order_index", "is_active"]
+        "required": ["entity_type", "image_url", "order_index", "is_active"]
       },
       "HeroSlideUpdateRequest": {
         "type": "object",
         "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
         "properties": {
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "image_url": { "type": "string", "example": "https://r2.example.com/updated-slide.png" },
           "order_index": { "type": "integer", "example": 1 },
           "is_active": { "type": "boolean", "example": false }

@@ -46,16 +46,16 @@ func setupHeroSlideController() (*fiber.App, *usecasemock.HeroSlideUsecaseMock) 
 
 func TestHeroSlideController_GetAllPublic_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	items := []model.HeroSlideResponse{{ID: "a", ImageURL: "https://a"}, {ID: "b", ImageURL: "https://b"}}
-	mockUC.On("GetPublic").Return(items, nil)
-	req := httptest.NewRequest("GET", "/api/public/hero-slides", nil)
+	items := []model.HeroSlideResponse{{ID: "a", EntityType: "pura", ImageURL: "https://a"}, {ID: "b", EntityType: "pura", ImageURL: "https://b"}}
+	mockUC.On("GetPublic", "pura").Return(items, nil)
+	req := httptest.NewRequest("GET", "/api/public/hero-slides?entity_type=pura", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 }
 
 func TestHeroSlideController_GetAllPublic_Error(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	mockUC.On("GetPublic").Return(([]model.HeroSlideResponse)(nil), errors.New("db error"))
+	mockUC.On("GetPublic", "").Return(([]model.HeroSlideResponse)(nil), errors.New("db error"))
 	req := httptest.NewRequest("GET", "/api/public/hero-slides", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
@@ -63,8 +63,8 @@ func TestHeroSlideController_GetAllPublic_Error(t *testing.T) {
 
 func TestHeroSlideController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	items := []model.HeroSlideResponse{{ID: "a", ImageURL: "https://a"}, {ID: "b", ImageURL: "https://b"}}
-	mockUC.On("GetAll").Return(items, nil)
+	items := []model.HeroSlideResponse{{ID: "a", EntityType: "pura", ImageURL: "https://a"}, {ID: "b", EntityType: "pura", ImageURL: "https://b"}}
+	mockUC.On("GetAll", "").Return(items, nil)
 	req := httptest.NewRequest("GET", "/api/hero-slides", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -72,7 +72,7 @@ func TestHeroSlideController_GetAll_Success(t *testing.T) {
 
 func TestHeroSlideController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	mockUC.On("GetAll").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/api/hero-slides", nil)
 	resp, _ := app.Test(req)
@@ -109,8 +109,8 @@ func TestHeroSlideController_GetByID_NotFound(t *testing.T) {
 
 func TestHeroSlideController_Create_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	reqBody := model.HeroSlideRequest{ImageURL: "https://img", OrderIndex: 1, IsActive: true}
-	resBody := &model.HeroSlideResponse{ID: "1", ImageURL: "https://img"}
+	reqBody := model.HeroSlideRequest{EntityType: "pura", ImageURL: "https://img", OrderIndex: 1, IsActive: true}
+	resBody := &model.HeroSlideResponse{ID: "1", EntityType: "pura", ImageURL: "https://img"}
 	mockUC.On("Create", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/hero-slides", bytes.NewReader(b))
@@ -157,8 +157,8 @@ func TestHeroSlideController_Create_UsecaseError(t *testing.T) {
 
 func TestHeroSlideController_Update_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	reqBody := model.HeroSlideRequest{ImageURL: "https://new", OrderIndex: 3, IsActive: false}
-	resBody := &model.HeroSlideResponse{ID: "2", ImageURL: "https://new"}
+	reqBody := model.HeroSlideRequest{EntityType: "pura", ImageURL: "https://new", OrderIndex: 3, IsActive: false}
+	resBody := &model.HeroSlideResponse{ID: "2", EntityType: "pura", ImageURL: "https://new"}
 	mockUC.On("Update", "2", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("PUT", "/api/hero-slides/2", bytes.NewReader(b))
@@ -176,7 +176,7 @@ func TestHeroSlideController_Update_BadBody(t *testing.T) {
 
 func TestHeroSlideController_Update_UsecaseError(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	reqBody := model.HeroSlideRequest{ImageURL: "https://img"}
+	reqBody := model.HeroSlideRequest{EntityType: "pura", ImageURL: "https://img"}
 	mockUC.On("Update", "3", reqBody).Return((*model.HeroSlideResponse)(nil), errors.New("update failed"))
 
 	b, _ := json.Marshal(reqBody)

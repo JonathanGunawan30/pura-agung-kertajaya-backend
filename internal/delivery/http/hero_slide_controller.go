@@ -21,7 +21,8 @@ func NewHeroSlideController(usecase usecase.HeroSlideUsecase, log *logrus.Logger
 }
 
 func (c *HeroSlideController) GetAll(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetAll()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch hero slides")
 		return err
@@ -31,7 +32,8 @@ func (c *HeroSlideController) GetAll(ctx *fiber.Ctx) error {
 
 // GetAllPublic returns only active hero slides for public consumption
 func (c *HeroSlideController) GetAllPublic(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetPublic()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetPublic(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public hero slides")
 		return err

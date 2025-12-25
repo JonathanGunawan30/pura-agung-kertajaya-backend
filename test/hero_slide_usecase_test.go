@@ -37,6 +37,7 @@ func TestHeroSlideUsecase_Create_Success(t *testing.T) {
 	u, mock := setupMockHeroSlideUsecase(t)
 
 	req := model.HeroSlideRequest{
+		EntityType: "pura",
 		ImageURL:   "https://example.com/image.jpg",
 		OrderIndex: 1,
 		IsActive:   true,
@@ -44,12 +45,12 @@ func TestHeroSlideUsecase_Create_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `hero_slides`")).
-		WithArgs(sqlmock.AnyArg(), "https://example.com/image.jpg", 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), "pura", "https://example.com/image.jpg", 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "image_url", "order_index", "is_active"}).
-		AddRow("id-1", "https://example.com/image.jpg", 1, true)
+	rows := sqlmock.NewRows([]string{"id", "entity_type", "image_url", "order_index", "is_active"}).
+		AddRow("id-1", "pura", "https://example.com/image.jpg", 1, true)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `hero_slides`")).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
@@ -64,6 +65,7 @@ func TestHeroSlideUsecase_Create_Success(t *testing.T) {
 	if res == nil {
 		return
 	}
+	assert.Equal(t, req.EntityType, res.EntityType)
 	assert.Equal(t, req.ImageURL, res.ImageURL)
 	assert.Equal(t, req.OrderIndex, res.OrderIndex)
 }
@@ -81,16 +83,18 @@ func TestHeroSlideUsecase_Create_ValidationError(t *testing.T) {
 func TestHeroSlideUsecase_GetAll_OrderedByIndex(t *testing.T) {
 	u, mock := setupMockHeroSlideUsecase(t)
 
-	rows := sqlmock.NewRows([]string{"id", "image_url", "order_index", "is_active"}).
-		AddRow("id-1", "https://example.com/1.jpg", 1, true).
-		AddRow("id-2", "https://example.com/2.jpg", 2, true)
+	rows := sqlmock.NewRows([]string{"id", "entity_type", "image_url", "order_index", "is_active"}).
+		AddRow("id-1", "pura", "https://example.com/1.jpg", 1, true).
+		AddRow("id-2", "pura", "https://example.com/2.jpg", 2, true)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `hero_slides` ORDER BY order_index ASC")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `hero_slides` WHERE entity_type = ? ORDER BY order_index ASC")).
+		WithArgs("pura").
 		WillReturnRows(rows)
 
-	list, err := u.GetAll()
+	list, err := u.GetAll("pura")
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
+	assert.Equal(t, "pura", list[0].EntityType)
 	assert.Equal(t, "https://example.com/1.jpg", list[0].ImageURL)
 	assert.Equal(t, "https://example.com/2.jpg", list[1].ImageURL)
 }
@@ -112,6 +116,7 @@ func TestHeroSlideUsecase_Update_Success(t *testing.T) {
 	targetID := "slide-1"
 
 	req := model.HeroSlideRequest{
+		EntityType: "yayasan",
 		ImageURL:   "https://new.jpg",
 		OrderIndex: 5,
 		IsActive:   false,
@@ -119,11 +124,11 @@ func TestHeroSlideUsecase_Update_Success(t *testing.T) {
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `hero_slides` WHERE id = ?")).
 		WithArgs(targetID, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "image_url"}).AddRow(targetID, "https://old.jpg"))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "entity_type", "image_url"}).AddRow(targetID, "pura", "https://old.jpg"))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `hero_slides`")).
-		WithArgs("https://new.jpg", 5, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs("yayasan", "https://new.jpg", 5, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -136,6 +141,7 @@ func TestHeroSlideUsecase_Update_Success(t *testing.T) {
 	if res == nil {
 		return
 	}
+	assert.Equal(t, req.EntityType, res.EntityType)
 	assert.Equal(t, req.ImageURL, res.ImageURL)
 	assert.Equal(t, req.OrderIndex, res.OrderIndex)
 	assert.Equal(t, req.IsActive, res.IsActive)
