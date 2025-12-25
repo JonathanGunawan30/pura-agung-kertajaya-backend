@@ -2,8 +2,8 @@ package model
 
 import "time"
 
-// ActivityRequest defines the payload for creating or updating an activity
-type ActivityRequest struct {
+type CreateActivityRequest struct {
+	EntityType  string `json:"entity_type" validate:"required,oneof=pura yayasan pasraman"`
 	Title       string `json:"title" validate:"required,min=1,max=150"`
 	Description string `json:"description" validate:"required"`
 	TimeInfo    string `json:"time_info" validate:"omitempty,max=100"`
@@ -12,9 +12,17 @@ type ActivityRequest struct {
 	IsActive    bool   `json:"is_active" validate:"boolean"`
 }
 
-// ActivityResponse defines the API response for an activity
+type UpdateActivityRequest struct {
+	Title       string `json:"title" validate:"required,min=1,max=150"`
+	Description string `json:"description" validate:"required"`
+	TimeInfo    string `json:"time_info" validate:"omitempty,max=100"`
+	Location    string `json:"location" validate:"omitempty,max=100"`
+	OrderIndex  int    `json:"order_index" validate:"required,min=1"`
+	IsActive    bool   `json:"is_active" validate:"boolean"`
+}
 type ActivityResponse struct {
 	ID          string    `json:"id"`
+	EntityType  string    `json:"entity_type"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	TimeInfo    string    `json:"time_info"`

@@ -18,7 +18,8 @@ func NewActivityController(usecase usecase.ActivityUsecase, log *logrus.Logger) 
 }
 
 func (c *ActivityController) GetAll(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetAll()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch activities")
 		return err
@@ -26,9 +27,9 @@ func (c *ActivityController) GetAll(ctx *fiber.Ctx) error {
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
 
-// GetAllPublic returns only active activities for public consumption
 func (c *ActivityController) GetAllPublic(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetPublic()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetPublic(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public activities")
 		return err
@@ -50,7 +51,7 @@ func (c *ActivityController) GetByID(ctx *fiber.Ctx) error {
 }
 
 func (c *ActivityController) Create(ctx *fiber.Ctx) error {
-	var req model.ActivityRequest
+	var req model.CreateActivityRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
@@ -67,7 +68,7 @@ func (c *ActivityController) Update(ctx *fiber.Ctx) error {
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
-	var req model.ActivityRequest
+	var req model.UpdateActivityRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}

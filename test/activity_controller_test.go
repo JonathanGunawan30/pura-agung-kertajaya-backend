@@ -56,7 +56,7 @@ func setupActivityController() (*fiber.App, *usecasemock.ActivityUsecaseMock) {
 func TestActivityController_GetAllPublic_Success(t *testing.T) {
 	app, mockUC := setupActivityController()
 	items := []model.ActivityResponse{{ID: "1", Title: "A"}, {ID: "2", Title: "B"}}
-	mockUC.On("GetPublic").Return(items, nil)
+	mockUC.On("GetPublic", "").Return(items, nil)
 	req := httptest.NewRequest("GET", "/api/public/activities", nil)
 	resp, _ := app.Test(req, -1)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -65,7 +65,7 @@ func TestActivityController_GetAllPublic_Success(t *testing.T) {
 
 func TestActivityController_GetAllPublic_Error(t *testing.T) {
 	app, mockUC := setupActivityController()
-	mockUC.On("GetPublic").Return(([]model.ActivityResponse)(nil), errors.New("db error"))
+	mockUC.On("GetPublic", "").Return(([]model.ActivityResponse)(nil), errors.New("db error"))
 	req := httptest.NewRequest("GET", "/api/public/activities", nil)
 	resp, _ := app.Test(req, -1)
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
@@ -78,7 +78,7 @@ func TestActivityController_GetAllPublic_Error(t *testing.T) {
 func TestActivityController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupActivityController()
 	items := []model.ActivityResponse{{ID: "1", Title: "A"}, {ID: "2", Title: "B"}}
-	mockUC.On("GetAll").Return(items, nil)
+	mockUC.On("GetAll", "").Return(items, nil)
 	req := httptest.NewRequest("GET", "/api/activities", nil)
 	resp, _ := app.Test(req, -1)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -87,7 +87,7 @@ func TestActivityController_GetAll_Success(t *testing.T) {
 
 func TestActivityController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupActivityController()
-	mockUC.On("GetAll").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
 	req := httptest.NewRequest("GET", "/api/activities", nil)
 	resp, _ := app.Test(req, -1)
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
@@ -131,7 +131,7 @@ func TestActivityController_GetByID_NotFound(t *testing.T) {
 
 func TestActivityController_Create_Success(t *testing.T) {
 	app, mockUC := setupActivityController()
-	reqBody := model.ActivityRequest{Title: "T", Description: "D", OrderIndex: 1, IsActive: true}
+	reqBody := model.CreateActivityRequest{EntityType: "pura", Title: "T", Description: "D", OrderIndex: 1, IsActive: true}
 	resBody := &model.ActivityResponse{ID: "1", Title: "T"}
 	mockUC.On("Create", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)
@@ -155,7 +155,7 @@ func TestActivityController_Create_BadBody(t *testing.T) {
 
 func TestActivityController_Create_UsecaseError(t *testing.T) {
 	app, mockUC := setupActivityController()
-	reqBody := model.ActivityRequest{}
+	reqBody := model.CreateActivityRequest{}
 	validate := validator.New()
 	err := validate.Struct(reqBody)
 	var validationErrs validator.ValidationErrors
@@ -174,7 +174,7 @@ func TestActivityController_Create_UsecaseError(t *testing.T) {
 
 func TestActivityController_Update_Success(t *testing.T) {
 	app, mockUC := setupActivityController()
-	reqBody := model.ActivityRequest{Title: "New", Description: "D", IsActive: true, OrderIndex: 1}
+	reqBody := model.UpdateActivityRequest{Title: "New", Description: "D", IsActive: true, OrderIndex: 1}
 	resBody := &model.ActivityResponse{ID: "2", Title: "New"}
 	mockUC.On("Update", "2", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)
@@ -198,7 +198,7 @@ func TestActivityController_Update_BadBody(t *testing.T) {
 
 func TestActivityController_Update_UsecaseError(t *testing.T) {
 	app, mockUC := setupActivityController()
-	reqBody := model.ActivityRequest{Title: "N", Description: "D", IsActive: true, OrderIndex: 1}
+	reqBody := model.UpdateActivityRequest{Title: "N", Description: "D", IsActive: true, OrderIndex: 1}
 	mockUC.On("Update", "3", reqBody).Return((*model.ActivityResponse)(nil), errors.New("update failed"))
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("PUT", "/api/activities/3", bytes.NewReader(b))

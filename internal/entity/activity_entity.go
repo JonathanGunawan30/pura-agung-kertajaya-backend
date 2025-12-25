@@ -5,6 +5,7 @@ import "time"
 // Activity Mirrors the DB schema from migrations: Activities
 type Activity struct {
 	ID          string    `gorm:"column:id;primaryKey;type:varchar(100)"`
+	EntityType  string    `gorm:"column:entity_type;type:enum('pura','yayasan','pasraman');default:pura';not null;index"`
 	Title       string    `gorm:"column:title;type:varchar(150);not null"`
 	Description string    `gorm:"column:description;type:text;not null"`
 	TimeInfo    string    `gorm:"column:time_info;type:varchar(100)"`

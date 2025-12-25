@@ -1467,10 +1467,22 @@
     "/api/public/activities": {
       "get": {
         "tags": ["Public API"],
-        "description": "Get all active activities for public website display. (is_active = true)",
+        "description": "Get all active activities, filtered by entity type.",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter activities by entity type"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Success get all active activities",
+            "description": "Success get active activities",
             "content": {
               "application/json": {
                 "schema": {
@@ -1478,9 +1490,7 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ActivityResponse"
-                      }
+                      "items": { "$ref": "#/components/schemas/ActivityResponse" }
                     }
                   }
                 }
@@ -1493,8 +1503,20 @@
     "/api/activities": {
       "get": {
         "tags": ["Activity API"],
-        "description": "Get all activities (admin view, includes non-active).",
+        "description": "Get all activities (admin view).",
         "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter activities by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all activities",
@@ -1505,9 +1527,7 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ActivityResponse"
-                      }
+                      "items": { "$ref": "#/components/schemas/ActivityResponse" }
                     }
                   }
                 }
@@ -1519,29 +1539,25 @@
       },
       "post": {
         "tags": ["Activity API"],
-        "description": "Create a new activity (requires authentication)",
+        "description": "Create a new activity.",
         "security": [{ "cookieAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ActivityCreateRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateActivityRequest" }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Activity created successfully",
+            "description": "Activity created",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ActivityResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/ActivityResponse" }
                   }
                 }
               }
@@ -1552,34 +1568,29 @@
         }
       }
     },
-    "/api/activities/:id": {
+    "/api/activities/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "UUID of the activity"
+        }
+      ],
       "get": {
         "tags": ["Activity API"],
-        "description": "Get a single activity by its ID (requires authentication)",
+        "description": "Get single activity.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "act_abc12345"
-            },
-            "description": "The ID of the activity to retrieve"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Success get activity by ID",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ActivityResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/ActivityResponse" }
                   }
                 }
               }
@@ -1591,41 +1602,25 @@
       },
       "put": {
         "tags": ["Activity API"],
-        "description": "Update an existing activity by its ID (requires authentication)",
+        "description": "Update activity.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "act_abc12345"
-            },
-            "description": "The ID of the activity to update"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ActivityUpdateRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/UpdateActivityRequest" }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Activity updated successfully",
+            "description": "Updated successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ActivityResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/ActivityResponse" }
                   }
                 }
               }
@@ -1638,32 +1633,17 @@
       },
       "delete": {
         "tags": ["Activity API"],
-        "description": "Delete an activity by its ID (requires authentication)",
+        "description": "Delete activity.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "act_abc12345"
-            },
-            "description": "The ID of the activity to delete"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Activity deleted successfully",
+            "description": "Deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "type": "boolean",
-                      "example": true
-                    }
+                    "data": { "type": "boolean", "example": true }
                   }
                 }
               }
@@ -2634,39 +2614,48 @@
       "ActivityResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "act_abc123" },
-          "title": { "type": "string", "example": "Upacara Piodalan" },
-          "description": { "type": "string", "example": "Deskripsi lengkap mengenai upacara piodalan." },
-          "time_info": { "type": "string", "example": "Setiap Purnama Sasih Kapat" },
-          "location": { "type": "string", "example": "Jaba Tengah Pura" },
-          "order_index": { "type": "integer", "example": 1 },
+          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "title": { "type": "string", "example": "Odalan Pura Agung" },
+          "slug": { "type": "string", "example": "odalan-pura-agung-2024" },
+          "description": { "type": "string", "example": "Upacara piodalan alit..." },
+          "location": { "type": "string", "example": "Mandala Utama" },
+          "event_date": { "type": "string", "format": "date", "example": "2024-10-15" },
+          "start_time": { "type": "string", "example": "08:00 WITA" },
+          "end_time": { "type": "string", "example": "Selesai" },
+          "image_url": { "type": "string", "example": "http://img.com/event.jpg" },
           "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
-      "ActivityCreateRequest": {
+      "CreateActivityRequest": {
         "type": "object",
+        "required": ["entity_type", "title", "event_date"],
         "properties": {
-          "title": { "type": "string", "example": "Galungan" },
-          "description": { "type": "string", "example": "Perayaan kemenangan Dharma melawan Adharma." },
-          "time_info": { "type": "string", "example": "Setiap 210 hari" },
-          "location": { "type": "string", "example": "Seluruh Bali" },
-          "order_index": { "type": "integer", "example": 2 },
-          "is_active": { "type": "boolean", "example": true }
-        },
-        "required": ["title", "description", "order_index", "is_active"]
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "title": { "type": "string", "example": "Rapat Tahunan" },
+          "description": { "type": "string", "example": "Pembahasan RAB..." },
+          "location": { "type": "string", "example": "Gedung Wantilan" },
+          "event_date": { "type": "string", "format": "date", "example": "2024-12-01" },
+          "start_time": { "type": "string", "example": "09:00" },
+          "end_time": { "type": "string", "example": "12:00" },
+          "image_url": { "type": "string", "example": "http://img.com/rapat.jpg" },
+          "is_active": { "type": "boolean", "default": true }
+        }
       },
-      "ActivityUpdateRequest": {
+      "UpdateActivityRequest": {
         "type": "object",
-        "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
+        "required": ["title", "event_date"],
         "properties": {
-          "title": { "type": "string", "example": "Kuningan" },
-          "description": { "type": "string", "example": "Perayaan 10 hari setelah Galungan." },
-          "time_info": { "type": "string", "example": "10 hari setelah Galungan" },
-          "location": { "type": "string", "example": "Seluruh Bali" },
-          "order_index": { "type": "integer", "example": 3 },
-          "is_active": { "type": "boolean", "example": false }
+          "title": { "type": "string", "example": "Rapat Tahunan (Revisi)" },
+          "description": { "type": "string", "example": "Pembahasan RAB..." },
+          "location": { "type": "string", "example": "Gedung Wantilan" },
+          "event_date": { "type": "string", "format": "date", "example": "2024-12-05" },
+          "start_time": { "type": "string", "example": "09:00" },
+          "end_time": { "type": "string", "example": "12:00" },
+          "image_url": { "type": "string", "example": "http://img.com/rapat.jpg" },
+          "is_active": { "type": "boolean", "example": true }
         }
       },
       "SiteIdentityResponse": {
