@@ -18,7 +18,8 @@ func NewAboutController(usecase usecase.AboutUsecase, log *logrus.Logger) *About
 }
 
 func (c *AboutController) GetAll(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetAll()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch about sections")
 		return err
@@ -28,7 +29,8 @@ func (c *AboutController) GetAll(ctx *fiber.Ctx) error {
 
 // GetAllPublic returns only active about sections with values
 func (c *AboutController) GetAllPublic(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetPublic()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetPublic(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public about sections")
 		return err

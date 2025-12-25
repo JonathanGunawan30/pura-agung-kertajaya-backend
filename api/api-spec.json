@@ -1857,6 +1857,18 @@
       "get": {
         "tags": ["Public API"],
         "description": "Get all active 'About' sections with their values for public display. Sorted by creation date.",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "example": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all active about sections with values",
@@ -1884,6 +1896,18 @@
         "tags": ["About API"],
         "description": "Get all 'About' sections (admin view, includes non-active), each with its associated values.",
         "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "example": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all about sections with values",
@@ -2729,6 +2753,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "example": "abt_abc12345" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "title": { "type": "string", "example": "Tentang Kami" },
           "description": { "type": "string", "example": "Deskripsi lengkap tentang pura..." },
           "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/about.png" },
@@ -2756,6 +2781,7 @@
         "type": "object",
         "description": "Payload for creating or updating an about section with its values.",
         "properties": {
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "title": { "type": "string", "example": "Sejarah Pura" },
           "description": { "type": "string", "example": "Penjelasan sejarah..." },
           "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/sejarah.png" },
@@ -2768,7 +2794,7 @@
             }
           }
         },
-        "required": ["title", "description", "is_active"]
+        "required": ["entity_type", "title", "description", "is_active"]
       },
       "OrganizationMemberResponse": {
         "type": "object",

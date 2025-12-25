@@ -54,9 +54,9 @@ func setupAboutController() (*fiber.App, *usecasemock.AboutUsecaseMock) {
 
 func TestAboutController_GetAllPublic_Success(t *testing.T) {
 	app, mockUC := setupAboutController()
-	items := []model.AboutSectionResponse{{ID: "1", Title: "A"}, {ID: "2", Title: "B"}}
-	mockUC.On("GetPublic").Return(items, nil)
-	req := httptest.NewRequest("GET", "/api/public/about", nil)
+	items := []model.AboutSectionResponse{{ID: "1", EntityType: "pura", Title: "A"}, {ID: "2", EntityType: "pura", Title: "B"}}
+	mockUC.On("GetPublic", "pura").Return(items, nil)
+	req := httptest.NewRequest("GET", "/api/public/about?entity_type=pura", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 	mockUC.AssertExpectations(t)
@@ -64,7 +64,7 @@ func TestAboutController_GetAllPublic_Success(t *testing.T) {
 
 func TestAboutController_GetAllPublic_Error(t *testing.T) {
 	app, mockUC := setupAboutController()
-	mockUC.On("GetPublic").Return(([]model.AboutSectionResponse)(nil), errors.New("db error"))
+	mockUC.On("GetPublic", "").Return(([]model.AboutSectionResponse)(nil), errors.New("db error"))
 	req := httptest.NewRequest("GET", "/api/public/about", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
@@ -77,8 +77,8 @@ func TestAboutController_GetAllPublic_Error(t *testing.T) {
 
 func TestAboutController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupAboutController()
-	items := []model.AboutSectionResponse{{ID: "1", Title: "A"}, {ID: "2", Title: "B"}}
-	mockUC.On("GetAll").Return(items, nil)
+	items := []model.AboutSectionResponse{{ID: "1", EntityType: "pura", Title: "A"}, {ID: "2", EntityType: "pura", Title: "B"}}
+	mockUC.On("GetAll", "").Return(items, nil)
 	req := httptest.NewRequest("GET", "/api/about", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -87,7 +87,7 @@ func TestAboutController_GetAll_Success(t *testing.T) {
 
 func TestAboutController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupAboutController()
-	mockUC.On("GetAll").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
 	req := httptest.NewRequest("GET", "/api/about", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
@@ -123,8 +123,8 @@ func TestAboutController_GetByID_NotFound(t *testing.T) {
 
 func TestAboutController_Create_Success(t *testing.T) {
 	app, mockUC := setupAboutController()
-	reqBody := model.AboutSectionRequest{Title: "T", Description: "D", IsActive: true}
-	resBody := &model.AboutSectionResponse{ID: "1", Title: "T"}
+	reqBody := model.AboutSectionRequest{EntityType: "pura", Title: "T", Description: "D", IsActive: true}
+	resBody := &model.AboutSectionResponse{ID: "1", EntityType: "pura", Title: "T"}
 	mockUC.On("Create", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/about", bytes.NewReader(b))
