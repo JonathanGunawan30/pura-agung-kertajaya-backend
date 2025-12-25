@@ -13,11 +13,11 @@ import (
 )
 
 type OrganizationUsecase interface {
-	GetAll() ([]model.OrganizationResponse, error)
-	GetPublic() ([]model.OrganizationResponse, error)
+	GetAll(entityType string) ([]model.OrganizationResponse, error)
+	GetPublic(entityType string) ([]model.OrganizationResponse, error)
 	GetByID(id string) (*model.OrganizationResponse, error)
-	Create(req model.OrganizationRequest) (*model.OrganizationResponse, error)
-	Update(id string, req model.OrganizationRequest) (*model.OrganizationResponse, error)
+	Create(req model.CreateOrganizationRequest) (*model.OrganizationResponse, error)
+	Update(id string, req model.UpdateOrganizationRequest) (*model.OrganizationResponse, error)
 	Delete(id string) error
 }
 
@@ -37,28 +37,36 @@ func NewOrganizationRequest(db *gorm.DB, log *logrus.Logger, validate *validator
 	}
 }
 
-func (u *organizationUsecase) GetAll() ([]model.OrganizationResponse, error) {
+func (u *organizationUsecase) GetAll(entityType string) ([]model.OrganizationResponse, error) {
 	var items []entity.OrganizationMember
-	if err := u.db.Order("position_order ASC, order_index ASC").Find(&items).Error; err != nil {
+
+	if entityType == "" {
+		entityType = "pura"
+	}
+
+	query := u.db.Where("entity_type = ?", entityType).Order("position_order ASC, order_index ASC")
+
+	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
 	}
-	resp := make([]model.OrganizationResponse, 0, len(items))
-	for _, g := range items {
-		resp = append(resp, converter.ToOrganizationResponse(g))
-	}
-	return resp, nil
+
+	return converter.ToOrganizationResponses(items), nil
 }
 
-func (u *organizationUsecase) GetPublic() ([]model.OrganizationResponse, error) {
+func (u *organizationUsecase) GetPublic(entityType string) ([]model.OrganizationResponse, error) {
 	var items []entity.OrganizationMember
-	if err := u.db.Where("is_active = ?", true).Order("order_index ASC").Find(&items).Error; err != nil {
+
+	if entityType == "" {
+		entityType = "pura"
+	}
+
+	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
+
+	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
 	}
-	resp := make([]model.OrganizationResponse, 0, len(items))
-	for _, g := range items {
-		resp = append(resp, converter.ToOrganizationResponse(g))
-	}
-	return resp, nil
+
+	return converter.ToOrganizationResponses(items), nil
 }
 
 func (u *organizationUsecase) GetByID(id string) (*model.OrganizationResponse, error) {
@@ -66,16 +74,17 @@ func (u *organizationUsecase) GetByID(id string) (*model.OrganizationResponse, e
 	if err := u.repo.FindById(u.db, &g, id); err != nil {
 		return nil, err
 	}
-	r := converter.ToOrganizationResponse(g)
+	r := converter.ToOrganizationResponse(&g)
 	return &r, nil
 }
 
-func (u *organizationUsecase) Create(req model.OrganizationRequest) (*model.OrganizationResponse, error) {
+func (u *organizationUsecase) Create(req model.CreateOrganizationRequest) (*model.OrganizationResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 	g := entity.OrganizationMember{
 		ID:            uuid.New().String(),
+		EntityType:    req.EntityType,
 		Name:          req.Name,
 		Position:      req.Position,
 		PositionOrder: req.PositionOrder,
@@ -85,11 +94,11 @@ func (u *organizationUsecase) Create(req model.OrganizationRequest) (*model.Orga
 	if err := u.repo.Create(u.db, &g); err != nil {
 		return nil, err
 	}
-	r := converter.ToOrganizationResponse(g)
+	r := converter.ToOrganizationResponse(&g)
 	return &r, nil
 }
 
-func (u *organizationUsecase) Update(id string, req model.OrganizationRequest) (*model.OrganizationResponse, error) {
+func (u *organizationUsecase) Update(id string, req model.UpdateOrganizationRequest) (*model.OrganizationResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
@@ -105,7 +114,7 @@ func (u *organizationUsecase) Update(id string, req model.OrganizationRequest) (
 	if err := u.repo.Update(u.db, &g); err != nil {
 		return nil, err
 	}
-	r := converter.ToOrganizationResponse(g)
+	r := converter.ToOrganizationResponse(&g)
 	return &r, nil
 }
 

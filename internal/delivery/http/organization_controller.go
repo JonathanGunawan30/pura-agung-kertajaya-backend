@@ -18,7 +18,8 @@ func NewOrganizationController(usecase usecase.OrganizationUsecase, log *logrus.
 }
 
 func (c *OrganizationController) GetAll(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetAll()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch organization members")
 		return err
@@ -26,9 +27,9 @@ func (c *OrganizationController) GetAll(ctx *fiber.Ctx) error {
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
 
-// GetAllPublic returns only active organization members for public consumption
 func (c *OrganizationController) GetAllPublic(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetPublic()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetPublic(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public organization members")
 		return err
@@ -50,7 +51,7 @@ func (c *OrganizationController) GetByID(ctx *fiber.Ctx) error {
 }
 
 func (c *OrganizationController) Create(ctx *fiber.Ctx) error {
-	var req model.OrganizationRequest
+	var req model.CreateOrganizationRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
@@ -67,7 +68,7 @@ func (c *OrganizationController) Update(ctx *fiber.Ctx) error {
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
-	var req model.OrganizationRequest
+	var req model.UpdateOrganizationRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}

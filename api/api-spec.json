@@ -2094,7 +2094,19 @@
     "/api/public/organization-members": {
       "get": {
         "tags": ["Public API"],
-        "description": "Get all active organization members for public display, ordered hierarchically.",
+        "description": "Get all active organization members, filtered by entity type.",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get active organization members",
@@ -2105,9 +2117,7 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/OrganizationMemberResponse"
-                      }
+                      "items": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
                     }
                   }
                 }
@@ -2120,8 +2130,20 @@
     "/api/organization-members": {
       "get": {
         "tags": ["Organization Member API"],
-        "description": "Get all organization members (admin view, includes non-active).",
+        "description": "Get all organization members (admin view).",
         "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all organization members",
@@ -2132,9 +2154,7 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/OrganizationMemberResponse"
-                      }
+                      "items": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
                     }
                   }
                 }
@@ -2146,29 +2166,25 @@
       },
       "post": {
         "tags": ["Organization Member API"],
-        "description": "Create a new organization member (requires authentication).",
+        "description": "Create a new organization member.",
         "security": [{ "cookieAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrganizationMemberRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateOrganizationMemberRequest" }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Organization member created successfully",
+            "description": "Organization member created",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/OrganizationMemberResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
                   }
                 }
               }
@@ -2179,34 +2195,29 @@
         }
       }
     },
-    "/api/organization-members/:id": {
+    "/api/organization-members/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "UUID of the organization member"
+        }
+      ],
       "get": {
         "tags": ["Organization Member API"],
-        "description": "Get a single organization member by ID (requires authentication).",
+        "description": "Get single organization member.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "om_abc12345"
-            },
-            "description": "The ID of the organization member"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Success get organization member by ID",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/OrganizationMemberResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
                   }
                 }
               }
@@ -2218,41 +2229,25 @@
       },
       "put": {
         "tags": ["Organization Member API"],
-        "description": "Update an existing organization member by ID (requires authentication).",
+        "description": "Update organization member.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "om_abc12345"
-            },
-            "description": "The ID of the organization member to update"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrganizationMemberRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/UpdateOrganizationMemberRequest" }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Organization member updated successfully",
+            "description": "Updated successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/OrganizationMemberResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
                   }
                 }
               }
@@ -2265,32 +2260,17 @@
       },
       "delete": {
         "tags": ["Organization Member API"],
-        "description": "Delete an organization member by ID (requires authentication).",
+        "description": "Delete organization member.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "om_abc12345"
-            },
-            "description": "The ID of the organization member to delete"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Organization member deleted successfully",
+            "description": "Deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "type": "boolean",
-                      "example": true
-                    }
+                    "data": { "type": "boolean", "example": true }
                   }
                 }
               }
@@ -2778,27 +2758,42 @@
       "OrganizationMemberResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "om_abc123" },
+          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "name": { "type": "string", "example": "I Wayan S." },
           "position": { "type": "string", "example": "Ketua" },
-          "position_order": { "type": "integer", "example": 1 },
+          "image_url": { "type": "string", "example": "http://img.com/foto.jpg" },
+          "social_media": { "type": "string", "example": "{\"facebook\": \"...\"}" },
           "order_index": { "type": "integer", "example": 1 },
           "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
-      "OrganizationMemberRequest": {
+      "CreateOrganizationMemberRequest": {
         "type": "object",
-        "description": "Payload for creating or updating an organization member.",
+        "required": ["entity_type", "name", "position"],
+        "properties": {
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "name": { "type": "string", "example": "Ni Made L." },
+          "position": { "type": "string", "example": "Sekretaris" },
+          "image_url": { "type": "string", "example": "http://img.com/foto.jpg" },
+          "social_media": { "type": "string", "example": "{}" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "default": true }
+        }
+      },
+      "UpdateOrganizationMemberRequest": {
+        "type": "object",
+        "required": ["name", "position"],
         "properties": {
           "name": { "type": "string", "example": "Ni Made L." },
           "position": { "type": "string", "example": "Sekretaris" },
-          "position_order": { "type": "integer", "example": 3 },
+          "image_url": { "type": "string", "example": "http://img.com/foto.jpg" },
+          "social_media": { "type": "string", "example": "{}" },
           "order_index": { "type": "integer", "example": 1 },
           "is_active": { "type": "boolean", "example": true }
-        },
-        "required": ["name", "position", "position_order", "is_active"]
+        }
       },
       "FacilityResponse": {
         "type": "object",

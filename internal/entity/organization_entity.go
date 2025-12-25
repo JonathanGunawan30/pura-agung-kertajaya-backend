@@ -6,6 +6,7 @@ import "time"
 
 type OrganizationMember struct {
 	ID            string    `gorm:"column:id;primaryKey;type:varchar(100)"`
+	EntityType    string    `gorm:"column:entity_type;type:enum('pura','yayasan','pasraman');default:pura';not null;index"`
 	Name          string    `gorm:"column:name;type:varchar(100);not null"`
 	Position      string    `gorm:"column:position;type:varchar(100);not null;"`
 	PositionOrder int       `gorm:"column:position_order;not null;default:99"`

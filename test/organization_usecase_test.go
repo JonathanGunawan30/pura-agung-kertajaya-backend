@@ -36,7 +36,8 @@ func setupMockOrganizationUsecase(t *testing.T) (usecase.OrganizationUsecase, sq
 func TestOrganizationMemberUsecase_Create_Success(t *testing.T) {
 	u, mock := setupMockOrganizationUsecase(t)
 
-	req := model.OrganizationRequest{
+	req := model.CreateOrganizationRequest{
+		EntityType:    "pura",
 		Name:          "Ketut Test",
 		Position:      "Bendahara",
 		PositionOrder: 3,
@@ -46,7 +47,7 @@ func TestOrganizationMemberUsecase_Create_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `organization_members`")).
-		WithArgs(sqlmock.AnyArg(), "Ketut Test", "Bendahara", 3, 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), req.EntityType, "Ketut Test", "Bendahara", 3, 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -54,7 +55,7 @@ func TestOrganizationMemberUsecase_Create_Success(t *testing.T) {
 		AddRow("uuid-1", "Ketut Test", "Bendahara", 3, 1, true)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members`")).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+		WithArgs(sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
 	created, err := u.Create(req)
@@ -74,7 +75,7 @@ func TestOrganizationMemberUsecase_Create_Success(t *testing.T) {
 func TestOrganizationMemberUsecase_Create_ValidationError(t *testing.T) {
 	u, _ := setupMockOrganizationUsecase(t)
 
-	req := model.OrganizationRequest{
+	req := model.CreateOrganizationRequest{
 		Name:          "",
 		Position:      "Tester",
 		PositionOrder: 1,
@@ -97,10 +98,11 @@ func TestOrganizationMemberUsecase_GetAll_OrderedCorrectly(t *testing.T) {
 		AddRow("m3", "Sekre 2", "Sekretaris", 3, 2, true).
 		AddRow("m5", "NonAktif", "Anggota", 4, 1, false)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` ORDER BY position_order ASC, order_index ASC")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE entity_type = ? ORDER BY position_order ASC, order_index ASC")).
+		WithArgs("pura").
 		WillReturnRows(rows)
 
-	list, err := u.GetAll()
+	list, err := u.GetAll("pura")
 
 	assert.NoError(t, err)
 	assert.Len(t, list, 5)
@@ -120,11 +122,11 @@ func TestOrganizationMemberUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) 
 		AddRow("m4", "Sekre 1", "Sekretaris", 3, 1, true).
 		AddRow("m3", "Sekre 2", "Sekretaris", 3, 2, true)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE is_active = ? ORDER BY order_index ASC")).
-		WithArgs(true).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE entity_type = ? AND is_active = ? ORDER BY order_index ASC")).
+		WithArgs("pura", true).
 		WillReturnRows(rows)
 
-	list, err := u.GetPublic()
+	list, err := u.GetPublic("pura")
 
 	assert.NoError(t, err)
 	if err != nil {
@@ -142,7 +144,7 @@ func TestOrganizationMemberUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) 
 func TestOrganizationMemberUsecase_GetByID_NotFound(t *testing.T) {
 	u, mock := setupMockOrganizationUsecase(t)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE id = ? LIMIT ?")).
 		WithArgs("non-existent-id", 1).
 		WillReturnRows(sqlmock.NewRows(nil))
 
@@ -156,7 +158,7 @@ func TestOrganizationMemberUsecase_Update_Success(t *testing.T) {
 	u, mock := setupMockOrganizationUsecase(t)
 	targetID := "update-me"
 
-	req := model.OrganizationRequest{
+	req := model.UpdateOrganizationRequest{
 		Name:          "New Name",
 		Position:      "New Pos",
 		PositionOrder: 5,
@@ -164,13 +166,13 @@ func TestOrganizationMemberUsecase_Update_Success(t *testing.T) {
 		IsActive:      false,
 	}
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "Old Name"))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `organization_members`")).
-		WithArgs("New Name", "New Pos", 5, 2, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs(sqlmock.AnyArg(), "New Name", "New Pos", 5, 2, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -191,7 +193,7 @@ func TestOrganizationMemberUsecase_Delete_Success(t *testing.T) {
 	u, mock := setupMockOrganizationUsecase(t)
 	targetID := "delete-me"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "To Delete"))
 

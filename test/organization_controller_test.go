@@ -17,8 +17,7 @@ import (
 	usecasemock "pura-agung-kertajaya-backend/internal/usecase/mock"
 )
 
-// setupOrganizationMemberController initializes the controller with mock and fiber app
-func setupOrganizationMemberController() (*fiber.App, *usecasemock.OrganizationMemberUsecaseMock) {
+func setupOrganizationMemberController(t *testing.T) (*fiber.App, *usecasemock.OrganizationMemberUsecaseMock) {
 	log := logrus.New()
 	mockUC := &usecasemock.OrganizationMemberUsecaseMock{}
 	controller := httpdelivery.NewOrganizationController(mockUC, logrus.New())
@@ -43,18 +42,17 @@ func setupOrganizationMemberController() (*fiber.App, *usecasemock.OrganizationM
 }
 
 func TestOrganizationMemberController_GetAllPublic_Success(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 
-	// Mock data
-	mockResponse := []model.OrganizationResponse{
+	items := []model.OrganizationResponse{
 		{ID: "1", Name: "Member A", Position: "Ketua", PositionOrder: 1, IsActive: true},
 		{ID: "2", Name: "Member B", Position: "Sekretaris", PositionOrder: 2, IsActive: true},
 	}
-	mockUC.On("GetPublic").Return(mockResponse, nil)
+	mockUC.On("GetPublic", "").Return(items, nil)
 
 	req := httptest.NewRequest("GET", "/api/public/organization-members", nil)
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req)
 	assert.NoError(t, err)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
@@ -68,9 +66,9 @@ func TestOrganizationMemberController_GetAllPublic_Success(t *testing.T) {
 }
 
 func TestOrganizationMemberController_GetAllPublic_Error(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 
-	mockUC.On("GetPublic").Return(([]model.OrganizationResponse)(nil), errors.New("db error"))
+	mockUC.On("GetPublic", "").Return(([]model.OrganizationResponse)(nil), errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/api/public/organization-members", nil)
 
@@ -82,13 +80,13 @@ func TestOrganizationMemberController_GetAllPublic_Error(t *testing.T) {
 }
 
 func TestOrganizationMemberController_GetAll_Success(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 
 	mockResponse := []model.OrganizationResponse{
 		{ID: "1", Name: "Member A"},
 		{ID: "2", Name: "Member B", IsActive: false},
 	}
-	mockUC.On("GetAll").Return(mockResponse, nil)
+	mockUC.On("GetAll", "").Return(mockResponse, nil)
 
 	req := httptest.NewRequest("GET", "/api/organization-members/", nil) // Note trailing slash might matter depending on StrictRouting
 
@@ -105,9 +103,9 @@ func TestOrganizationMemberController_GetAll_Success(t *testing.T) {
 }
 
 func TestOrganizationMemberController_GetAll_Error(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 
-	mockUC.On("GetAll").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/api/organization-members/", nil)
 
@@ -119,7 +117,7 @@ func TestOrganizationMemberController_GetAll_Error(t *testing.T) {
 }
 
 func TestOrganizationMemberController_GetByID_Success(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "member123"
 	mockResponse := &model.OrganizationResponse{ID: memberID, Name: "Member Found"}
 	mockUC.On("GetByID", memberID).Return(mockResponse, nil)
@@ -140,7 +138,7 @@ func TestOrganizationMemberController_GetByID_Success(t *testing.T) {
 }
 
 func TestOrganizationMemberController_GetByID_NotFound(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "notfound"
 	mockUC.On("GetByID", memberID).Return((*model.OrganizationResponse)(nil), errors.New("not found")) // Assuming controller maps this to 404
 
@@ -154,9 +152,9 @@ func TestOrganizationMemberController_GetByID_NotFound(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Create_Success(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 
-	reqBody := model.OrganizationRequest{Name: "New Member", Position: "Anggota", PositionOrder: 5, IsActive: true}
+	reqBody := model.CreateOrganizationRequest{Name: "New Member", Position: "Anggota", PositionOrder: 5, IsActive: true}
 	mockResponse := &model.OrganizationResponse{ID: "newID", Name: "New Member", Position: "Anggota", PositionOrder: 5, IsActive: true}
 	mockUC.On("Create", reqBody).Return(mockResponse, nil)
 
@@ -178,7 +176,7 @@ func TestOrganizationMemberController_Create_Success(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Create_BadBody(t *testing.T) {
-	app, _ := setupOrganizationMemberController()
+	app, _ := setupOrganizationMemberController(t)
 
 	req := httptest.NewRequest("POST", "/api/organization-members/", bytes.NewBufferString("{bad json"))
 	req.Header.Set("Content-Type", "application/json")
@@ -189,10 +187,9 @@ func TestOrganizationMemberController_Create_BadBody(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Create_UsecaseError(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 
-	// Simulate validation error from use case
-	reqBody := model.OrganizationRequest{Name: "", Position: "Pos"} // Invalid name
+	reqBody := model.CreateOrganizationRequest{Name: "", Position: "Pos"}
 	mockUC.On("Create", reqBody).Return((*model.OrganizationResponse)(nil), errors.New("validation failed: Name is required"))
 
 	bodyBytes, _ := json.Marshal(reqBody)
@@ -207,12 +204,11 @@ func TestOrganizationMemberController_Create_UsecaseError(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Update_Success(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "updateID"
-	reqBody := model.OrganizationRequest{Name: "Updated Name", Position: "Ketua", PositionOrder: 1, IsActive: true}
+	reqBody := model.UpdateOrganizationRequest{Name: "Updated Name", Position: "Ketua", PositionOrder: 1, IsActive: true}
 	mockResponse := &model.OrganizationResponse{ID: memberID, Name: "Updated Name", Position: "Ketua", PositionOrder: 1, IsActive: true}
 
-	// Expect Update to be called with ID and Request Body
 	mockUC.On("Update", memberID, reqBody).Return(mockResponse, nil)
 
 	bodyBytes, _ := json.Marshal(reqBody)
@@ -233,7 +229,7 @@ func TestOrganizationMemberController_Update_Success(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Update_BadBody(t *testing.T) {
-	app, _ := setupOrganizationMemberController()
+	app, _ := setupOrganizationMemberController(t)
 	memberID := "updateID"
 
 	req := httptest.NewRequest("PUT", "/api/organization-members/"+memberID, bytes.NewBufferString("{bad json"))
@@ -245,9 +241,9 @@ func TestOrganizationMemberController_Update_BadBody(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Update_NotFound(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "notfound"
-	reqBody := model.OrganizationRequest{Name: "Update"}
+	reqBody := model.UpdateOrganizationRequest{Name: "Update"}
 
 	mockUC.On("Update", memberID, reqBody).Return((*model.OrganizationResponse)(nil), errors.New("not found")) // Simulate use case not found
 
@@ -263,7 +259,7 @@ func TestOrganizationMemberController_Update_NotFound(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Delete_Success(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "deleteID"
 
 	mockUC.On("Delete", memberID).Return(nil)
@@ -282,7 +278,7 @@ func TestOrganizationMemberController_Delete_Success(t *testing.T) {
 }
 
 func TestOrganizationMemberController_Delete_NotFound(t *testing.T) {
-	app, mockUC := setupOrganizationMemberController()
+	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "notfound"
 
 	mockUC.On("Delete", memberID).Return(errors.New("not found"))

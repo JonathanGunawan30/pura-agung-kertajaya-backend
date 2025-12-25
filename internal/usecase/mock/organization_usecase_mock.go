@@ -10,25 +10,22 @@ type OrganizationMemberUsecaseMock struct {
 	mock.Mock
 }
 
-// GetAll mocks base method.
-func (m *OrganizationMemberUsecaseMock) GetAll() ([]model.OrganizationResponse, error) {
-	args := m.Called()
+func (m *OrganizationMemberUsecaseMock) GetAll(entityType string) ([]model.OrganizationResponse, error) {
+	args := m.Called(entityType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]model.OrganizationResponse), args.Error(1)
 }
 
-// GetPublic mocks base method.
-func (m *OrganizationMemberUsecaseMock) GetPublic() ([]model.OrganizationResponse, error) {
-	args := m.Called()
+func (m *OrganizationMemberUsecaseMock) GetPublic(entityType string) ([]model.OrganizationResponse, error) {
+	args := m.Called(entityType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]model.OrganizationResponse), args.Error(1)
 }
 
-// GetByID mocks base method.
 func (m *OrganizationMemberUsecaseMock) GetByID(id string) (*model.OrganizationResponse, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
@@ -37,8 +34,7 @@ func (m *OrganizationMemberUsecaseMock) GetByID(id string) (*model.OrganizationR
 	return args.Get(0).(*model.OrganizationResponse), args.Error(1)
 }
 
-// Create mocks base method.
-func (m *OrganizationMemberUsecaseMock) Create(req model.OrganizationRequest) (*model.OrganizationResponse, error) {
+func (m *OrganizationMemberUsecaseMock) Create(req model.CreateOrganizationRequest) (*model.OrganizationResponse, error) {
 	args := m.Called(req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -46,8 +42,7 @@ func (m *OrganizationMemberUsecaseMock) Create(req model.OrganizationRequest) (*
 	return args.Get(0).(*model.OrganizationResponse), args.Error(1)
 }
 
-// Update mocks base method.
-func (m *OrganizationMemberUsecaseMock) Update(id string, req model.OrganizationRequest) (*model.OrganizationResponse, error) {
+func (m *OrganizationMemberUsecaseMock) Update(id string, req model.UpdateOrganizationRequest) (*model.OrganizationResponse, error) {
 	args := m.Called(id, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -55,7 +50,6 @@ func (m *OrganizationMemberUsecaseMock) Update(id string, req model.Organization
 	return args.Get(0).(*model.OrganizationResponse), args.Error(1)
 }
 
-// Delete mocks base method.
 func (m *OrganizationMemberUsecaseMock) Delete(id string) error {
 	args := m.Called(id)
 	return args.Error(0)
