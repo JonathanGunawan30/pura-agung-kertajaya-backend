@@ -39,7 +39,7 @@ func setupContactInfoController() (*fiber.App, *usecasemock.ContactInfoUsecaseMo
 func TestContactInfoController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupContactInfoController()
 	items := []model.ContactInfoResponse{{ID: "1", Address: "A"}, {ID: "2", Address: "B"}}
-	mockUC.On("GetAll").Return(items, nil)
+	mockUC.On("GetAll", "").Return(items, nil)
 
 	req := httptest.NewRequest("GET", "/contact-info", nil)
 	resp, _ := app.Test(req)
@@ -53,7 +53,7 @@ func TestContactInfoController_GetAll_Success(t *testing.T) {
 
 func TestContactInfoController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupContactInfoController()
-	mockUC.On("GetAll").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/contact-info", nil)
 	resp, _ := app.Test(req)
@@ -93,7 +93,7 @@ func TestContactInfoController_GetByID_NotFound(t *testing.T) {
 
 func TestContactInfoController_Create_Success(t *testing.T) {
 	app, mockUC := setupContactInfoController()
-	reqBody := model.ContactInfoRequest{Address: "A", Email: "e@x.com"}
+	reqBody := model.CreateContactInfoRequest{EntityType: "pura", Address: "A", Email: "e@x.com"}
 	resBody := &model.ContactInfoResponse{ID: "1", Address: "A"}
 	mockUC.On("Create", reqBody).Return(resBody, nil)
 
@@ -119,7 +119,7 @@ func TestContactInfoController_Create_BadBody(t *testing.T) {
 
 func TestContactInfoController_Create_UsecaseError(t *testing.T) {
 	app, mockUC := setupContactInfoController()
-	reqBody := model.ContactInfoRequest{}
+	reqBody := model.CreateContactInfoRequest{}
 	mockUC.On("Create", reqBody).Return((*model.ContactInfoResponse)(nil), errors.New("validation failed"))
 
 	b, _ := json.Marshal(reqBody)
@@ -131,7 +131,7 @@ func TestContactInfoController_Create_UsecaseError(t *testing.T) {
 
 func TestContactInfoController_Update_Success(t *testing.T) {
 	app, mockUC := setupContactInfoController()
-	reqBody := model.ContactInfoRequest{Address: "New"}
+	reqBody := model.UpdateContactInfoRequest{Address: "New"}
 	resBody := &model.ContactInfoResponse{ID: "2", Address: "New"}
 	mockUC.On("Update", "2", reqBody).Return(resBody, nil)
 
@@ -157,7 +157,7 @@ func TestContactInfoController_Update_BadBody(t *testing.T) {
 
 func TestContactInfoController_Update_UsecaseError(t *testing.T) {
 	app, mockUC := setupContactInfoController()
-	reqBody := model.ContactInfoRequest{Address: "A"}
+	reqBody := model.UpdateContactInfoRequest{Address: "A"}
 	mockUC.On("Update", "3", reqBody).Return((*model.ContactInfoResponse)(nil), errors.New("update failed"))
 
 	b, _ := json.Marshal(reqBody)

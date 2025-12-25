@@ -1254,11 +1254,59 @@
         }
       }
     },
+    "/api/public/contact-info": {
+      "get": {
+        "tags": ["Public API"],
+        "description": "Get all contact info entries for public display, filtered by entity type.",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success get all public contact info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ContactInfoResponse" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/contact-info": {
       "get": {
         "tags": ["Contact Info API"],
         "description": "Get all contact info entries (admin view).",
         "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all contact info entries",
@@ -1269,9 +1317,7 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ContactInfoResponse"
-                      }
+                      "items": { "$ref": "#/components/schemas/ContactInfoResponse" }
                     }
                   }
                 }
@@ -1283,29 +1329,25 @@
       },
       "post": {
         "tags": ["Contact Info API"],
-        "description": "Create a new contact info entry (requires authentication)",
+        "description": "Create a new contact info entry.",
         "security": [{ "cookieAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ContactInfoRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateContactInfoRequest" }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Contact info entry created successfully",
+            "description": "Contact info created successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ContactInfoResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/ContactInfoResponse" }
                   }
                 }
               }
@@ -1316,23 +1358,20 @@
         }
       }
     },
-    "/api/contact-info/:id": {
+    "/api/contact-info/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" },
+          "description": "UUID of the contact info entry"
+        }
+      ],
       "get": {
         "tags": ["Contact Info API"],
-        "description": "Get a single contact info entry by its ID (requires authentication)",
+        "description": "Get a single contact info entry by ID.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "ci_abc12345"
-            },
-            "description": "The ID of the contact info entry"
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success get contact info by ID",
@@ -1341,9 +1380,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ContactInfoResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/ContactInfoResponse" }
                   }
                 }
               }
@@ -1355,41 +1392,25 @@
       },
       "put": {
         "tags": ["Contact Info API"],
-        "description": "Update an existing contact info entry by its ID (requires authentication)",
+        "description": "Update an existing contact info entry.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "ci_abc12345"
-            },
-            "description": "The ID of the contact info entry to update"
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ContactInfoRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/UpdateContactInfoRequest" }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Contact info entry updated successfully",
+            "description": "Contact info updated successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ContactInfoResponse"
-                    }
+                    "data": { "$ref": "#/components/schemas/ContactInfoResponse" }
                   }
                 }
               }
@@ -1402,32 +1423,17 @@
       },
       "delete": {
         "tags": ["Contact Info API"],
-        "description": "Delete a contact info entry by its ID (requires authentication)",
+        "description": "Delete a contact info entry.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "ci_abc12345"
-            },
-            "description": "The ID of the contact info entry to delete"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Contact info entry deleted successfully",
+            "description": "Deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "type": "string",
-                      "example": "Contact info deleted successfully"
-                    }
+                    "data": { "type": "boolean", "example": true }
                   }
                 }
               }
@@ -1435,32 +1441,6 @@
           },
           "401": { "$ref": "#/components/responses/UnauthorizedError" },
           "404": { "$ref": "#/components/responses/NotFoundError" }
-        }
-      }
-    },
-    "/api/public/contact-info": {
-      "get": {
-        "tags": ["Public API"],
-        "description": "Get all contact info entries for public website display.",
-        "responses": {
-          "200": {
-            "description": "Success get all public contact info",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ContactInfoResponse"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
         }
       }
     },
@@ -2603,27 +2583,42 @@
       "ContactInfoResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "ci_abc123" },
-          "address": { "type": "string", "example": "Jalan Pura No. 123, Denpasar" },
-          "phone": { "type": "string", "example": "08123456789" },
-          "email": { "type": "string", "format": "email", "example": "info@pura.com" },
-          "visiting_hours": { "type": "string", "example": "Senin - Jumat: 08:00 - 17:00" },
-          "map_embed_url": { "type": "string", "format": "uri", "example": "https://maps.google.com/..." },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "platform": { "type": "string", "example": "whatsapp" },
+          "value": { "type": "string", "example": "6281234567890" },
+          "label": { "type": "string", "example": "Admin Pendaftaran" },
+          "icon": { "type": "string", "example": "fa-whatsapp" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       },
-      "ContactInfoRequest": {
+      "CreateContactInfoRequest": {
         "type": "object",
-        "description": "Payload for creating or updating contact info.",
+        "required": ["entity_type", "platform", "value"],
         "properties": {
-          "address": { "type": "string", "example": "Jalan Pura No. 123, Denpasar" },
-          "phone": { "type": "string", "example": "081234567890" },
-          "email": { "type": "string", "format": "email", "example": "info@puraagungkertajaya.com" },
-          "visiting_hours": { "type": "string", "example": "Setiap Hari: 08:00 - 18:00" },
-          "map_embed_url": { "type": "string", "format": "uri", "example": "https://maps.google.com/..." }
-        },
-        "required": ["address"]
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "platform": { "type": "string", "example": "email" },
+          "value": { "type": "string", "example": "info@pura.com" },
+          "label": { "type": "string", "example": "Email Sekretariat" },
+          "icon": { "type": "string", "example": "fa-envelope" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "default": true }
+        }
+      },
+      "UpdateContactInfoRequest": {
+        "type": "object",
+        "required": ["platform", "value"],
+        "properties": {
+          "platform": { "type": "string", "example": "email" },
+          "value": { "type": "string", "example": "info-baru@pura.com" },
+          "label": { "type": "string", "example": "Email Sekretariat" },
+          "icon": { "type": "string", "example": "fa-envelope" },
+          "order_index": { "type": "integer", "example": 1 },
+          "is_active": { "type": "boolean", "example": true }
+        }
       },
       "ActivityResponse": {
         "type": "object",

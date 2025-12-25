@@ -18,7 +18,8 @@ func NewContactInfoController(usecase usecase.ContactInfoUsecase, log *logrus.Lo
 }
 
 func (c *ContactInfoController) GetAll(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetAll()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch contact info")
 		return err
@@ -40,7 +41,7 @@ func (c *ContactInfoController) GetByID(ctx *fiber.Ctx) error {
 }
 
 func (c *ContactInfoController) Create(ctx *fiber.Ctx) error {
-	var req model.ContactInfoRequest
+	var req model.CreateContactInfoRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
@@ -57,7 +58,7 @@ func (c *ContactInfoController) Update(ctx *fiber.Ctx) error {
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
-	var req model.ContactInfoRequest
+	var req model.UpdateContactInfoRequest
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}

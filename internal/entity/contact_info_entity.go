@@ -6,6 +6,7 @@ import "time"
 // Mirrors the DB schema from migrations: contact_info
 type ContactInfo struct {
 	ID            string    `gorm:"column:id;primaryKey;type:varchar(100)"`
+	EntityType    string    `gorm:"column:entity_type;type:enum('pura','yayasan','pasraman');default:pura';not null;index"`
 	Address       string    `gorm:"column:address;type:text;not null"`
 	Phone         string    `gorm:"column:phone;type:varchar(50)"`
 	Email         string    `gorm:"column:email;type:varchar(100)"`

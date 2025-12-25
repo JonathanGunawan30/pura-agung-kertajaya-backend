@@ -8,8 +8,8 @@ import (
 
 type ContactInfoUsecaseMock struct{ mock.Mock }
 
-func (m *ContactInfoUsecaseMock) GetAll() ([]model.ContactInfoResponse, error) {
-	args := m.Called()
+func (m *ContactInfoUsecaseMock) GetAll(entityType string) ([]model.ContactInfoResponse, error) {
+	args := m.Called(entityType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -24,7 +24,7 @@ func (m *ContactInfoUsecaseMock) GetByID(id string) (*model.ContactInfoResponse,
 	return args.Get(0).(*model.ContactInfoResponse), args.Error(1)
 }
 
-func (m *ContactInfoUsecaseMock) Create(req model.ContactInfoRequest) (*model.ContactInfoResponse, error) {
+func (m *ContactInfoUsecaseMock) Create(req model.CreateContactInfoRequest) (*model.ContactInfoResponse, error) {
 	args := m.Called(req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -32,7 +32,7 @@ func (m *ContactInfoUsecaseMock) Create(req model.ContactInfoRequest) (*model.Co
 	return args.Get(0).(*model.ContactInfoResponse), args.Error(1)
 }
 
-func (m *ContactInfoUsecaseMock) Update(id string, req model.ContactInfoRequest) (*model.ContactInfoResponse, error) {
+func (m *ContactInfoUsecaseMock) Update(id string, req model.UpdateContactInfoRequest) (*model.ContactInfoResponse, error) {
 	args := m.Called(id, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

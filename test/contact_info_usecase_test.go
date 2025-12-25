@@ -36,7 +36,8 @@ func setupMockContactInfoUsecase(t *testing.T) (usecase.ContactInfoUsecase, sqlm
 func TestContactInfoUsecase_Create_Success(t *testing.T) {
 	u, mock := setupMockContactInfoUsecase(t)
 
-	req := model.ContactInfoRequest{
+	req := model.CreateContactInfoRequest{
+		EntityType:    "pura",
 		Address:       "Jl. Contoh No.1",
 		Phone:         "+62 8123456789",
 		Email:         "info@example.com",
@@ -46,15 +47,15 @@ func TestContactInfoUsecase_Create_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `contact_info`")).
-		WithArgs(sqlmock.AnyArg(), "Jl. Contoh No.1", "+62 8123456789", "info@example.com", "08:00 - 17:00", "https://maps.google.com/?q=x", sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), req.EntityType, "Jl. Contoh No.1", "+62 8123456789", "info@example.com", "08:00 - 17:00", "https://maps.google.com/?q=x", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "address", "phone", "email", "visiting_hours", "map_embed_url"}).
-		AddRow("ci-1", "Jl. Contoh No.1", "+62 8123456789", "info@example.com", "08:00 - 17:00", "https://maps.google.com/?q=x")
+	rows := sqlmock.NewRows([]string{"id", "entity_type", "address", "phone", "email", "visiting_hours", "map_embed_url"}).
+		AddRow("ci-1", "pura", "Jl. Contoh No.1", "+62 8123456789", "info@example.com", "08:00 - 17:00", "https://maps.google.com/?q=x")
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info`")).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+		WithArgs(sqlmock.AnyArg(), 1).
 		WillReturnRows(rows)
 
 	res, err := u.Create(req)
@@ -73,7 +74,7 @@ func TestContactInfoUsecase_Create_Success(t *testing.T) {
 func TestContactInfoUsecase_Create_ValidationError(t *testing.T) {
 	u, _ := setupMockContactInfoUsecase(t)
 
-	req := model.ContactInfoRequest{}
+	req := model.CreateContactInfoRequest{}
 
 	res, err := u.Create(req)
 	assert.Error(t, err)
@@ -87,10 +88,11 @@ func TestContactInfoUsecase_GetAll(t *testing.T) {
 		AddRow("1", "A", "email1").
 		AddRow("2", "B", "email2")
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info`")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE entity_type = ? ORDER BY created_at ASC")).
+		WithArgs("pura").
 		WillReturnRows(rows)
 
-	list, err := u.GetAll()
+	list, err := u.GetAll("pura")
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
 }
@@ -111,7 +113,7 @@ func TestContactInfoUsecase_Update_Success(t *testing.T) {
 	u, mock := setupMockContactInfoUsecase(t)
 	targetID := "ci-1"
 
-	req := model.ContactInfoRequest{Address: "New Addr", Email: "new@example.com", Phone: "000"}
+	req := model.UpdateContactInfoRequest{Address: "New Addr", Email: "new@example.com", Phone: "000"}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ?")).
 		WithArgs(targetID, 1).
@@ -119,7 +121,7 @@ func TestContactInfoUsecase_Update_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `contact_info`")).
-		WithArgs("New Addr", "000", "new@example.com", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs(sqlmock.AnyArg(), "New Addr", "000", "new@example.com", "", "", sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
