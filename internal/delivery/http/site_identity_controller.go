@@ -18,7 +18,8 @@ func NewSiteIdentityController(usecase usecase.SiteIdentityUsecase, log *logrus.
 }
 
 func (c *SiteIdentityController) GetAll(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetAll()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch site identities")
 		return err
@@ -28,7 +29,8 @@ func (c *SiteIdentityController) GetAll(ctx *fiber.Ctx) error {
 
 // GetPublic returns the latest site identity for public consumption
 func (c *SiteIdentityController) GetPublic(ctx *fiber.Ctx) error {
-	data, err := c.UseCase.GetPublic()
+	entityType := ctx.Query("entity_type")
+	data, err := c.UseCase.GetPublic(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch public site identity")
 		return err

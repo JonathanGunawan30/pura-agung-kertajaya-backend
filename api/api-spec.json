@@ -1638,6 +1638,18 @@
       "get": {
         "tags": ["Public API"],
         "description": "Get the latest site identity configuration for public website display.",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "example": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get public site identity",
@@ -2674,6 +2686,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "example": "si_abc123" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "site_name": { "type": "string", "example": "Pura Agung Kertajaya" },
           "logo_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/logo.png" },
           "tagline": { "type": "string", "example": "Melayani Umat dengan Sepenuh Hati" },
@@ -2689,6 +2702,7 @@
         "type": "object",
         "description": "Payload for creating or updating site identity.",
         "properties": {
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
           "site_name": { "type": "string", "example": "Pura Agung Kertajaya" },
           "logo_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/new-logo.png" },
           "tagline": { "type": "string", "example": "Melayani Umat Hindu Dharma" },
@@ -2697,7 +2711,7 @@
           "secondary_button_text": { "type": "string", "example": "Galeri Pura" },
           "secondary_button_link": { "type": "string", "format": "uri", "example": "/galeri" }
         },
-        "required": ["site_name", "logo_url"]
+        "required": ["entity_type", "site_name", "logo_url"]
       },
       "AboutValueResponse": {
         "type": "object",

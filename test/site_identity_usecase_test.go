@@ -36,16 +36,16 @@ func setupMockSiteIdentityUsecase(t *testing.T) (usecase.SiteIdentityUsecase, sq
 func TestSiteIdentityUsecase_Create_Success(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 
-	req := model.SiteIdentityRequest{SiteName: "Pura", LogoURL: "https://logo", Tagline: "Tag"}
+	req := model.SiteIdentityRequest{EntityType: "pura", SiteName: "Pura", LogoURL: "https://logo", Tagline: "Tag"}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `site_identity`")).
-		WithArgs(sqlmock.AnyArg(), "Pura", "https://logo", "Tag", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), "pura", "Pura", "https://logo", "Tag", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "site_name", "logo_url", "tagline"}).
-		AddRow("uuid-1", "Pura", "https://logo", "Tag")
+	rows := sqlmock.NewRows([]string{"id", "entity_type", "site_name", "logo_url", "tagline"}).
+		AddRow("uuid-1", "pura", "Pura", "https://logo", "Tag")
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity`")).
 		WithArgs(sqlmock.AnyArg(), 1).
@@ -60,6 +60,7 @@ func TestSiteIdentityUsecase_Create_Success(t *testing.T) {
 	if res == nil {
 		return
 	}
+	assert.Equal(t, "pura", res.EntityType)
 	assert.Equal(t, "Pura", res.SiteName)
 }
 
@@ -76,14 +77,15 @@ func TestSiteIdentityUsecase_Create_ValidationError(t *testing.T) {
 func TestSiteIdentityUsecase_GetAll(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 
-	rows := sqlmock.NewRows([]string{"id", "site_name"}).
-		AddRow("s1", "A").
-		AddRow("s2", "B")
+	rows := sqlmock.NewRows([]string{"id", "entity_type", "site_name"}).
+		AddRow("s1", "pura", "A").
+		AddRow("s2", "pura", "B")
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity`")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE entity_type = ?")).
+		WithArgs("pura").
 		WillReturnRows(rows)
 
-	list, err := u.GetAll()
+	list, err := u.GetAll("pura")
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
 }
@@ -104,15 +106,15 @@ func TestSiteIdentityUsecase_Update_Success(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 	targetID := "sid-1"
 
-	req := model.SiteIdentityRequest{SiteName: "New", Tagline: "New", PrimaryButtonText: "Go"}
+	req := model.SiteIdentityRequest{EntityType: "yayasan", SiteName: "New", Tagline: "New", PrimaryButtonText: "Go"}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ?")).
 		WithArgs(targetID, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "site_name", "tagline"}).AddRow(targetID, "Old", "Old"))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "entity_type", "site_name", "tagline"}).AddRow(targetID, "pura", "Old", "Old"))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `site_identity`")).
-		WithArgs("New", sqlmock.AnyArg(), "New", "Go", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs("yayasan", "New", sqlmock.AnyArg(), "New", "Go", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -150,14 +152,14 @@ func TestSiteIdentityUsecase_Delete_Success(t *testing.T) {
 func TestSiteIdentityUsecase_GetPublic_ReturnsLatest(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 
-	rows := sqlmock.NewRows([]string{"id", "site_name"}).
-		AddRow("new", "New")
+	rows := sqlmock.NewRows([]string{"id", "entity_type", "site_name"}).
+		AddRow("new", "pura", "New")
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` ORDER BY created_at DESC LIMIT ?")).
-		WithArgs(1).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE entity_type = ? ORDER BY created_at DESC LIMIT ?")).
+		WithArgs("pura", 1).
 		WillReturnRows(rows)
 
-	result, err := u.GetPublic()
+	result, err := u.GetPublic("pura")
 
 	assert.NoError(t, err)
 	if err != nil {

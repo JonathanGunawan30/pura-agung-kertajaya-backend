@@ -15,16 +15,17 @@ import "time"
 // updated_at TIMESTAMP
 
 type SiteIdentity struct {
-	ID                   string    `gorm:"column:id;primaryKey;type:varchar(100)"`
-	SiteName             string    `gorm:"column:site_name;type:varchar(150);not null"`
-	LogoURL              string    `gorm:"column:logo_url;type:text"`
-	Tagline              string    `gorm:"column:tagline;type:varchar(255)"`
-	PrimaryButtonText    string    `gorm:"column:primary_button_text;type:varchar(50)"`
-	PrimaryButtonLink    string    `gorm:"column:primary_button_link;type:varchar(255)"`
-	SecondaryButtonText  string    `gorm:"column:secondary_button_text;type:varchar(50)"`
-	SecondaryButtonLink  string    `gorm:"column:secondary_button_link;type:varchar(255)"`
-	CreatedAt            time.Time `gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt            time.Time `gorm:"column:updated_at;autoUpdateTime"`
+	ID                  string    `gorm:"column:id;primaryKey;type:varchar(100)"`
+	EntityType          string    `gorm:"column:entity_type;type:enum('pura', 'yayasan', 'pasraman');not null;default:'pura'"`
+	SiteName            string    `gorm:"column:site_name;type:varchar(150);not null"`
+	LogoURL             string    `gorm:"column:logo_url;type:text"`
+	Tagline             string    `gorm:"column:tagline;type:varchar(255)"`
+	PrimaryButtonText   string    `gorm:"column:primary_button_text;type:varchar(50)"`
+	PrimaryButtonLink   string    `gorm:"column:primary_button_link;type:varchar(255)"`
+	SecondaryButtonText string    `gorm:"column:secondary_button_text;type:varchar(50)"`
+	SecondaryButtonLink string    `gorm:"column:secondary_button_link;type:varchar(255)"`
+	CreatedAt           time.Time `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt           time.Time `gorm:"column:updated_at;autoUpdateTime"`
 }
 
 func (SiteIdentity) TableName() string { return "site_identity" }

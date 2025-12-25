@@ -42,10 +42,10 @@ func TestSiteIdentityController_GetPublic_Success(t *testing.T) {
 	app := fiber.New()
 	app.Get("/public/site-identity", controller.GetPublic)
 
-	item := &model.SiteIdentityResponse{ID: "x", SiteName: "Pura"}
-	mockUC.On("GetPublic").Return(item, nil)
+	item := &model.SiteIdentityResponse{ID: "x", EntityType: "pura", SiteName: "Pura"}
+	mockUC.On("GetPublic", "pura").Return(item, nil)
 
-	req := httptest.NewRequest("GET", "/public/site-identity", nil)
+	req := httptest.NewRequest("GET", "/public/site-identity?entity_type=pura", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
@@ -61,7 +61,7 @@ func TestSiteIdentityController_GetPublic_Error(t *testing.T) {
 	app := fiber.New()
 	app.Get("/public/site-identity", controller.GetPublic)
 
-	mockUC.On("GetPublic").Return((*model.SiteIdentityResponse)(nil), errors.New("db error"))
+	mockUC.On("GetPublic", "").Return((*model.SiteIdentityResponse)(nil), errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/public/site-identity", nil)
 	resp, _ := app.Test(req)
@@ -71,10 +71,10 @@ func TestSiteIdentityController_GetPublic_Error(t *testing.T) {
 func TestSiteIdentityController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupSiteIdentityController()
 
-	items := []model.SiteIdentityResponse{{ID: "1", SiteName: "A"}, {ID: "2", SiteName: "B"}}
-	mockUC.On("GetAll").Return(items, nil)
+	items := []model.SiteIdentityResponse{{ID: "1", EntityType: "pura", SiteName: "A"}, {ID: "2", EntityType: "pura", SiteName: "B"}}
+	mockUC.On("GetAll", "pura").Return(items, nil)
 
-	req := httptest.NewRequest("GET", "/site-identity", nil)
+	req := httptest.NewRequest("GET", "/site-identity?entity_type=pura", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
@@ -86,7 +86,7 @@ func TestSiteIdentityController_GetAll_Success(t *testing.T) {
 
 func TestSiteIdentityController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupSiteIdentityController()
-	mockUC.On("GetAll").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/site-identity", nil)
 	resp, _ := app.Test(req)
@@ -118,8 +118,8 @@ func TestSiteIdentityController_GetByID_NotFound(t *testing.T) {
 
 func TestSiteIdentityController_Create_Success(t *testing.T) {
 	app, mockUC := setupSiteIdentityController()
-	reqBody := model.SiteIdentityRequest{SiteName: "X"}
-	resBody := &model.SiteIdentityResponse{ID: "1", SiteName: "X"}
+	reqBody := model.SiteIdentityRequest{EntityType: "pura", SiteName: "X"}
+	resBody := &model.SiteIdentityResponse{ID: "1", EntityType: "pura", SiteName: "X"}
 	mockUC.On("Create", reqBody).Return(resBody, nil)
 
 	b, _ := json.Marshal(reqBody)
