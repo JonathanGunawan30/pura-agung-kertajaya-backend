@@ -7,20 +7,21 @@ import (
 )
 
 type RouteConfig struct {
-	App                    *fiber.App
-	UserController         *http.UserController
-	StorageController      *http.StorageController
-	TestimonialController  *http.TestimonialController
-	HeroSlideController    *http.HeroSlideController
-	GalleryController      *http.GalleryController
-	FacilityController     *http.FacilityController
-	ContactInfoController  *http.ContactInfoController
-	ActivityController     *http.ActivityController
-	SiteIdentityController *http.SiteIdentityController
-	AboutController        *http.AboutController
-	OrganizationController *http.OrganizationController
-	RemarkController       *http.RemarkController
-	AuthMiddleware         fiber.Handler
+	App                          *fiber.App
+	UserController               *http.UserController
+	StorageController            *http.StorageController
+	TestimonialController        *http.TestimonialController
+	HeroSlideController          *http.HeroSlideController
+	GalleryController            *http.GalleryController
+	FacilityController           *http.FacilityController
+	ContactInfoController        *http.ContactInfoController
+	ActivityController           *http.ActivityController
+	SiteIdentityController       *http.SiteIdentityController
+	AboutController              *http.AboutController
+	OrganizationController       *http.OrganizationController
+	OrganizationDetailController *http.OrganizationDetailController
+	RemarkController             *http.RemarkController
+	AuthMiddleware               fiber.Handler
 
 	PublicRateLimiter   fiber.Handler
 	AuthRateLimiter     fiber.Handler
@@ -47,7 +48,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 	public.Get("/site-identity", c.SiteIdentityController.GetPublic)
 	public.Get("/about", c.AboutController.GetAllPublic)
 	public.Get("/organization-members", c.OrganizationController.GetAllPublic)
-	public.Get("/facilities", c.FacilityController.GetAllPublic)
+	public.Get("/organization-details", c.OrganizationDetailController.GetPublic)
 	public.Get("/remarks", c.RemarkController.GetAllPublic)
 
 	c.App.Post("/api/users/_login", c.AuthRateLimiter, c.UserController.Login)
@@ -124,4 +125,7 @@ func (c *RouteConfig) SetupAuthRoute() {
 	auth.Post("/remarks", c.CMSWriteRateLimiter, c.RemarkController.Create)
 	auth.Put("/remarks/:id", c.CMSWriteRateLimiter, c.RemarkController.Update)
 	auth.Delete("/remarks/:id", c.DeleteRateLimiter, c.RemarkController.Delete)
+
+	auth.Get("/organization-details", c.CMSReadRateLimiter, c.OrganizationDetailController.GetAdmin)
+	auth.Put("/organization-details", c.CMSWriteRateLimiter, c.OrganizationDetailController.Update)
 }

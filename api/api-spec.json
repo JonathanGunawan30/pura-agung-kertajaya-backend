@@ -2483,6 +2483,128 @@
           "500": { "$ref": "#/components/responses/InternalServerError" }
         }
       }
+    },
+    "/api/public/organization-details": {
+      "get": {
+        "tags": ["Public API"],
+        "summary": "Get Organization Detail (Public)",
+        "description": "Retrieves Vision, Mission, Rules, and Work Program by entity type.",
+        "operationId": "getPublicOrganizationDetail",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Filter by entity type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/OrganizationDetailResponse" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/organization-details": {
+      "get": {
+        "tags": ["Organization Details API"],
+        "summary": "Get Organization Detail (Admin)",
+        "description": "Retrieves details for CMS editor.",
+        "operationId": "getOrganizationDetailAdmin",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/OrganizationDetailResponse" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "put": {
+        "tags": ["Organization Details API"],
+        "summary": "Update/Upsert Organization Detail",
+        "description": "Updates Vision, Mission, Rules. Creates data if it doesn't exist (Upsert).",
+        "operationId": "updateOrganizationDetail",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["pura", "yayasan", "pasraman"],
+              "default": "pura"
+            },
+            "description": "Target entity to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateOrganizationDetailRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/OrganizationDetailResponse" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequestError" },
+          "401": { "$ref": "#/components/responses/UnauthorizedError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
     }
   },
   "components": {
@@ -2908,6 +3030,30 @@
           "content": { "type": "string", "example": "Om Swastyastu..." },
           "is_active": { "type": "boolean", "example": true },
           "order_index": { "type": "integer", "example": 1 }
+        }
+      },
+      "OrganizationDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
+          "vision": { "type": "string", "example": "Menjadi pusat peradaban umat." },
+          "mission": { "type": "string", "example": "<ul><li>Membangun karakter...</li></ul>" },
+          "rules": { "type": "string", "example": "<ol><li>Dilarang merokok...</li></ol>" },
+          "work_program": { "type": "string", "example": "<ul><li>Bakti Sosial 2025...</li></ul>", "nullable": true },
+          "image_url": { "type": "string", "example": "http://img.com/header-visi.jpg" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UpdateOrganizationDetailRequest": {
+        "type": "object",
+        "properties": {
+          "vision": { "type": "string", "example": "Visi Baru..." },
+          "mission": { "type": "string", "example": "Misi Baru..." },
+          "rules": { "type": "string", "example": "Aturan Baru..." },
+          "work_program": { "type": "string", "example": "Proker Baru..." },
+          "image_url": { "type": "string", "example": "http://img.com/header-baru.jpg" }
         }
       }
     },
