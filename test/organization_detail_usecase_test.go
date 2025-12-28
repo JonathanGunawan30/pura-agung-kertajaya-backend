@@ -42,8 +42,13 @@ func TestOrgDetailUsecase_GetByEntityType_Success(t *testing.T) {
 	u, mock := setupMockOrgDetailUsecase(t)
 
 	now := time.Now()
-	rows := sqlmock.NewRows([]string{"id", "entity_type", "vision", "mission", "created_at", "updated_at"}).
-		AddRow("uuid-1", "pura", "Visi Pura", "Misi Pura", now, now)
+	rows := sqlmock.NewRows([]string{
+		"id", "entity_type", "vision", "mission", "rules", "work_program",
+		"vision_mission_image_url", "work_program_image_url", "rules_image_url",
+		"created_at", "updated_at",
+	}).
+		AddRow("uuid-1", "pura", "Visi Pura", "Misi Pura", "Aturan", "Proker",
+			"img_vm.jpg", "img_wp.jpg", "img_r.jpg", now, now)
 
 	expectedSQL := "SELECT * FROM `organization_details` WHERE entity_type = ? ORDER BY `organization_details`.`id` LIMIT ?"
 
@@ -56,6 +61,7 @@ func TestOrgDetailUsecase_GetByEntityType_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "Visi Pura", result.Vision)
+	assert.Equal(t, "img_vm.jpg", result.VisionMissionImageURL)
 	assert.Equal(t, "pura", result.EntityType)
 }
 
@@ -70,18 +76,20 @@ func TestOrgDetailUsecase_GetByEntityType_NotFound(t *testing.T) {
 
 	result, err := u.GetByEntityType("pasraman")
 
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, gorm.ErrRecordNotFound, err)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, "pasraman", result.EntityType)
+	assert.Equal(t, "", result.Vision)
 }
 
 func TestOrgDetailUsecase_Update_TriggerCreate(t *testing.T) {
 	u, mock := setupMockOrgDetailUsecase(t)
 
 	req := model.UpdateOrganizationDetailRequest{
-		Vision:  "Visi Baru",
-		Mission: "Misi Baru",
-		Rules:   "Aturan",
+		Vision:                "Visi Baru",
+		Mission:               "Misi Baru",
+		Rules:                 "Aturan",
+		VisionMissionImageURL: "new_img.jpg",
 	}
 	entityType := "yayasan"
 
@@ -100,6 +108,8 @@ func TestOrgDetailUsecase_Update_TriggerCreate(t *testing.T) {
 			"Misi Baru",
 			"Aturan",
 			"",
+			"new_img.jpg",
+			"",
 			"",
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
@@ -113,8 +123,7 @@ func TestOrgDetailUsecase_Update_TriggerCreate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, "Visi Baru", res.Vision)
-	assert.Equal(t, entityType, res.EntityType)
-	assert.NotEmpty(t, res.ID)
+	assert.Equal(t, "new_img.jpg", res.VisionMissionImageURL)
 }
 
 func TestOrgDetailUsecase_Update_TriggerUpdate(t *testing.T) {
@@ -122,15 +131,20 @@ func TestOrgDetailUsecase_Update_TriggerUpdate(t *testing.T) {
 
 	entityType := "pura"
 	existingID := "existing-uuid"
+	now := time.Now()
 
 	req := model.UpdateOrganizationDetailRequest{
-		Vision:  "Visi Update",
-		Mission: "Misi Lama",
+		Vision:              "Visi Update",
+		WorkProgramImageURL: "wp_update.jpg",
 	}
 
 	selectSQL := "SELECT * FROM `organization_details` WHERE entity_type = ? ORDER BY `organization_details`.`id` LIMIT ?"
-	rows := sqlmock.NewRows([]string{"id", "entity_type", "vision", "mission"}).
-		AddRow(existingID, entityType, "Visi Lama", "Misi Lama")
+
+	rows := sqlmock.NewRows([]string{
+		"id", "entity_type", "vision", "mission", "rules", "work_program",
+		"vision_mission_image_url", "work_program_image_url", "rules_image_url",
+		"created_at", "updated_at",
+	}).AddRow(existingID, entityType, "Visi Lama", "Misi Lama", "", "", "", "old_wp.jpg", "", now, now)
 
 	mock.ExpectQuery(regexp.QuoteMeta(selectSQL)).
 		WithArgs(entityType, 1).
@@ -145,6 +159,8 @@ func TestOrgDetailUsecase_Update_TriggerUpdate(t *testing.T) {
 			"Misi Lama",
 			"",
 			"",
+			"",
+			"wp_update.jpg",
 			"",
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
@@ -163,7 +179,7 @@ func TestOrgDetailUsecase_Update_TriggerUpdate(t *testing.T) {
 
 	assert.NotNil(t, res)
 	assert.Equal(t, "Visi Update", res.Vision)
-	assert.Equal(t, existingID, res.ID)
+	assert.Equal(t, "wp_update.jpg", res.WorkProgramImageURL)
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

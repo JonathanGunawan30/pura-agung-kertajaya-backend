@@ -45,7 +45,16 @@ func (u *organizationDetailUsecase) GetByEntityType(entityType string) (*model.O
 
 	if err := query.First(&detail).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return &model.OrganizationDetailResponse{
+				EntityType:            entityType,
+				Vision:                "",
+				Mission:               "",
+				Rules:                 "",
+				WorkProgram:           "",
+				VisionMissionImageURL: "",
+				WorkProgramImageURL:   "",
+				RulesImageURL:         "",
+			}, nil
 		}
 		return nil, err
 	}
@@ -69,13 +78,15 @@ func (u *organizationDetailUsecase) Update(entityType string, req model.UpdateOr
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		detail = entity.OrganizationDetail{
-			ID:          uuid.New().String(),
-			EntityType:  entityType,
-			Vision:      req.Vision,
-			Mission:     req.Mission,
-			Rules:       req.Rules,
-			WorkProgram: req.WorkProgram,
-			ImageURL:    req.ImageURL,
+			ID:                    uuid.New().String(),
+			EntityType:            entityType,
+			Vision:                req.Vision,
+			Mission:               req.Mission,
+			Rules:                 req.Rules,
+			WorkProgram:           req.WorkProgram,
+			VisionMissionImageURL: req.VisionMissionImageURL,
+			WorkProgramImageURL:   req.WorkProgramImageURL,
+			RulesImageURL:         req.RulesImageURL,
 		}
 
 		if err := u.repo.Create(u.db, &detail); err != nil {
@@ -84,11 +95,27 @@ func (u *organizationDetailUsecase) Update(entityType string, req model.UpdateOr
 	} else if err != nil {
 		return nil, err
 	} else {
-		detail.Vision = req.Vision
-		detail.Mission = req.Mission
-		detail.Rules = req.Rules
-		detail.WorkProgram = req.WorkProgram
-		detail.ImageURL = req.ImageURL
+		if req.Vision != "" {
+			detail.Vision = req.Vision
+		}
+		if req.Mission != "" {
+			detail.Mission = req.Mission
+		}
+		if req.Rules != "" {
+			detail.Rules = req.Rules
+		}
+		if req.WorkProgram != "" {
+			detail.WorkProgram = req.WorkProgram
+		}
+		if req.VisionMissionImageURL != "" {
+			detail.VisionMissionImageURL = req.VisionMissionImageURL
+		}
+		if req.WorkProgramImageURL != "" {
+			detail.WorkProgramImageURL = req.WorkProgramImageURL
+		}
+		if req.RulesImageURL != "" {
+			detail.RulesImageURL = req.RulesImageURL
+		}
 
 		if err := u.repo.Update(u.db, &detail); err != nil {
 			return nil, err

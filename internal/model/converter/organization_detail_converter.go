@@ -7,15 +7,18 @@ import (
 
 func ToOrganizationDetailResponse(od *entity.OrganizationDetail) model.OrganizationDetailResponse {
 	return model.OrganizationDetailResponse{
-		ID:          od.ID,
-		EntityType:  od.EntityType,
-		Vision:      od.Vision,
-		Mission:     od.Mission,
-		Rules:       od.Rules,
-		WorkProgram: od.WorkProgram,
-		ImageURL:    od.ImageURL,
-		CreatedAt:   od.CreatedAt,
-		UpdatedAt:   od.UpdatedAt,
+		ID:                    od.ID,
+		EntityType:            od.EntityType,
+		Vision:                od.Vision,
+		Mission:               od.Mission,
+		Rules:                 od.Rules,
+		WorkProgram:           od.WorkProgram,
+		VisionMissionImageURL: od.VisionMissionImageURL,
+		WorkProgramImageURL:   od.WorkProgramImageURL,
+		RulesImageURL:         od.RulesImageURL,
+
+		CreatedAt: od.CreatedAt,
+		UpdatedAt: od.UpdatedAt,
 	}
 }
 

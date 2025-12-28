@@ -13,7 +13,9 @@
   "paths": {
     "/api/users/_login": {
       "post": {
-        "tags": ["User API"],
+        "tags": [
+          "User API"
+        ],
         "description": "Login admin user (internal only). Token is returned via HttpOnly cookie.",
         "requestBody": {
           "required": true,
@@ -22,14 +24,24 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string", "example": "admin@example.com" },
-                  "password": { "type": "string", "example": "12345678" },
+                  "email": {
+                    "type": "string",
+                    "example": "admin@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "12345678"
+                  },
                   "recaptcha_token": {
                     "type": "string",
                     "description": "reCAPTCHA v3 token"
                   }
                 },
-                "required": ["email", "password", "recaptcha_token"]
+                "required": [
+                  "email",
+                  "password",
+                  "recaptcha_token"
+                ]
               }
             }
           }
@@ -40,7 +52,9 @@
             "headers": {
               "Set-Cookie": {
                 "description": "JWT Access Token (HttpOnly, Secure, SameSite=Strict)",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             },
             "content": {
@@ -87,7 +101,9 @@
     },
     "/api/users/_logout": {
       "post": {
-        "tags": ["User API"],
+        "tags": [
+          "User API"
+        ],
         "description": "Logout user and revoke JWT (invalidate cookie + Redis blacklist)",
         "security": [
           {
@@ -100,7 +116,9 @@
             "headers": {
               "Set-Cookie": {
                 "description": "Clears JWT cookie",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             },
             "content": {
@@ -108,19 +126,26 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "type": "boolean", "example": true }
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
     "/api/users/_current": {
       "get": {
-        "tags": ["User API"],
+        "tags": [
+          "User API"
+        ],
         "description": "Get current logged-in user info (based on HttpOnly cookie)",
         "security": [
           {
@@ -143,11 +168,15 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "patch": {
-        "tags": ["User API"],
+        "tags": [
+          "User API"
+        ],
         "description": "Update current user profile (name or password)",
         "security": [
           {
@@ -160,7 +189,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": { "type": "string", "example": "Admin Baru" },
+                  "name": {
+                    "type": "string",
+                    "example": "Admin Baru"
+                  },
                   "password": {
                     "type": "string",
                     "example": "newpassword123"
@@ -186,13 +218,17 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
     "/api/storage/upload": {
       "post": {
-        "tags": ["Storage API"],
+        "tags": [
+          "Storage API"
+        ],
         "description": "Upload file to Cloudflare R2 storage (requires authentication)",
         "security": [
           {
@@ -212,7 +248,9 @@
                     "description": "File to upload (max size depends on server configuration)"
                   }
                 },
-                "required": ["file"]
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -261,14 +299,20 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
     "/api/storage/delete": {
       "delete": {
-        "tags": ["Storage API"],
+        "tags": [
+          "Storage API"
+        ],
         "description": "Delete file from Cloudflare R2 storage (requires authentication)",
         "security": [
           {
@@ -304,15 +348,23 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
     "/api/storage/presigned-url": {
       "get": {
-        "tags": ["Storage API"],
+        "tags": [
+          "Storage API"
+        ],
         "description": "Generate presigned URL for temporary file access (requires authentication)",
         "security": [
           {
@@ -365,15 +417,23 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
     "/api/testimonials": {
       "get": {
-        "tags": ["Testimonial API"],
+        "tags": [
+          "Testimonial API"
+        ],
         "description": "Get all testimonials.",
         "security": [
           {
@@ -399,11 +459,15 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["Testimonial API"],
+        "tags": [
+          "Testimonial API"
+        ],
         "description": "Create a new testimonial (requires authentication)",
         "security": [
           {
@@ -436,14 +500,20 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
     "/api/testimonials/:id": {
       "get": {
-        "tags": ["Testimonial API"],
+        "tags": [
+          "Testimonial API"
+        ],
         "description": "Get a single testimonial by its ID (requires authentication)",
         "security": [
           {
@@ -478,12 +548,18 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Testimonial API"],
+        "tags": [
+          "Testimonial API"
+        ],
         "description": "Update an existing testimonial by its ID (requires authentication)",
         "security": [
           {
@@ -528,13 +604,21 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Testimonial API"],
+        "tags": [
+          "Testimonial API"
+        ],
         "description": "Delete a testimonial by its ID (requires authentication)",
         "security": [
           {
@@ -570,16 +654,26 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/hero-slides": {
       "get": {
-        "tags": ["Hero Slide API"],
+        "tags": [
+          "Hero Slide API"
+        ],
         "description": "Get all hero slides.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all hero slides",
@@ -599,13 +693,21 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["Hero Slide API"],
+        "tags": [
+          "Hero Slide API"
+        ],
         "description": "Create a new hero slide (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -632,16 +734,26 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
     "/api/hero-slides/:id": {
       "get": {
-        "tags": ["Hero Slide API"],
+        "tags": [
+          "Hero Slide API"
+        ],
         "description": "Get a single hero slide by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -670,14 +782,24 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Hero Slide API"],
+        "tags": [
+          "Hero Slide API"
+        ],
         "description": "Update an existing hero slide by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -716,15 +838,27 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Hero Slide API"],
+        "tags": [
+          "Hero Slide API"
+        ],
         "description": "Delete a hero slide by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -754,14 +888,20 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/remarks": {
       "get": {
-        "tags": ["Remark API"],
+        "tags": [
+          "Remark API"
+        ],
         "description": "Get all remarks filtered by entity_type (Admin).",
         "parameters": [
           {
@@ -769,7 +909,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter remarks by entity type"
@@ -785,7 +929,9 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/RemarkResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/RemarkResponse"
+                      }
                     }
                   }
                 }
@@ -795,13 +941,17 @@
         }
       },
       "post": {
-        "tags": ["Remark API"],
+        "tags": [
+          "Remark API"
+        ],
         "description": "Create a new remark",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateRemarkRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateRemarkRequest"
+              }
             }
           }
         },
@@ -813,7 +963,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/RemarkResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/RemarkResponse"
+                    }
                   }
                 }
               }
@@ -824,7 +976,9 @@
     },
     "/api/remarks/{id}": {
       "get": {
-        "tags": ["Remark API"],
+        "tags": [
+          "Remark API"
+        ],
         "description": "Get a single remark by its ID (requires authentication)",
         "security": [
           {
@@ -859,12 +1013,18 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Remark API"],
+        "tags": [
+          "Remark API"
+        ],
         "description": "Update an existing remark by its ID (requires authentication)",
         "security": [
           {
@@ -909,13 +1069,21 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Remark API"],
+        "tags": [
+          "Remark API"
+        ],
         "description": "Delete a remark by its ID (requires authentication)",
         "security": [
           {
@@ -951,14 +1119,20 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/public/remarks": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get active remarks for public website.",
         "parameters": [
           {
@@ -966,7 +1140,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter public remarks by entity type"
@@ -982,7 +1160,9 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/RemarkResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/RemarkResponse"
+                      }
                     }
                   }
                 }
@@ -994,7 +1174,9 @@
     },
     "/api/public/testimonials": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get all active testimonials for public website display. (is_active = true)",
         "responses": {
           "200": {
@@ -1020,7 +1202,9 @@
     },
     "/api/public/hero-slides": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get all active hero slides for public website display. (is_active = true)",
         "responses": {
           "200": {
@@ -1046,7 +1230,9 @@
     },
     "/api/public/galleries": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get all active gallery items for public website display. (is_active = true)",
         "responses": {
           "200": {
@@ -1072,9 +1258,15 @@
     },
     "/api/galleries": {
       "get": {
-        "tags": ["Gallery API"],
+        "tags": [
+          "Gallery API"
+        ],
         "description": "Get all gallery items (admin view, includes non-active).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all gallery items",
@@ -1094,13 +1286,21 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["Gallery API"],
+        "tags": [
+          "Gallery API"
+        ],
         "description": "Create a new gallery item (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1127,16 +1327,26 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
     "/api/galleries/:id": {
       "get": {
-        "tags": ["Gallery API"],
+        "tags": [
+          "Gallery API"
+        ],
         "description": "Get a single gallery item by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1165,14 +1375,24 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Gallery API"],
+        "tags": [
+          "Gallery API"
+        ],
         "description": "Update an existing gallery item by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1211,15 +1431,27 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Gallery API"],
+        "tags": [
+          "Gallery API"
+        ],
         "description": "Delete a gallery item by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1249,14 +1481,20 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/public/contact-info": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get all contact info entries for public display, filtered by entity type.",
         "parameters": [
           {
@@ -1264,7 +1502,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter by entity type"
@@ -1280,7 +1522,9 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/ContactInfoResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/ContactInfoResponse"
+                      }
                     }
                   }
                 }
@@ -1292,16 +1536,26 @@
     },
     "/api/contact-info": {
       "get": {
-        "tags": ["Contact Info API"],
+        "tags": [
+          "Contact Info API"
+        ],
         "description": "Get all contact info entries (admin view).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "entity_type",
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter by entity type"
@@ -1317,25 +1571,37 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/ContactInfoResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/ContactInfoResponse"
+                      }
                     }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["Contact Info API"],
+        "tags": [
+          "Contact Info API"
+        ],
         "description": "Create a new contact info entry.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateContactInfoRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactInfoRequest"
+              }
             }
           }
         },
@@ -1347,14 +1613,20 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/ContactInfoResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/ContactInfoResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
@@ -1364,14 +1636,23 @@
           "name": "id",
           "in": "path",
           "required": true,
-          "schema": { "type": "string", "format": "uuid" },
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
           "description": "UUID of the contact info entry"
         }
       ],
       "get": {
-        "tags": ["Contact Info API"],
+        "tags": [
+          "Contact Info API"
+        ],
         "description": "Get a single contact info entry by ID.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get contact info by ID",
@@ -1380,25 +1661,39 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/ContactInfoResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/ContactInfoResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Contact Info API"],
+        "tags": [
+          "Contact Info API"
+        ],
         "description": "Update an existing contact info entry.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateContactInfoRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactInfoRequest"
+              }
             }
           }
         },
@@ -1410,21 +1705,35 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/ContactInfoResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/ContactInfoResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Contact Info API"],
+        "tags": [
+          "Contact Info API"
+        ],
         "description": "Delete a contact info entry.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Deleted successfully",
@@ -1433,20 +1742,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "type": "boolean", "example": true }
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/public/activities": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get all active activities, filtered by entity type.",
         "parameters": [
           {
@@ -1454,7 +1772,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter activities by entity type"
@@ -1470,7 +1792,9 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/ActivityResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/ActivityResponse"
+                      }
                     }
                   }
                 }
@@ -1482,16 +1806,26 @@
     },
     "/api/activities": {
       "get": {
-        "tags": ["Activity API"],
+        "tags": [
+          "Activity API"
+        ],
         "description": "Get all activities (admin view).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "entity_type",
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter activities by entity type"
@@ -1507,25 +1841,37 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/ActivityResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/ActivityResponse"
+                      }
                     }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["Activity API"],
+        "tags": [
+          "Activity API"
+        ],
         "description": "Create a new activity.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateActivityRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateActivityRequest"
+              }
             }
           }
         },
@@ -1537,14 +1883,20 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/ActivityResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/ActivityResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
@@ -1554,14 +1906,23 @@
           "name": "id",
           "in": "path",
           "required": true,
-          "schema": { "type": "string", "format": "uuid" },
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
           "description": "UUID of the activity"
         }
       ],
       "get": {
-        "tags": ["Activity API"],
+        "tags": [
+          "Activity API"
+        ],
         "description": "Get single activity.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1570,25 +1931,39 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/ActivityResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/ActivityResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Activity API"],
+        "tags": [
+          "Activity API"
+        ],
         "description": "Update activity.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateActivityRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActivityRequest"
+              }
             }
           }
         },
@@ -1600,21 +1975,35 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/ActivityResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/ActivityResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Activity API"],
+        "tags": [
+          "Activity API"
+        ],
         "description": "Delete activity.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Deleted successfully",
@@ -1623,20 +2012,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "type": "boolean", "example": true }
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/public/site-identity": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get the latest site identity configuration for public website display.",
         "parameters": [
           {
@@ -1644,7 +2042,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "example": "pura"
             },
             "description": "Filter by entity type"
@@ -1671,9 +2073,15 @@
     },
     "/api/site-identity": {
       "get": {
-        "tags": ["Site Identity API"],
+        "tags": [
+          "Site Identity API"
+        ],
         "description": "Get all site identity entries (admin view).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success get all site identity entries",
@@ -1693,13 +2101,21 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["Site Identity API"],
+        "tags": [
+          "Site Identity API"
+        ],
         "description": "Create a new site identity entry (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1726,16 +2142,26 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
     "/api/site-identity/:id": {
       "get": {
-        "tags": ["Site Identity API"],
+        "tags": [
+          "Site Identity API"
+        ],
         "description": "Get a single site identity entry by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1764,14 +2190,24 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Site Identity API"],
+        "tags": [
+          "Site Identity API"
+        ],
         "description": "Update an existing site identity entry by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1810,15 +2246,27 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Site Identity API"],
+        "tags": [
+          "Site Identity API"
+        ],
         "description": "Delete a site identity entry by its ID (requires authentication)",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1848,14 +2296,20 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/public/about": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get all active 'About' sections with their values for public display. Sorted by creation date.",
         "parameters": [
           {
@@ -1863,7 +2317,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "example": "pura"
             },
             "description": "Filter by entity type"
@@ -1893,16 +2351,26 @@
     },
     "/api/about": {
       "get": {
-        "tags": ["About API"],
+        "tags": [
+          "About API"
+        ],
         "description": "Get all 'About' sections (admin view, includes non-active), each with its associated values.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "entity_type",
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "example": "pura"
             },
             "description": "Filter by entity type"
@@ -1927,13 +2395,21 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["About API"],
+        "tags": [
+          "About API"
+        ],
         "description": "Create a new 'About' section along with its associated values (requires authentication).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1960,16 +2436,26 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
     "/api/about/:id": {
       "get": {
-        "tags": ["About API"],
+        "tags": [
+          "About API"
+        ],
         "description": "Get a single 'About' section by its ID, including its associated values (requires authentication).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1998,14 +2484,24 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["About API"],
+        "tags": [
+          "About API"
+        ],
         "description": "Update an existing 'About' section. This operation *replaces* all existing associated values with the ones provided in the request body (requires authentication).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2044,15 +2540,27 @@
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["About API"],
+        "tags": [
+          "About API"
+        ],
         "description": "Delete an 'About' section by its ID. Associated values will also be deleted due to cascade (requires authentication).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2082,14 +2590,20 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/public/organization-members": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Get all active organization members, filtered by entity type.",
         "parameters": [
           {
@@ -2097,7 +2611,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter by entity type"
@@ -2113,7 +2631,9 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/OrganizationMemberResponse"
+                      }
                     }
                   }
                 }
@@ -2125,16 +2645,26 @@
     },
     "/api/organization-members": {
       "get": {
-        "tags": ["Organization Member API"],
+        "tags": [
+          "Organization Member API"
+        ],
         "description": "Get all organization members (admin view).",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "entity_type",
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter by entity type"
@@ -2150,25 +2680,37 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/OrganizationMemberResponse"
+                      }
                     }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       },
       "post": {
-        "tags": ["Organization Member API"],
+        "tags": [
+          "Organization Member API"
+        ],
         "description": "Create a new organization member.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateOrganizationMemberRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationMemberRequest"
+              }
             }
           }
         },
@@ -2180,14 +2722,20 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationMemberResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
         }
       }
     },
@@ -2197,14 +2745,23 @@
           "name": "id",
           "in": "path",
           "required": true,
-          "schema": { "type": "string", "format": "uuid" },
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
           "description": "UUID of the organization member"
         }
       ],
       "get": {
-        "tags": ["Organization Member API"],
+        "tags": [
+          "Organization Member API"
+        ],
         "description": "Get single organization member.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -2213,25 +2770,39 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationMemberResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "put": {
-        "tags": ["Organization Member API"],
+        "tags": [
+          "Organization Member API"
+        ],
         "description": "Update organization member.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateOrganizationMemberRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationMemberRequest"
+              }
             }
           }
         },
@@ -2243,21 +2814,35 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/OrganizationMemberResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationMemberResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       },
       "delete": {
-        "tags": ["Organization Member API"],
+        "tags": [
+          "Organization Member API"
+        ],
         "description": "Delete organization member.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Deleted successfully",
@@ -2266,20 +2851,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "type": "boolean", "example": true }
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
         }
       }
     },
     "/api/public/facilities": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "description": "Retrieves all 'active' facilities for public display, filtered by entity type.",
         "operationId": "getPublicFacilities",
         "parameters": [
@@ -2288,7 +2882,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter facilities by entity type"
@@ -2304,31 +2902,45 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/FacilityResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/FacilityResponse"
+                      }
                     }
                   }
                 }
               }
             }
           },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
     "/api/facilities": {
       "get": {
-        "tags": ["Facilities API"],
+        "tags": [
+          "Facilities API"
+        ],
         "summary": "Get All Facilities (Admin)",
         "description": "Retrieves all facilities, including inactive ones (admin dashboard).",
         "operationId": "getAllFacilitiesAdmin",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "entity_type",
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter facilities by entity type"
@@ -2344,28 +2956,42 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/FacilityResponse" }
+                      "items": {
+                        "$ref": "#/components/schemas/FacilityResponse"
+                      }
                     }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       },
       "post": {
-        "tags": ["Facilities API"],
+        "tags": [
+          "Facilities API"
+        ],
         "summary": "Create New Facility (Admin)",
         "description": "Creates a new facility entry.",
         "operationId": "createFacility",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/FacilityCreateRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/FacilityCreateRequest"
+              }
             }
           }
         },
@@ -2377,15 +3003,23 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/FacilityResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/FacilityResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
@@ -2395,16 +3029,25 @@
           "name": "id",
           "in": "path",
           "required": true,
-          "schema": { "type": "string", "format": "uuid" },
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
           "description": "UUID of the facility"
         }
       ],
       "get": {
-        "tags": ["Facilities API"],
+        "tags": [
+          "Facilities API"
+        ],
         "summary": "Get Facility by ID (Admin)",
         "description": "Retrieves a single facility's details by its ID.",
         "operationId": "getFacilityById",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2413,28 +3056,44 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/FacilityResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/FacilityResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       },
       "put": {
-        "tags": ["Facilities API"],
+        "tags": [
+          "Facilities API"
+        ],
         "summary": "Update Facility by ID (Admin)",
         "description": "Updates a facility's data by its ID.",
         "operationId": "updateFacility",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/FacilityUpdateRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/FacilityUpdateRequest"
+              }
             }
           }
         },
@@ -2446,24 +3105,40 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/FacilityResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/FacilityResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       },
       "delete": {
-        "tags": ["Facilities API"],
+        "tags": [
+          "Facilities API"
+        ],
         "summary": "Delete Facility by ID (Admin)",
         "description": "Deletes a facility by its ID.",
         "operationId": "deleteFacility",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2472,23 +3147,34 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "type": "boolean", "example": true }
+                    "data": {
+                      "type": "boolean",
+                      "example": true
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "404": { "$ref": "#/components/responses/NotFoundError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
     "/api/public/organization-details": {
       "get": {
-        "tags": ["Public API"],
+        "tags": [
+          "Public API"
+        ],
         "summary": "Get Organization Detail (Public)",
-        "description": "Retrieves Vision, Mission, Rules, and Work Program by entity type.",
+        "description": "Retrieves Vision, Mission, Rules, Work Program, and their specific images by entity type.",
         "operationId": "getPublicOrganizationDetail",
         "parameters": [
           {
@@ -2497,7 +3183,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Filter by entity type"
@@ -2511,24 +3201,36 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/OrganizationDetailResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationDetailResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "404": { "$ref": "#/components/responses/NotFoundError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
     "/api/organization-details": {
       "get": {
-        "tags": ["Organization Details API"],
+        "tags": [
+          "Organization Details API"
+        ],
         "summary": "Get Organization Detail (Admin)",
         "description": "Retrieves details for CMS editor.",
         "operationId": "getOrganizationDetailAdmin",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "entity_type",
@@ -2536,7 +3238,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             }
           }
@@ -2549,22 +3255,34 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/OrganizationDetailResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationDetailResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       },
       "put": {
-        "tags": ["Organization Details API"],
+        "tags": [
+          "Organization Details API"
+        ],
         "summary": "Update/Upsert Organization Detail",
-        "description": "Updates Vision, Mission, Rules. Creates data if it doesn't exist (Upsert).",
+        "description": "Updates details including specific images. Creates data if it doesn't exist (Upsert).",
         "operationId": "updateOrganizationDetail",
-        "security": [{ "cookieAuth": [] }],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "entity_type",
@@ -2572,7 +3290,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["pura", "yayasan", "pasraman"],
+              "enum": [
+                "pura",
+                "yayasan",
+                "pasraman"
+              ],
               "default": "pura"
             },
             "description": "Target entity to update"
@@ -2582,7 +3304,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateOrganizationDetailRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationDetailRequest"
+              }
             }
           }
         },
@@ -2594,15 +3318,23 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": { "$ref": "#/components/schemas/OrganizationDetailResponse" }
+                    "data": {
+                      "$ref": "#/components/schemas/OrganizationDetailResponse"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequestError" },
-          "401": { "$ref": "#/components/responses/UnauthorizedError" },
-          "500": { "$ref": "#/components/responses/InternalServerError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     }
@@ -2620,49 +3352,133 @@
       "UserResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "u_123" },
-          "name": { "type": "string", "example": "Admin CMS" },
-          "email": { "type": "string", "example": "admin@example.com" },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "id": {
+            "type": "string",
+            "example": "u_123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Admin CMS"
+          },
+          "email": {
+            "type": "string",
+            "example": "admin@example.com"
+          },
+          "created_at": {
+            "type": "number",
+            "example": 1739650180
+          },
+          "updated_at": {
+            "type": "number",
+            "example": 1739650180
+          }
         }
       },
       "TestimonialResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "t_abc123" },
-          "name": { "type": "string", "example": "John Doe" },
-          "avatar_url": { "type": "string", "example": "https://r2.example.com/avatar.png" },
-          "rating": { "type": "integer", "example": 5 },
-          "comment": { "type": "string", "example": "Pelayanan sangat memuaskan!" },
-          "is_active": { "type": "boolean", "example": true },
-          "order_index": { "type": "integer", "example": 1 },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "id": {
+            "type": "string",
+            "example": "t_abc123"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "avatar_url": {
+            "type": "string",
+            "example": "https://r2.example.com/avatar.png"
+          },
+          "rating": {
+            "type": "integer",
+            "example": 5
+          },
+          "comment": {
+            "type": "string",
+            "example": "Pelayanan sangat memuaskan!"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "number",
+            "example": 1739650180
+          },
+          "updated_at": {
+            "type": "number",
+            "example": 1739650180
+          }
         }
       },
       "TestimonialCreateRequest": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "example": "Jane Doe" },
-          "avatar_url": { "type": "string", "example": "https://r2.example.com/avatar.png" },
-          "rating": { "type": "integer", "example": 4 },
-          "comment": { "type": "string", "example": "Sangat membantu." },
-          "is_active": { "type": "boolean", "example": true },
-          "order_index": { "type": "integer", "example": 2 }
+          "name": {
+            "type": "string",
+            "example": "Jane Doe"
+          },
+          "avatar_url": {
+            "type": "string",
+            "example": "https://r2.example.com/avatar.png"
+          },
+          "rating": {
+            "type": "integer",
+            "example": 4
+          },
+          "comment": {
+            "type": "string",
+            "example": "Sangat membantu."
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 2
+          }
         },
-        "required": ["name", "rating", "comment", "is_active", "order_index"]
+        "required": [
+          "name",
+          "rating",
+          "comment",
+          "is_active",
+          "order_index"
+        ]
       },
       "TestimonialUpdateRequest": {
         "type": "object",
         "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
         "properties": {
-          "name": { "type": "string", "example": "Jane Doe Updated" },
-          "avatar_url": { "type": "string", "example": "https://r2.example.com/new-avatar.png" },
-          "rating": { "type": "integer", "example": 5 },
-          "comment": { "type": "string", "example": "Sangat membantu (updated)." },
-          "is_active": { "type": "boolean", "example": false },
-          "order_index": { "type": "integer", "example": 1 }
+          "name": {
+            "type": "string",
+            "example": "Jane Doe Updated"
+          },
+          "avatar_url": {
+            "type": "string",
+            "example": "https://r2.example.com/new-avatar.png"
+          },
+          "rating": {
+            "type": "integer",
+            "example": 5
+          },
+          "comment": {
+            "type": "string",
+            "example": "Sangat membantu (updated)."
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": false
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          }
         }
       },
       "ErrorResponse": {
@@ -2677,211 +3493,661 @@
       "HeroSlideResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "hs_abc123" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "image_url": { "type": "string", "example": "https://r2.example.com/slide1.png" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "id": {
+            "type": "string",
+            "example": "hs_abc123"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://r2.example.com/slide1.png"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "number",
+            "example": 1739650180
+          },
+          "updated_at": {
+            "type": "number",
+            "example": 1739650180
+          }
         }
       },
       "HeroSlideCreateRequest": {
         "type": "object",
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "image_url": { "type": "string", "example": "https://r2.example.com/new-slide.png" },
-          "order_index": { "type": "integer", "example": 2 },
-          "is_active": { "type": "boolean", "example": true }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://r2.example.com/new-slide.png"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 2
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
         },
-        "required": ["entity_type", "image_url", "order_index", "is_active"]
+        "required": [
+          "entity_type",
+          "image_url",
+          "order_index",
+          "is_active"
+        ]
       },
       "HeroSlideUpdateRequest": {
         "type": "object",
         "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "image_url": { "type": "string", "example": "https://r2.example.com/updated-slide.png" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": false }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://r2.example.com/updated-slide.png"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": false
+          }
         }
       },
       "GalleryResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "g_abc123" },
-          "title": { "type": "string", "example": "Galeri Acara 1" },
-          "description": { "type": "string", "example": "Deskripsi singkat acara galeri." },
-          "image_url": { "type": "string", "example": "https://r2.example.com/galeri1.png" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "id": {
+            "type": "string",
+            "example": "g_abc123"
+          },
+          "title": {
+            "type": "string",
+            "example": "Galeri Acara 1"
+          },
+          "description": {
+            "type": "string",
+            "example": "Deskripsi singkat acara galeri."
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://r2.example.com/galeri1.png"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "number",
+            "example": 1739650180
+          },
+          "updated_at": {
+            "type": "number",
+            "example": 1739650180
+          }
         }
       },
       "GalleryCreateRequest": {
         "type": "object",
         "properties": {
-          "title": { "type": "string", "example": "Galeri Acara Baru" },
-          "description": { "type": "string", "example": "Deskripsi opsional." },
-          "image_url": { "type": "string", "example": "https://r2.example.com/galeri-baru.png" },
-          "order_index": { "type": "integer", "example": 2 },
-          "is_active": { "type": "boolean", "example": true }
+          "title": {
+            "type": "string",
+            "example": "Galeri Acara Baru"
+          },
+          "description": {
+            "type": "string",
+            "example": "Deskripsi opsional."
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://r2.example.com/galeri-baru.png"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 2
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
         },
-        "required": ["title", "image_url", "order_index", "is_active"]
+        "required": [
+          "title",
+          "image_url",
+          "order_index",
+          "is_active"
+        ]
       },
       "GalleryUpdateRequest": {
         "type": "object",
         "description": "Semua field opsional. Kirim hanya field yang ingin di-update.",
         "properties": {
-          "title": { "type": "string", "example": "Galeri Acara Updated" },
-          "description": { "type": "string", "example": "Deskripsi baru." },
-          "image_url": { "type": "string", "example": "https://r2.example.com/galeri-updated.png" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": false }
+          "title": {
+            "type": "string",
+            "example": "Galeri Acara Updated"
+          },
+          "description": {
+            "type": "string",
+            "example": "Deskripsi baru."
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://r2.example.com/galeri-updated.png"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": false
+          }
         }
       },
       "ContactInfoResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "platform": { "type": "string", "example": "whatsapp" },
-          "value": { "type": "string", "example": "6281234567890" },
-          "label": { "type": "string", "example": "Admin Pendaftaran" },
-          "icon": { "type": "string", "example": "fa-whatsapp" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "platform": {
+            "type": "string",
+            "example": "whatsapp"
+          },
+          "value": {
+            "type": "string",
+            "example": "6281234567890"
+          },
+          "label": {
+            "type": "string",
+            "example": "Admin Pendaftaran"
+          },
+          "icon": {
+            "type": "string",
+            "example": "fa-whatsapp"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CreateContactInfoRequest": {
         "type": "object",
-        "required": ["entity_type", "platform", "value"],
+        "required": [
+          "entity_type",
+          "platform",
+          "value"
+        ],
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "platform": { "type": "string", "example": "email" },
-          "value": { "type": "string", "example": "info@pura.com" },
-          "label": { "type": "string", "example": "Email Sekretariat" },
-          "icon": { "type": "string", "example": "fa-envelope" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "default": true }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "platform": {
+            "type": "string",
+            "example": "email"
+          },
+          "value": {
+            "type": "string",
+            "example": "info@pura.com"
+          },
+          "label": {
+            "type": "string",
+            "example": "Email Sekretariat"
+          },
+          "icon": {
+            "type": "string",
+            "example": "fa-envelope"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
+          }
         }
       },
       "UpdateContactInfoRequest": {
         "type": "object",
-        "required": ["platform", "value"],
+        "required": [
+          "platform",
+          "value"
+        ],
         "properties": {
-          "platform": { "type": "string", "example": "email" },
-          "value": { "type": "string", "example": "info-baru@pura.com" },
-          "label": { "type": "string", "example": "Email Sekretariat" },
-          "icon": { "type": "string", "example": "fa-envelope" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": true }
+          "platform": {
+            "type": "string",
+            "example": "email"
+          },
+          "value": {
+            "type": "string",
+            "example": "info-baru@pura.com"
+          },
+          "label": {
+            "type": "string",
+            "example": "Email Sekretariat"
+          },
+          "icon": {
+            "type": "string",
+            "example": "fa-envelope"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
         }
       },
       "ActivityResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "title": { "type": "string", "example": "Odalan Pura Agung" },
-          "slug": { "type": "string", "example": "odalan-pura-agung-2024" },
-          "description": { "type": "string", "example": "Upacara piodalan alit..." },
-          "location": { "type": "string", "example": "Mandala Utama" },
-          "event_date": { "type": "string", "format": "date", "example": "2024-10-15" },
-          "start_time": { "type": "string", "example": "08:00 WITA" },
-          "end_time": { "type": "string", "example": "Selesai" },
-          "image_url": { "type": "string", "example": "http://img.com/event.jpg" },
-          "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "title": {
+            "type": "string",
+            "example": "Odalan Pura Agung"
+          },
+          "slug": {
+            "type": "string",
+            "example": "odalan-pura-agung-2024"
+          },
+          "description": {
+            "type": "string",
+            "example": "Upacara piodalan alit..."
+          },
+          "location": {
+            "type": "string",
+            "example": "Mandala Utama"
+          },
+          "event_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-10-15"
+          },
+          "start_time": {
+            "type": "string",
+            "example": "08:00 WITA"
+          },
+          "end_time": {
+            "type": "string",
+            "example": "Selesai"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/event.jpg"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CreateActivityRequest": {
         "type": "object",
-        "required": ["entity_type", "title", "event_date"],
+        "required": [
+          "entity_type",
+          "title",
+          "event_date"
+        ],
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "title": { "type": "string", "example": "Rapat Tahunan" },
-          "description": { "type": "string", "example": "Pembahasan RAB..." },
-          "location": { "type": "string", "example": "Gedung Wantilan" },
-          "event_date": { "type": "string", "format": "date", "example": "2024-12-01" },
-          "start_time": { "type": "string", "example": "09:00" },
-          "end_time": { "type": "string", "example": "12:00" },
-          "image_url": { "type": "string", "example": "http://img.com/rapat.jpg" },
-          "is_active": { "type": "boolean", "default": true }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "title": {
+            "type": "string",
+            "example": "Rapat Tahunan"
+          },
+          "description": {
+            "type": "string",
+            "example": "Pembahasan RAB..."
+          },
+          "location": {
+            "type": "string",
+            "example": "Gedung Wantilan"
+          },
+          "event_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-12-01"
+          },
+          "start_time": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "end_time": {
+            "type": "string",
+            "example": "12:00"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/rapat.jpg"
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
+          }
         }
       },
       "UpdateActivityRequest": {
         "type": "object",
-        "required": ["title", "event_date"],
+        "required": [
+          "title",
+          "event_date"
+        ],
         "properties": {
-          "title": { "type": "string", "example": "Rapat Tahunan (Revisi)" },
-          "description": { "type": "string", "example": "Pembahasan RAB..." },
-          "location": { "type": "string", "example": "Gedung Wantilan" },
-          "event_date": { "type": "string", "format": "date", "example": "2024-12-05" },
-          "start_time": { "type": "string", "example": "09:00" },
-          "end_time": { "type": "string", "example": "12:00" },
-          "image_url": { "type": "string", "example": "http://img.com/rapat.jpg" },
-          "is_active": { "type": "boolean", "example": true }
+          "title": {
+            "type": "string",
+            "example": "Rapat Tahunan (Revisi)"
+          },
+          "description": {
+            "type": "string",
+            "example": "Pembahasan RAB..."
+          },
+          "location": {
+            "type": "string",
+            "example": "Gedung Wantilan"
+          },
+          "event_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-12-05"
+          },
+          "start_time": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "end_time": {
+            "type": "string",
+            "example": "12:00"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/rapat.jpg"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
         }
       },
       "SiteIdentityResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "si_abc123" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "site_name": { "type": "string", "example": "Pura Agung Kertajaya" },
-          "logo_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/logo.png" },
-          "tagline": { "type": "string", "example": "Melayani Umat dengan Sepenuh Hati" },
-          "primary_button_text": { "type": "string", "example": "Donasi Sekarang" },
-          "primary_button_link": { "type": "string", "format": "uri", "example": "/donasi" },
-          "secondary_button_text": { "type": "string", "example": "Jadwal Kegiatan" },
-          "secondary_button_link": { "type": "string", "format": "uri", "example": "/kegiatan" },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "id": {
+            "type": "string",
+            "example": "si_abc123"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "site_name": {
+            "type": "string",
+            "example": "Pura Agung Kertajaya"
+          },
+          "logo_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://r2.example.com/logo.png"
+          },
+          "tagline": {
+            "type": "string",
+            "example": "Melayani Umat dengan Sepenuh Hati"
+          },
+          "primary_button_text": {
+            "type": "string",
+            "example": "Donasi Sekarang"
+          },
+          "primary_button_link": {
+            "type": "string",
+            "format": "uri",
+            "example": "/donasi"
+          },
+          "secondary_button_text": {
+            "type": "string",
+            "example": "Jadwal Kegiatan"
+          },
+          "secondary_button_link": {
+            "type": "string",
+            "format": "uri",
+            "example": "/kegiatan"
+          },
+          "created_at": {
+            "type": "number",
+            "example": 1739650180
+          },
+          "updated_at": {
+            "type": "number",
+            "example": 1739650180
+          }
         }
       },
       "SiteIdentityRequest": {
         "type": "object",
         "description": "Payload for creating or updating site identity.",
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "site_name": { "type": "string", "example": "Pura Agung Kertajaya" },
-          "logo_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/new-logo.png" },
-          "tagline": { "type": "string", "example": "Melayani Umat Hindu Dharma" },
-          "primary_button_text": { "type": "string", "example": "Beri Dana Punia" },
-          "primary_button_link": { "type": "string", "format": "uri", "example": "/dana-punia" },
-          "secondary_button_text": { "type": "string", "example": "Galeri Pura" },
-          "secondary_button_link": { "type": "string", "format": "uri", "example": "/galeri" }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "site_name": {
+            "type": "string",
+            "example": "Pura Agung Kertajaya"
+          },
+          "logo_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://r2.example.com/new-logo.png"
+          },
+          "tagline": {
+            "type": "string",
+            "example": "Melayani Umat Hindu Dharma"
+          },
+          "primary_button_text": {
+            "type": "string",
+            "example": "Beri Dana Punia"
+          },
+          "primary_button_link": {
+            "type": "string",
+            "format": "uri",
+            "example": "/dana-punia"
+          },
+          "secondary_button_text": {
+            "type": "string",
+            "example": "Galeri Pura"
+          },
+          "secondary_button_link": {
+            "type": "string",
+            "format": "uri",
+            "example": "/galeri"
+          }
         },
-        "required": ["entity_type", "site_name", "logo_url"]
+        "required": [
+          "entity_type",
+          "site_name",
+          "logo_url"
+        ]
       },
       "AboutValueResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "val_123" },
-          "about_id": { "type": "string", "example": "abt_abc12345" },
-          "title": { "type": "string", "example": "Visi" },
-          "value": { "type": "string", "example": "Menjadi pusat spiritual..." },
-          "order_index": { "type": "integer", "example": 1 },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 }
+          "id": {
+            "type": "string",
+            "example": "val_123"
+          },
+          "about_id": {
+            "type": "string",
+            "example": "abt_abc12345"
+          },
+          "title": {
+            "type": "string",
+            "example": "Visi"
+          },
+          "value": {
+            "type": "string",
+            "example": "Menjadi pusat spiritual..."
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "number",
+            "example": 1739650180
+          },
+          "updated_at": {
+            "type": "number",
+            "example": 1739650180
+          }
         }
       },
       "AboutSectionResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "abt_abc12345" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "title": { "type": "string", "example": "Tentang Kami" },
-          "description": { "type": "string", "example": "Deskripsi lengkap tentang pura..." },
-          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/about.png" },
-          "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "number", "example": 1739650180 },
-          "updated_at": { "type": "number", "example": 1739650180 },
+          "id": {
+            "type": "string",
+            "example": "abt_abc12345"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "title": {
+            "type": "string",
+            "example": "Tentang Kami"
+          },
+          "description": {
+            "type": "string",
+            "example": "Deskripsi lengkap tentang pura..."
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://r2.example.com/about.png"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "number",
+            "example": 1739650180
+          },
+          "updated_at": {
+            "type": "number",
+            "example": 1739650180
+          },
           "values": {
             "type": "array",
             "items": {
@@ -2893,21 +4159,55 @@
       "AboutValueRequest": {
         "type": "object",
         "properties": {
-          "title": { "type": "string", "example": "Misi" },
-          "value": { "type": "string", "example": "Melayani umat..." },
-          "order_index": { "type": "integer", "example": 2 }
+          "title": {
+            "type": "string",
+            "example": "Misi"
+          },
+          "value": {
+            "type": "string",
+            "example": "Melayani umat..."
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 2
+          }
         },
-        "required": ["title", "value", "order_index"]
+        "required": [
+          "title",
+          "value",
+          "order_index"
+        ]
       },
       "AboutSectionRequest": {
         "type": "object",
         "description": "Payload for creating or updating an about section with its values.",
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "title": { "type": "string", "example": "Sejarah Pura" },
-          "description": { "type": "string", "example": "Penjelasan sejarah..." },
-          "image_url": { "type": "string", "format": "uri", "example": "https://r2.example.com/sejarah.png" },
-          "is_active": { "type": "boolean", "example": true },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "title": {
+            "type": "string",
+            "example": "Sejarah Pura"
+          },
+          "description": {
+            "type": "string",
+            "example": "Penjelasan sejarah..."
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://r2.example.com/sejarah.png"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
           "values": {
             "type": "array",
             "description": "List of key-value pairs associated with this section (e.g., Visi, Misi). When updating, this list *replaces* all existing values.",
@@ -2916,132 +4216,383 @@
             }
           }
         },
-        "required": ["entity_type", "title", "description", "is_active"]
+        "required": [
+          "entity_type",
+          "title",
+          "description",
+          "is_active"
+        ]
       },
       "OrganizationMemberResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "name": { "type": "string", "example": "I Wayan S." },
-          "position": { "type": "string", "example": "Ketua" },
-          "image_url": { "type": "string", "example": "http://img.com/foto.jpg" },
-          "social_media": { "type": "string", "example": "{\"facebook\": \"...\"}" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "name": {
+            "type": "string",
+            "example": "I Wayan S."
+          },
+          "position": {
+            "type": "string",
+            "example": "Ketua"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/foto.jpg"
+          },
+          "social_media": {
+            "type": "string",
+            "example": "{\"facebook\": \"...\"}"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CreateOrganizationMemberRequest": {
         "type": "object",
-        "required": ["entity_type", "name", "position"],
+        "required": [
+          "entity_type",
+          "name",
+          "position"
+        ],
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "name": { "type": "string", "example": "Ni Made L." },
-          "position": { "type": "string", "example": "Sekretaris" },
-          "image_url": { "type": "string", "example": "http://img.com/foto.jpg" },
-          "social_media": { "type": "string", "example": "{}" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "default": true }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ni Made L."
+          },
+          "position": {
+            "type": "string",
+            "example": "Sekretaris"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/foto.jpg"
+          },
+          "social_media": {
+            "type": "string",
+            "example": "{}"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
+          }
         }
       },
       "UpdateOrganizationMemberRequest": {
         "type": "object",
-        "required": ["name", "position"],
+        "required": [
+          "name",
+          "position"
+        ],
         "properties": {
-          "name": { "type": "string", "example": "Ni Made L." },
-          "position": { "type": "string", "example": "Sekretaris" },
-          "image_url": { "type": "string", "example": "http://img.com/foto.jpg" },
-          "social_media": { "type": "string", "example": "{}" },
-          "order_index": { "type": "integer", "example": 1 },
-          "is_active": { "type": "boolean", "example": true }
+          "name": {
+            "type": "string",
+            "example": "Ni Made L."
+          },
+          "position": {
+            "type": "string",
+            "example": "Sekretaris"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/foto.jpg"
+          },
+          "social_media": {
+            "type": "string",
+            "example": "{}"
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
         }
       },
       "FacilityResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "name": { "type": "string", "example": "Gedung Wantilan" },
-          "description": { "type": "string", "example": "Gedung serbaguna kapasitas 500 orang." },
-          "image_url": { "type": "string", "example": "http://img.com/wantilan.jpg" },
-          "is_active": { "type": "boolean", "example": true },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "name": {
+            "type": "string",
+            "example": "Gedung Wantilan"
+          },
+          "description": {
+            "type": "string",
+            "example": "Gedung serbaguna kapasitas 500 orang."
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/wantilan.jpg"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "FacilityCreateRequest": {
         "type": "object",
-        "required": ["entity_type", "name"],
+        "required": [
+          "entity_type",
+          "name"
+        ],
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "name": { "type": "string", "example": "Parkir Luas" },
-          "description": { "type": "string", "example": "Area parkir untuk 100 mobil." },
-          "image_url": { "type": "string", "example": "http://img.com/parkir.jpg" },
-          "is_active": { "type": "boolean", "default": true }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "name": {
+            "type": "string",
+            "example": "Parkir Luas"
+          },
+          "description": {
+            "type": "string",
+            "example": "Area parkir untuk 100 mobil."
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/parkir.jpg"
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
+          }
         }
       },
       "FacilityUpdateRequest": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
-          "name": { "type": "string", "example": "Parkir Luas (Renovasi)" },
-          "description": { "type": "string", "example": "Area parkir untuk 150 mobil." },
-          "image_url": { "type": "string", "example": "http://img.com/parkir-baru.jpg" },
-          "is_active": { "type": "boolean", "example": true }
+          "name": {
+            "type": "string",
+            "example": "Parkir Luas (Renovasi)"
+          },
+          "description": {
+            "type": "string",
+            "example": "Area parkir untuk 150 mobil."
+          },
+          "image_url": {
+            "type": "string",
+            "example": "http://img.com/parkir-baru.jpg"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
         }
       },
       "RemarkResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "name": { "type": "string", "example": "I Made Ketua" },
-          "position": { "type": "string", "example": "Ketua Yayasan" },
-          "image_url": { "type": "string", "example": "https://example.com/ketua.jpg" },
-          "content": { "type": "string", "example": "Om Swastyastu..." },
-          "is_active": { "type": "boolean", "example": true },
-          "order_index": { "type": "integer", "example": 1 },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "name": {
+            "type": "string",
+            "example": "I Made Ketua"
+          },
+          "position": {
+            "type": "string",
+            "example": "Ketua Yayasan"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://example.com/ketua.jpg"
+          },
+          "content": {
+            "type": "string",
+            "example": "Om Swastyastu..."
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CreateRemarkRequest": {
         "type": "object",
-        "required": ["entity_type", "name", "position", "content"],
+        "required": [
+          "entity_type",
+          "name",
+          "position",
+          "content"
+        ],
         "properties": {
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "name": { "type": "string", "example": "I Made Ketua" },
-          "position": { "type": "string", "example": "Ketua Yayasan" },
-          "image_url": { "type": "string", "example": "https://example.com/ketua.jpg" },
-          "content": { "type": "string", "example": "Om Swastyastu..." },
-          "is_active": { "type": "boolean", "default": true },
-          "order_index": { "type": "integer", "example": 1 }
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "pura",
+              "yayasan",
+              "pasraman"
+            ],
+            "example": "pura"
+          },
+          "name": {
+            "type": "string",
+            "example": "I Made Ketua"
+          },
+          "position": {
+            "type": "string",
+            "example": "Ketua Yayasan"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://example.com/ketua.jpg"
+          },
+          "content": {
+            "type": "string",
+            "example": "Om Swastyastu..."
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          }
         }
       },
       "UpdateRemarkRequest": {
         "type": "object",
-        "required": ["name", "position", "content"],
+        "required": [
+          "name",
+          "position",
+          "content"
+        ],
         "properties": {
-          "name": { "type": "string", "example": "I Made Ketua" },
-          "position": { "type": "string", "example": "Ketua Yayasan" },
-          "image_url": { "type": "string", "example": "https://example.com/ketua.jpg" },
-          "content": { "type": "string", "example": "Om Swastyastu..." },
-          "is_active": { "type": "boolean", "example": true },
-          "order_index": { "type": "integer", "example": 1 }
+          "name": {
+            "type": "string",
+            "example": "I Made Ketua"
+          },
+          "position": {
+            "type": "string",
+            "example": "Ketua Yayasan"
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://example.com/ketua.jpg"
+          },
+          "content": {
+            "type": "string",
+            "example": "Om Swastyastu..."
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "order_index": {
+            "type": "integer",
+            "example": 1
+          }
         }
       },
       "OrganizationDetailResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "example": "550e8400-e29b-41d4-a716-446655440000" },
-          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"], "example": "pura" },
-          "vision": { "type": "string", "example": "Menjadi pusat peradaban umat." },
-          "mission": { "type": "string", "example": "<ul><li>Membangun karakter...</li></ul>" },
-          "rules": { "type": "string", "example": "<ol><li>Dilarang merokok...</li></ol>" },
-          "work_program": { "type": "string", "example": "<ul><li>Bakti Sosial 2025...</li></ul>", "nullable": true },
-          "image_url": { "type": "string", "example": "http://img.com/header-visi.jpg" },
+          "id": { "type": "string", "format": "uuid" },
+          "entity_type": { "type": "string", "enum": ["pura", "yayasan", "pasraman"] },
+          "vision": { "type": "string" },
+          "mission": { "type": "string" },
+          "rules": { "type": "string" },
+          "work_program": { "type": "string" },
+          "image_url": { "type": "string", "description": "Legacy field (optional)" },
+          "vision_mission_image_url": { "type": "string", "description": "Image for Vision & Mission page" },
+          "work_program_image_url": { "type": "string", "description": "Image for Work Program page" },
+          "rules_image_url": { "type": "string", "description": "Image for Rules/Regulations page" },
           "created_at": { "type": "string", "format": "date-time" },
           "updated_at": { "type": "string", "format": "date-time" }
         }
@@ -3049,11 +4600,14 @@
       "UpdateOrganizationDetailRequest": {
         "type": "object",
         "properties": {
-          "vision": { "type": "string", "example": "Visi Baru..." },
-          "mission": { "type": "string", "example": "Misi Baru..." },
-          "rules": { "type": "string", "example": "Aturan Baru..." },
-          "work_program": { "type": "string", "example": "Proker Baru..." },
-          "image_url": { "type": "string", "example": "http://img.com/header-baru.jpg" }
+          "vision": { "type": "string" },
+          "mission": { "type": "string" },
+          "rules": { "type": "string" },
+          "work_program": { "type": "string" },
+          "image_url": { "type": "string" },
+          "vision_mission_image_url": { "type": "string" },
+          "work_program_image_url": { "type": "string" },
+          "rules_image_url": { "type": "string" }
         }
       }
     },

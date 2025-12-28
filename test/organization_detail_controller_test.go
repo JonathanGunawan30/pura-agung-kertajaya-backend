@@ -56,7 +56,7 @@ func TestOrganizationDetailController_GetPublic_Success(t *testing.T) {
 	app, mockUC := setupOrganizationDetailController()
 
 	expectedResp := &model.OrganizationDetailResponse{
-		ID: "uuid-1", EntityType: "pura", Vision: "Visi Pura",
+		ID: "uuid-1", EntityType: "pura", Vision: "Visi Pura", VisionMissionImageURL: "img.jpg",
 	}
 
 	mockUC.On("GetByEntityType", "pura").Return(expectedResp, nil)
@@ -73,15 +73,25 @@ func TestOrganizationDetailController_GetPublic_Success(t *testing.T) {
 	mockUC.AssertExpectations(t)
 }
 
-func TestOrganizationDetailController_GetPublic_NotFound(t *testing.T) {
+func TestOrganizationDetailController_GetPublic_NotFound_ReturnsEmpty(t *testing.T) {
 	app, mockUC := setupOrganizationDetailController()
 
-	mockUC.On("GetByEntityType", "pasraman").Return((*model.OrganizationDetailResponse)(nil), gorm.ErrRecordNotFound)
+	emptyResp := &model.OrganizationDetailResponse{
+		EntityType: "pasraman",
+		Vision:     "",
+		Mission:    "",
+	}
+
+	mockUC.On("GetByEntityType", "pasraman").Return(emptyResp, nil)
 
 	req := httptest.NewRequest("GET", "/api/public/organization-details?entity_type=pasraman", nil)
 	resp, _ := app.Test(req)
 
-	assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+	var response model.WebResponse[*model.OrganizationDetailResponse]
+	json.NewDecoder(resp.Body).Decode(&response)
+	assert.Equal(t, "", response.Data.Vision)
 
 	mockUC.AssertExpectations(t)
 }
@@ -111,11 +121,11 @@ func TestOrganizationDetailController_Update_Success(t *testing.T) {
 	app, mockUC := setupOrganizationDetailController()
 
 	reqBody := model.UpdateOrganizationDetailRequest{
-		Vision: "Visi Baru", Mission: "Misi Baru", Rules: "Rules Baru",
+		Vision: "Visi Baru", Mission: "Misi Baru", VisionMissionImageURL: "new.jpg",
 	}
 
 	resBody := &model.OrganizationDetailResponse{
-		ID: "uuid-upserted", EntityType: "pura", Vision: "Visi Baru",
+		ID: "uuid-upserted", EntityType: "pura", Vision: "Visi Baru", VisionMissionImageURL: "new.jpg",
 	}
 
 	mockUC.On("Update", "pura", reqBody).Return(resBody, nil)
@@ -131,6 +141,7 @@ func TestOrganizationDetailController_Update_Success(t *testing.T) {
 	var response model.WebResponse[*model.OrganizationDetailResponse]
 	json.NewDecoder(resp.Body).Decode(&response)
 	assert.Equal(t, "Visi Baru", response.Data.Vision)
+	assert.Equal(t, "new.jpg", response.Data.VisionMissionImageURL)
 
 	mockUC.AssertExpectations(t)
 }

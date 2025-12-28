@@ -61,6 +61,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	aboutUseCase := usecase.NewAboutUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	organizationUsecase := usecase.NewOrganizationRequest(cfg.DB, cfg.Log, cfg.Validate)
 	remarkUseCase := usecase.NewRemarkUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	organizationDetailUsecase := usecase.NewOrganizationDetailUsecase(cfg.DB, cfg.Log, cfg.Validate)
 
 	// Setup controllers
 	userController := http.NewUserController(userUseCase, cfg.Log)
@@ -75,6 +76,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	aboutController := http.NewAboutController(aboutUseCase, cfg.Log)
 	organizationController := http.NewOrganizationController(organizationUsecase, cfg.Log)
 	remarkcontroller := http.NewRemarkController(remarkUseCase, cfg.Log)
+	organizationDetailController := http.NewOrganizationDetailController(organizationDetailUsecase, cfg.Log)
 
 	// Setup redis storage
 	storage := NewFiberRedisStorage(redisHost, redisPort, redisPass, rateLimiterDB)
@@ -92,20 +94,21 @@ func Bootstrap(cfg *BootstrapConfig) {
 
 	// Setup routes
 	routeConfig := route.RouteConfig{
-		App:                    cfg.App,
-		UserController:         userController,
-		StorageController:      storageController,
-		TestimonialController:  testimonialController,
-		HeroSlideController:    heroSlideController,
-		GalleryController:      galleryController,
-		FacilityController:     facilityController,
-		ContactInfoController:  contactInfoController,
-		ActivityController:     activityController,
-		SiteIdentityController: siteIdentityController,
-		AboutController:        aboutController,
-		OrganizationController: organizationController,
-		RemarkController:       remarkcontroller,
-		AuthMiddleware:         authMiddleware,
+		App:                          cfg.App,
+		UserController:               userController,
+		StorageController:            storageController,
+		TestimonialController:        testimonialController,
+		HeroSlideController:          heroSlideController,
+		GalleryController:            galleryController,
+		FacilityController:           facilityController,
+		ContactInfoController:        contactInfoController,
+		ActivityController:           activityController,
+		SiteIdentityController:       siteIdentityController,
+		AboutController:              aboutController,
+		OrganizationController:       organizationController,
+		RemarkController:             remarkcontroller,
+		OrganizationDetailController: organizationDetailController,
+		AuthMiddleware:               authMiddleware,
 
 		PublicRateLimiter:   publicRateLimiter,
 		AuthRateLimiter:     authRateLimiter,
