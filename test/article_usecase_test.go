@@ -1,0 +1,237 @@
+package test
+
+import (
+	"regexp"
+	"testing"
+	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/go-playground/validator/v10"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+
+	"pura-agung-kertajaya-backend/internal/entity"
+	"pura-agung-kertajaya-backend/internal/model"
+	"pura-agung-kertajaya-backend/internal/usecase"
+)
+
+func setupMockArticleUsecase(t *testing.T) (usecase.ArticleUsecase, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open stub db: %v", err)
+	}
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open gorm: %v", err)
+	}
+
+	u := usecase.NewArticleUsecase(gormDB, logrus.New(), validator.New())
+	return u, mock
+}
+
+func TestArticleUsecase_GetPublic(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+
+	rows := sqlmock.NewRows([]string{"id", "title", "status", "published_at"}).
+		AddRow("uuid-1", "Berita 1", "PUBLISHED", time.Now()).
+		AddRow("uuid-2", "Berita 2", "PUBLISHED", time.Now())
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE status = ? ORDER BY is_featured DESC, published_at DESC LIMIT ?")).
+		WithArgs(entity.ArticleStatusPublished, 10).
+		WillReturnRows(rows)
+
+	results, err := u.GetPublic(10)
+
+	assert.NoError(t, err)
+
+	assert.Len(t, results, 2)
+
+	if len(results) > 0 {
+		assert.Equal(t, "Berita 1", results[0].Title)
+	}
+}
+func TestArticleUsecase_GetBySlug(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+
+	slug := "upacara-ngaben"
+
+	rows := sqlmock.NewRows([]string{"id", "title", "slug", "status"}).
+		AddRow("uuid-1", "Upacara Ngaben", slug, "PUBLISHED")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE slug = ? AND status = ? ORDER BY `articles`.`id` LIMIT ?")).
+		WithArgs(slug, entity.ArticleStatusPublished, 1).
+		WillReturnRows(rows)
+
+	res, err := u.GetBySlug(slug)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, "Upacara Ngaben", res.Title)
+}
+
+func TestArticleUsecase_Create_AutoSlugAndExcerpt(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+
+	req := model.CreateArticleRequest{
+		Title:      "Judul Berita Keren",
+		AuthorName: "Admin",
+		Content:    "Ini adalah konten yang sangat panjang sekali...",
+		Status:     "PUBLISHED",
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE slug = ?")).
+		WithArgs("judul-berita-keren").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `articles`")).
+		WithArgs(
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			req.Title,
+			"judul-berita-keren",
+			req.AuthorName,
+			"",
+			"Ini adalah konten yang sangat panjang sekali...",
+			req.Content,
+			"",
+			"PUBLISHED",
+			false,
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	created, err := u.Create(req)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, created)
+	assert.Equal(t, "judul-berita-keren", created.Slug)
+	assert.Equal(t, req.Content, created.Excerpt)
+}
+
+func TestArticleUsecase_Create_SlugCollision(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+
+	req := model.CreateArticleRequest{
+		Title:      "Berita Sama",
+		AuthorName: "Budi",
+		Content:    "Isi konten ini harus cukup panjang ya",
+		Status:     "DRAFT",
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE slug = ?")).
+		WithArgs("berita-sama").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE slug = ?")).
+		WithArgs("berita-sama-1").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `articles`")).
+		WithArgs(
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			req.Title,
+			"berita-sama-1",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			"Isi konten ini harus cukup panjang ya",
+			"Isi konten ini harus cukup panjang ya",
+
+			"",
+			"DRAFT",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	created, err := u.Create(req)
+
+	assert.NoError(t, err)
+
+	if created == nil {
+		t.FailNow()
+	}
+
+	assert.Equal(t, "berita-sama-1", created.Slug)
+}
+
+func TestArticleUsecase_Update(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+	id := "art-1"
+
+	req := model.UpdateArticleRequest{
+		Title:      "Judul Baru",
+		Content:    "Konten baru",
+		AuthorName: "Author",
+		Status:     "PUBLISHED",
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "slug"}).AddRow(id, "Judul Lama", "judul-lama"))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE slug = ? AND id != ?")).
+		WithArgs("judul-baru", id).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE `articles`")).
+		WithArgs(
+			sqlmock.AnyArg(),
+			"Judul Baru",
+			"judul-baru",
+			req.AuthorName,
+			"",
+			"Konten baru",
+			req.Content,
+			"",
+			"PUBLISHED",
+			false,
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			id,
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	updated, err := u.Update(id, req)
+	assert.NoError(t, err)
+
+	if updated != nil {
+		assert.Equal(t, "Judul Baru", updated.Title)
+		assert.Equal(t, "judul-baru", updated.Slug)
+	}
+}
+
+func TestArticleUsecase_Delete(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+	id := "del-1"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title"}).AddRow(id, "To Delete"))
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `articles` WHERE `articles`.`id` = ?")).
+		WithArgs(id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	err := u.Delete(id)
+	assert.NoError(t, err)
+}

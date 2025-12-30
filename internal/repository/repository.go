@@ -31,3 +31,21 @@ func (r *Repository[T]) FindById(db *gorm.DB, entity *T, id any) error {
 func (r *Repository[T]) FindAll(db *gorm.DB, dest *[]T) error {
 	return db.Find(dest).Error
 }
+
+func (r *Repository[T]) FindBySlug(db *gorm.DB, entity *T, slug string) error {
+	return db.Where("slug = ?", slug).Take(entity).Error
+}
+
+func (r *Repository[T]) CountBySlug(db *gorm.DB, slug string) (int64, error) {
+	var total int64
+	err := db.Model(new(T)).Where("slug = ?", slug).Count(&total).Error
+	return total, err
+}
+
+func (r *Repository[T]) CountBySlugIgnoringID(db *gorm.DB, slug string, id any) (int64, error) {
+	var total int64
+	err := db.Model(new(T)).
+		Where("slug = ? AND id != ?", slug, id).
+		Count(&total).Error
+	return total, err
+}

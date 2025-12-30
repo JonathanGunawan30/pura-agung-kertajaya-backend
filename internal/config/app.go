@@ -62,6 +62,8 @@ func Bootstrap(cfg *BootstrapConfig) {
 	organizationUsecase := usecase.NewOrganizationRequest(cfg.DB, cfg.Log, cfg.Validate)
 	remarkUseCase := usecase.NewRemarkUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	organizationDetailUsecase := usecase.NewOrganizationDetailUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	categoryUsecase := usecase.NewCategoryUsecase(cfg.DB, cfg.Log, cfg.Validate)
+	articleUsecase := usecase.NewArticleUsecase(cfg.DB, cfg.Log, cfg.Validate)
 
 	// Setup controllers
 	userController := http.NewUserController(userUseCase, cfg.Log)
@@ -77,6 +79,8 @@ func Bootstrap(cfg *BootstrapConfig) {
 	organizationController := http.NewOrganizationController(organizationUsecase, cfg.Log)
 	remarkcontroller := http.NewRemarkController(remarkUseCase, cfg.Log)
 	organizationDetailController := http.NewOrganizationDetailController(organizationDetailUsecase, cfg.Log)
+	categoryController := http.NewCategoryController(categoryUsecase, cfg.Log)
+	articleController := http.NewArticleController(articleUsecase, cfg.Log)
 
 	// Setup redis storage
 	storage := NewFiberRedisStorage(redisHost, redisPort, redisPass, rateLimiterDB)
@@ -108,7 +112,10 @@ func Bootstrap(cfg *BootstrapConfig) {
 		OrganizationController:       organizationController,
 		RemarkController:             remarkcontroller,
 		OrganizationDetailController: organizationDetailController,
-		AuthMiddleware:               authMiddleware,
+		CategoryController:           categoryController,
+		ArticleController:            articleController,
+
+		AuthMiddleware: authMiddleware,
 
 		PublicRateLimiter:   publicRateLimiter,
 		AuthRateLimiter:     authRateLimiter,

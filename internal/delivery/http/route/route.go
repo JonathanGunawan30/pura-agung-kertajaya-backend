@@ -21,6 +21,8 @@ type RouteConfig struct {
 	OrganizationController       *http.OrganizationController
 	OrganizationDetailController *http.OrganizationDetailController
 	RemarkController             *http.RemarkController
+	CategoryController           *http.CategoryController
+	ArticleController            *http.ArticleController
 	AuthMiddleware               fiber.Handler
 
 	PublicRateLimiter   fiber.Handler
@@ -50,6 +52,9 @@ func (c *RouteConfig) SetupGuestRoute() {
 	public.Get("/organization-members", c.OrganizationController.GetAllPublic)
 	public.Get("/organization-details", c.OrganizationDetailController.GetPublic)
 	public.Get("/remarks", c.RemarkController.GetAllPublic)
+	public.Get("/categories", c.CategoryController.GetAllPublic)
+	public.Get("/articles", c.ArticleController.GetPublic)
+	public.Get("/articles/:slug", c.ArticleController.GetBySlug)
 
 	c.App.Post("/api/users/_login", c.AuthRateLimiter, c.UserController.Login)
 }
@@ -128,4 +133,16 @@ func (c *RouteConfig) SetupAuthRoute() {
 
 	auth.Get("/organization-details", c.CMSReadRateLimiter, c.OrganizationDetailController.GetAdmin)
 	auth.Put("/organization-details", c.CMSWriteRateLimiter, c.OrganizationDetailController.Update)
+
+	auth.Get("/categories", c.CMSReadRateLimiter, c.CategoryController.GetAll)
+	auth.Get("/categories/:id", c.CMSReadRateLimiter, c.CategoryController.GetByID)
+	auth.Post("/categories", c.CMSWriteRateLimiter, c.CategoryController.Create)
+	auth.Put("/categories/:id", c.CMSWriteRateLimiter, c.CategoryController.Update)
+	auth.Delete("/categories/:id", c.DeleteRateLimiter, c.CategoryController.Delete)
+
+	auth.Get("/articles", c.CMSReadRateLimiter, c.ArticleController.GetAll)
+	auth.Get("/articles/:id", c.CMSReadRateLimiter, c.ArticleController.GetByID)
+	auth.Post("/articles", c.CMSWriteRateLimiter, c.ArticleController.Create)
+	auth.Put("/articles/:id", c.CMSWriteRateLimiter, c.ArticleController.Update)
+	auth.Delete("/articles/:id", c.DeleteRateLimiter, c.ArticleController.Delete)
 }
