@@ -11,7 +11,7 @@ func ToGalleryResponse(g *entity.Gallery) model.GalleryResponse {
 		EntityType:  g.EntityType,
 		Title:       g.Title,
 		Description: g.Description,
-		ImageURL:    g.ImageURL,
+		Images:      g.Images,
 		OrderIndex:  g.OrderIndex,
 		IsActive:    g.IsActive,
 		CreatedAt:   g.CreatedAt,

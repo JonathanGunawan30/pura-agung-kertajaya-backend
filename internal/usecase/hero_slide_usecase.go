@@ -5,6 +5,7 @@ import (
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
 	"pura-agung-kertajaya-backend/internal/repository"
+	"pura-agung-kertajaya-backend/internal/util"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -86,7 +87,7 @@ func (u *heroSlideUsecase) Create(req model.HeroSlideRequest) (*model.HeroSlideR
 	s := entity.HeroSlide{
 		ID:         uuid.New().String(),
 		EntityType: req.EntityType,
-		ImageUrl:   req.ImageURL,
+		Images:     util.ImageMap(req.Images),
 		OrderIndex: req.OrderIndex,
 		IsActive:   req.IsActive,
 	}
@@ -110,7 +111,7 @@ func (u *heroSlideUsecase) Update(id string, req model.HeroSlideRequest) (*model
 	}
 
 	s.EntityType = req.EntityType
-	s.ImageUrl = req.ImageURL
+	s.Images = util.ImageMap(req.Images)
 	s.OrderIndex = req.OrderIndex
 	s.IsActive = req.IsActive
 

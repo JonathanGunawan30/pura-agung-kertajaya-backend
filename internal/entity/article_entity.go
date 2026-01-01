@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"pura-agung-kertajaya-backend/internal/util"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,7 +26,7 @@ type Article struct {
 	AuthorRole  string        `gorm:"column:author_role;type:varchar(100)"`
 	Excerpt     string        `gorm:"column:excerpt;type:text"`
 	Content     string        `gorm:"column:content;type:longtext"`
-	ImageURL    string        `gorm:"column:image_url;type:varchar(255)"`
+	Images      util.ImageMap `gorm:"column:images;types:json"`
 	Status      ArticleStatus `gorm:"column:status;type:enum('DRAFT','PUBLISHED','ARCHIVED');default:'DRAFT';index"`
 	IsFeatured  bool          `gorm:"column:is_featured;default:false;index"`
 	PublishedAt *time.Time    `gorm:"column:published_at"`

@@ -4094,9 +4094,16 @@
             ],
             "example": "pura"
           },
-          "image_url": {
-            "type": "string",
-            "example": "https://r2.example.com/slide1.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs (e.g. original, lg, md, sm)",
+            "example": {
+              "lg": "https://r2.example.com/slide1_lg.png",
+              "original": "https://r2.example.com/slide1.png"
+            }
           },
           "order_index": {
             "type": "integer",
@@ -4128,9 +4135,15 @@
             ],
             "example": "pura"
           },
-          "image_url": {
-            "type": "string",
-            "example": "https://r2.example.com/new-slide.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required.",
+            "example": {
+              "lg": "https://r2.example.com/new-slide_lg.png"
+            }
           },
           "order_index": {
             "type": "integer",
@@ -4143,7 +4156,7 @@
         },
         "required": [
           "entity_type",
-          "image_url",
+          "images",
           "order_index",
           "is_active"
         ]
@@ -4161,9 +4174,12 @@
             ],
             "example": "pura"
           },
-          "image_url": {
-            "type": "string",
-            "example": "https://r2.example.com/updated-slide.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs."
           },
           "order_index": {
             "type": "integer",
@@ -4190,9 +4206,16 @@
             "type": "string",
             "example": "Deskripsi singkat acara galeri."
           },
-          "image_url": {
-            "type": "string",
-            "example": "https://r2.example.com/galeri1.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs (e.g. original, lg, md, sm)",
+            "example": {
+              "lg": "https://r2.example.com/galeri1_lg.png",
+              "original": "https://r2.example.com/galeri1.png"
+            }
           },
           "order_index": {
             "type": "integer",
@@ -4223,9 +4246,15 @@
             "type": "string",
             "example": "Deskripsi opsional."
           },
-          "image_url": {
-            "type": "string",
-            "example": "https://r2.example.com/galeri-baru.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required.",
+            "example": {
+              "lg": "https://r2.example.com/galeri-baru_lg.png"
+            }
           },
           "order_index": {
             "type": "integer",
@@ -4238,7 +4267,7 @@
         },
         "required": [
           "title",
-          "image_url",
+          "images",
           "order_index",
           "is_active"
         ]
@@ -4255,9 +4284,12 @@
             "type": "string",
             "example": "Deskripsi baru."
           },
-          "image_url": {
-            "type": "string",
-            "example": "https://r2.example.com/galeri-updated.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs."
           },
           "order_index": {
             "type": "integer",
@@ -4442,10 +4474,6 @@
             "type": "string",
             "example": "Selesai"
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/event.jpg"
-          },
           "is_active": {
             "type": "boolean",
             "example": true
@@ -4502,10 +4530,6 @@
             "type": "string",
             "example": "12:00"
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/rapat.jpg"
-          },
           "is_active": {
             "type": "boolean",
             "default": true
@@ -4543,10 +4567,6 @@
           "end_time": {
             "type": "string",
             "example": "12:00"
-          },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/rapat.jpg"
           },
           "is_active": {
             "type": "boolean",
@@ -4719,10 +4739,16 @@
             "type": "string",
             "example": "Deskripsi lengkap tentang pura..."
           },
-          "image_url": {
-            "type": "string",
-            "format": "uri",
-            "example": "https://r2.example.com/about.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs (e.g. original, lg, md, sm)",
+            "example": {
+              "lg": "https://r2.example.com/about_lg.png",
+              "original": "https://r2.example.com/about.png"
+            }
           },
           "is_active": {
             "type": "boolean",
@@ -4787,10 +4813,15 @@
             "type": "string",
             "example": "Penjelasan sejarah..."
           },
-          "image_url": {
-            "type": "string",
-            "format": "uri",
-            "example": "https://r2.example.com/sejarah.png"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required.",
+            "example": {
+              "lg": "https://r2.example.com/sejarah_lg.png"
+            }
           },
           "is_active": {
             "type": "boolean",
@@ -4963,9 +4994,16 @@
             "type": "string",
             "example": "Gedung serbaguna kapasitas 500 orang."
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/wantilan.jpg"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs (e.g. original, lg, md, sm)",
+            "example": {
+              "original": "http://img.com/orig.jpg",
+              "lg": "http://img.com/lg.jpg"
+            }
           },
           "is_active": {
             "type": "boolean",
@@ -4985,7 +5023,8 @@
         "type": "object",
         "required": [
           "entity_type",
-          "name"
+          "name",
+          "images"
         ],
         "properties": {
           "entity_type": {
@@ -5005,9 +5044,15 @@
             "type": "string",
             "example": "Area parkir untuk 100 mobil."
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/parkir.jpg"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required.",
+            "example": {
+              "lg": "http://img.com/parkir_lg.jpg"
+            }
           },
           "is_active": {
             "type": "boolean",
@@ -5018,7 +5063,8 @@
       "FacilityUpdateRequest": {
         "type": "object",
         "required": [
-          "name"
+          "name",
+          "images"
         ],
         "properties": {
           "name": {
@@ -5029,9 +5075,12 @@
             "type": "string",
             "example": "Area parkir untuk 150 mobil."
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/parkir-baru.jpg"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required."
           },
           "is_active": {
             "type": "boolean",
@@ -5284,8 +5333,12 @@
             "type": "string",
             "description": "Full HTML content"
           },
-          "image_url": {
-            "type": "string"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs (e.g. original, lg, md, sm)"
           },
           "status": {
             "type": "string",
@@ -5318,7 +5371,8 @@
           "title",
           "author_name",
           "content",
-          "status"
+          "status",
+          "images"
         ],
         "properties": {
           "category_id": {
@@ -5344,9 +5398,12 @@
             "type": "string",
             "minLength": 10
           },
-          "image_url": {
-            "type": "string",
-            "format": "uri"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required keys depend on frontend implementation."
           },
           "is_featured": {
             "type": "boolean"
@@ -5372,7 +5429,8 @@
           "title",
           "author_name",
           "content",
-          "status"
+          "status",
+          "images"
         ],
         "properties": {
           "category_id": {
@@ -5397,9 +5455,11 @@
             "type": "string",
             "minLength": 10
           },
-          "image_url": {
-            "type": "string",
-            "format": "uri"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           },
           "is_featured": {
             "type": "boolean"

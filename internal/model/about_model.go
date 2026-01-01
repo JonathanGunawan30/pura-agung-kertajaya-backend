@@ -12,7 +12,7 @@ type AboutSectionRequest struct {
 	EntityType  string              `json:"entity_type" validate:"required,oneof=pura yayasan pasraman"`
 	Title       string              `json:"title" validate:"required,min=1,max=150"`
 	Description string              `json:"description" validate:"required"`
-	ImageURL    string              `json:"image_url" validate:"omitempty,url|uri|startswith=http"`
+	Images      map[string]string   `json:"images" validate:"required"`
 	IsActive    bool                `json:"is_active"`
 	Values      []AboutValueRequest `json:"values" validate:"dive"`
 }
@@ -31,7 +31,7 @@ type AboutSectionResponse struct {
 	EntityType  string               `json:"entity_type"`
 	Title       string               `json:"title"`
 	Description string               `json:"description"`
-	ImageURL    string               `json:"image_url"`
+	Images      map[string]string    `json:"images"`
 	IsActive    bool                 `json:"is_active"`
 	CreatedAt   time.Time            `json:"created_at"`
 	UpdatedAt   time.Time            `json:"updated_at"`

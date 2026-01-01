@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"net/http/httptest"
+	"net/textproto"
 	"testing"
 
 	"pura-agung-kertajaya-backend/internal/delivery/http"
@@ -16,7 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gorm.io/gorm"
 )
 
 func TestStorageController_Upload_Success(t *testing.T) {
@@ -25,16 +26,23 @@ func TestStorageController_Upload_Success(t *testing.T) {
 	controller := http.NewStorageController(mockUsecase, log)
 	app := fiber.New()
 
-	// multipart body
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	part, _ := writer.CreateFormFile("file", "test.jpg")
+
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", "test.jpg"))
+	h.Set("Content-Type", "image/jpeg")
+	part, _ := writer.CreatePart(h)
 	part.Write([]byte("test file content"))
 	writer.Close()
 
-	expectedURL := "https://example.com/uploads/test_1234567890.jpg"
-	mockUsecase.On("UploadFile", mock.Anything, "test.jpg", mock.Anything, mock.Anything, mock.Anything).
-		Return(expectedURL, nil)
+	expectedVariants := map[string]string{
+		"original": "https://example.com/uploads/test_1234567890.jpg",
+		"lg":       "https://example.com/uploads/test_1234567890_lg.jpg",
+	}
+
+	mockUsecase.On("UploadFile", mock.Anything, "test.jpg", mock.Anything, "image/jpeg", mock.Anything).
+		Return(expectedVariants, nil)
 
 	app.Post("/upload", controller.Upload)
 	req := httptest.NewRequest("POST", "/upload", body)
@@ -43,10 +51,15 @@ func TestStorageController_Upload_Success(t *testing.T) {
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
-	var response model.WebResponse[fiber.Map]
+	var response model.WebResponse[map[string]interface{}]
 	json.NewDecoder(resp.Body).Decode(&response)
-	assert.Equal(t, expectedURL, response.Data["url"])
+
+	variants := response.Data["variants"].(map[string]interface{})
+
+	assert.Equal(t, expectedVariants["original"], variants["original"])
+	assert.Equal(t, expectedVariants["lg"], variants["lg"])
 	assert.Equal(t, "test.jpg", response.Data["filename"])
+
 	mockUsecase.AssertExpectations(t)
 }
 
@@ -75,13 +88,18 @@ func TestStorageController_Upload_UsecaseError(t *testing.T) {
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	part, _ := writer.CreateFormFile("file", "test.jpg")
+
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", "test.jpg"))
+	h.Set("Content-Type", "image/jpeg")
+	part, _ := writer.CreatePart(h)
 	part.Write([]byte("test file content"))
 	writer.Close()
 
 	expectedError := errors.New("upload failed")
-	mockUsecase.On("UploadFile", mock.Anything, "test.jpg", mock.Anything, mock.Anything, mock.Anything).
-		Return("", expectedError)
+
+	mockUsecase.On("UploadFile", mock.Anything, "test.jpg", mock.Anything, "image/jpeg", mock.Anything).
+		Return((map[string]string)(nil), expectedError)
 
 	app.Post("/upload", controller.Upload)
 	req := httptest.NewRequest("POST", "/upload", body)
@@ -135,20 +153,11 @@ func TestStorageController_Delete_NoKey(t *testing.T) {
 }
 
 func TestStorageController_Delete_Error(t *testing.T) {
-	mockUsecase := &usecasemock.MockStorageUsecase{}
+	mockUsecase := usecasemock.NewMockStorageUsecase()
 	log := logrus.New()
 	controller := http.NewStorageController(mockUsecase, log)
-	app := fiber.New(fiber.Config{
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-			message := "An internal server error occurred. Please try again later."
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				code = fiber.StatusNotFound
-				message = "The requested resource was not found."
-			}
-			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
-		},
-	})
+
+	app := fiber.New()
 
 	app.Delete("/api/storage/delete", controller.Delete)
 
@@ -166,7 +175,9 @@ func TestStorageController_Delete_Error(t *testing.T) {
 	var response model.WebResponse[any]
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Equal(t, "An internal server error occurred. Please try again later.", response.Errors)
+
+	// PERBAIKAN DISINI: Expect pesan error asli, bukan generic message
+	assert.Equal(t, "delete failed", response.Errors)
 
 	mockUsecase.AssertExpectations(t)
 }

@@ -21,7 +21,7 @@ func ToArticleResponse(a *entity.Article) model.ArticleResponse {
 		AuthorRole:  a.AuthorRole,
 		Excerpt:     a.Excerpt,
 		Content:     a.Content,
-		ImageURL:    a.ImageURL,
+		Images:      a.Images,
 		Status:      string(a.Status),
 		IsFeatured:  a.IsFeatured,
 		PublishedAt: a.PublishedAt,

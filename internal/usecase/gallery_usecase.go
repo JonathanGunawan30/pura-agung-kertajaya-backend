@@ -5,6 +5,7 @@ import (
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
 	"pura-agung-kertajaya-backend/internal/repository"
+	"pura-agung-kertajaya-backend/internal/util"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -87,7 +88,7 @@ func (u *galleryUsecase) Create(req model.CreateGalleryRequest) (*model.GalleryR
 		EntityType:  req.EntityType,
 		Title:       req.Title,
 		Description: req.Description,
-		ImageURL:    req.ImageURL,
+		Images:      util.ImageMap(req.Images),
 		OrderIndex:  req.OrderIndex,
 		IsActive:    req.IsActive,
 	}
@@ -108,7 +109,7 @@ func (u *galleryUsecase) Update(id string, req model.UpdateGalleryRequest) (*mod
 	}
 	g.Title = req.Title
 	g.Description = req.Description
-	g.ImageURL = req.ImageURL
+	g.Images = util.ImageMap(req.Images)
 	g.OrderIndex = req.OrderIndex
 	g.IsActive = req.IsActive
 	if err := u.repo.Update(u.db, &g); err != nil {

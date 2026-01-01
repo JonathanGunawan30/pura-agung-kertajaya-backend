@@ -5,6 +5,7 @@ import (
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
 	"pura-agung-kertajaya-backend/internal/repository"
+	"pura-agung-kertajaya-backend/internal/util"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -95,7 +96,7 @@ func (u *aboutUsecase) Create(req model.AboutSectionRequest) (*model.AboutSectio
 		EntityType:  req.EntityType,
 		Title:       req.Title,
 		Description: req.Description,
-		ImageURL:    req.ImageURL,
+		Images:      util.ImageMap(req.Images),
 		IsActive:    req.IsActive,
 	}
 
@@ -124,7 +125,6 @@ func (u *aboutUsecase) Create(req model.AboutSectionRequest) (*model.AboutSectio
 		return nil, err
 	}
 
-	// reload with values
 	if err := preloadValuesOrdered(u.db).Where("id = ?", a.ID).Take(&a).Error; err != nil {
 		return nil, err
 	}
@@ -145,14 +145,13 @@ func (u *aboutUsecase) Update(id string, req model.AboutSectionRequest) (*model.
 	a.EntityType = req.EntityType
 	a.Title = req.Title
 	a.Description = req.Description
-	a.ImageURL = req.ImageURL
+	a.Images = util.ImageMap(req.Images)
 	a.IsActive = req.IsActive
 
 	err := u.db.Transaction(func(tx *gorm.DB) error {
 		if err := u.repoAbout.Update(tx, &a); err != nil {
 			return err
 		}
-		// simple sync strategy: delete existing values then recreate in order
 		if err := tx.Where("about_id = ?", a.ID).Delete(&entity.AboutValue{}).Error; err != nil {
 			return err
 		}

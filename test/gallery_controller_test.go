@@ -92,7 +92,7 @@ func TestGalleryController_GetByID_Success(t *testing.T) {
 func TestGalleryController_Create_Success(t *testing.T) {
 	app, mockUC := setupGalleryController(t)
 
-	reqBody := model.CreateGalleryRequest{Title: "New", ImageURL: "http://img.com", EntityType: "pura"}
+	reqBody := model.CreateGalleryRequest{Title: "New", Images: map[string]string{"lg": "https://img.com/lg.jpg"}, EntityType: "pura"}
 	resBody := &model.GalleryResponse{ID: "new-id", Title: "New"}
 
 	mockUC.On("Create", mock.AnythingOfType("model.CreateGalleryRequest")).Return(resBody, nil)

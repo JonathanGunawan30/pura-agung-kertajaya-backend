@@ -15,9 +15,14 @@ func NewMockStorageUsecase() *MockStorageUsecase {
 	return &MockStorageUsecase{}
 }
 
-func (m *MockStorageUsecase) UploadFile(ctx context.Context, filename string, file io.Reader, contentType string, fileSize int64) (string, error) {
+func (m *MockStorageUsecase) UploadFile(ctx context.Context, filename string, file io.Reader, contentType string, fileSize int64) (map[string]string, error) {
 	args := m.Called(ctx, filename, file, contentType, fileSize)
-	return args.String(0), args.Error(1)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(map[string]string), args.Error(1)
 }
 
 func (m *MockStorageUsecase) DownloadFile(ctx context.Context, key string) (io.ReadCloser, error) {

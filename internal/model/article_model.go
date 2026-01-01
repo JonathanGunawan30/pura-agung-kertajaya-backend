@@ -11,7 +11,7 @@ type ArticleResponse struct {
 	AuthorRole  string            `json:"author_role"`
 	Excerpt     string            `json:"excerpt"`
 	Content     string            `json:"content"`
-	ImageURL    string            `json:"image_url"`
+	Images      map[string]string `json:"images"`
 	Status      string            `json:"status"`
 	IsFeatured  bool              `json:"is_featured"`
 	PublishedAt *time.Time        `json:"published_at"`
@@ -20,25 +20,25 @@ type ArticleResponse struct {
 }
 
 type CreateArticleRequest struct {
-	CategoryID  string     `json:"category_id"`
-	Title       string     `json:"title" validate:"required,min=5,max=200"`
-	AuthorName  string     `json:"author_name" validate:"required,min=2,max=100"`
-	AuthorRole  string     `json:"author_role" validate:"omitempty,max=100"`
-	Content     string     `json:"content" validate:"required,min=10"`
-	ImageURL    string     `json:"image_url" validate:"omitempty,url"`
-	IsFeatured  bool       `json:"is_featured"`
-	Status      string     `json:"status" validate:"required,oneof=DRAFT PUBLISHED ARCHIVED"`
-	PublishedAt *time.Time `json:"published_at"`
+	CategoryID  string            `json:"category_id"`
+	Title       string            `json:"title" validate:"required,min=5,max=200"`
+	AuthorName  string            `json:"author_name" validate:"required,min=2,max=100"`
+	AuthorRole  string            `json:"author_role" validate:"omitempty,max=100"`
+	Content     string            `json:"content" validate:"required,min=10"`
+	Images      map[string]string `json:"images" validate:"required"`
+	IsFeatured  bool              `json:"is_featured"`
+	Status      string            `json:"status" validate:"required,oneof=DRAFT PUBLISHED ARCHIVED"`
+	PublishedAt *time.Time        `json:"published_at"`
 }
 
 type UpdateArticleRequest struct {
-	CategoryID  string     `json:"category_id"`
-	Title       string     `json:"title" validate:"required,min=5,max=200"`
-	AuthorName  string     `json:"author_name" validate:"required,min=2,max=100"`
-	AuthorRole  string     `json:"author_role" validate:"omitempty,max=100"`
-	Content     string     `json:"content" validate:"required,min=10"`
-	ImageURL    string     `json:"image_url" validate:"omitempty,url"`
-	IsFeatured  bool       `json:"is_featured"`
-	Status      string     `json:"status" validate:"required,oneof=DRAFT PUBLISHED ARCHIVED"`
-	PublishedAt *time.Time `json:"published_at"`
+	CategoryID  string            `json:"category_id"`
+	Title       string            `json:"title" validate:"required,min=5,max=200"`
+	AuthorName  string            `json:"author_name" validate:"required,min=2,max=100"`
+	AuthorRole  string            `json:"author_role" validate:"omitempty,max=100"`
+	Content     string            `json:"content" validate:"required,min=10"`
+	Images      map[string]string `json:"images" validate:"required"`
+	IsFeatured  bool              `json:"is_featured"`
+	Status      string            `json:"status" validate:"required,oneof=DRAFT PUBLISHED ARCHIVED"`
+	PublishedAt *time.Time        `json:"published_at"`
 }

@@ -26,7 +26,7 @@ func ToAboutSectionResponse(a entity.AboutSection) model.AboutSectionResponse {
 		EntityType:  a.EntityType,
 		Title:       a.Title,
 		Description: a.Description,
-		ImageURL:    a.ImageURL,
+		Images:      a.Images,
 		IsActive:    a.IsActive,
 		CreatedAt:   a.CreatedAt,
 		UpdatedAt:   a.UpdatedAt,

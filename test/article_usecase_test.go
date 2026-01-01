@@ -38,9 +38,9 @@ func setupMockArticleUsecase(t *testing.T) (usecase.ArticleUsecase, sqlmock.Sqlm
 func TestArticleUsecase_GetPublic(t *testing.T) {
 	u, mock := setupMockArticleUsecase(t)
 
-	rows := sqlmock.NewRows([]string{"id", "title", "status", "published_at"}).
-		AddRow("uuid-1", "Berita 1", "PUBLISHED", time.Now()).
-		AddRow("uuid-2", "Berita 2", "PUBLISHED", time.Now())
+	rows := sqlmock.NewRows([]string{"id", "title", "status", "published_at", "images"}).
+		AddRow("uuid-1", "Berita 1", "PUBLISHED", time.Now(), []byte(`{"lg":"img1.jpg"}`)).
+		AddRow("uuid-2", "Berita 2", "PUBLISHED", time.Now(), []byte(`{"lg":"img2.jpg"}`))
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE status = ? ORDER BY is_featured DESC, published_at DESC LIMIT ?")).
 		WithArgs(entity.ArticleStatusPublished, 10).
@@ -49,20 +49,21 @@ func TestArticleUsecase_GetPublic(t *testing.T) {
 	results, err := u.GetPublic(10)
 
 	assert.NoError(t, err)
-
 	assert.Len(t, results, 2)
 
 	if len(results) > 0 {
 		assert.Equal(t, "Berita 1", results[0].Title)
+		assert.Equal(t, "img1.jpg", results[0].Images["lg"])
 	}
 }
+
 func TestArticleUsecase_GetBySlug(t *testing.T) {
 	u, mock := setupMockArticleUsecase(t)
 
 	slug := "upacara-ngaben"
 
-	rows := sqlmock.NewRows([]string{"id", "title", "slug", "status"}).
-		AddRow("uuid-1", "Upacara Ngaben", slug, "PUBLISHED")
+	rows := sqlmock.NewRows([]string{"id", "title", "slug", "status", "images"}).
+		AddRow("uuid-1", "Upacara Ngaben", slug, "PUBLISHED", []byte(`{"lg":"img1.jpg"}`))
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE slug = ? AND status = ? ORDER BY `articles`.`id` LIMIT ?")).
 		WithArgs(slug, entity.ArticleStatusPublished, 1).
@@ -71,8 +72,10 @@ func TestArticleUsecase_GetBySlug(t *testing.T) {
 	res, err := u.GetBySlug(slug)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, res)
-	assert.Equal(t, "Upacara Ngaben", res.Title)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, "Upacara Ngaben", res.Title)
+		assert.Equal(t, "img1.jpg", res.Images["lg"])
+	}
 }
 
 func TestArticleUsecase_Create_AutoSlugAndExcerpt(t *testing.T) {
@@ -83,6 +86,7 @@ func TestArticleUsecase_Create_AutoSlugAndExcerpt(t *testing.T) {
 		AuthorName: "Admin",
 		Content:    "Ini adalah konten yang sangat panjang sekali...",
 		Status:     "PUBLISHED",
+		Images:     map[string]string{"lg": "https://img.com/lg.jpg"},
 	}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE slug = ?")).
@@ -100,7 +104,7 @@ func TestArticleUsecase_Create_AutoSlugAndExcerpt(t *testing.T) {
 			"",
 			"Ini adalah konten yang sangat panjang sekali...",
 			req.Content,
-			"",
+			sqlmock.AnyArg(),
 			"PUBLISHED",
 			false,
 			sqlmock.AnyArg(),
@@ -113,9 +117,11 @@ func TestArticleUsecase_Create_AutoSlugAndExcerpt(t *testing.T) {
 	created, err := u.Create(req)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, created)
-	assert.Equal(t, "judul-berita-keren", created.Slug)
-	assert.Equal(t, req.Content, created.Excerpt)
+	if assert.NotNil(t, created) {
+		assert.Equal(t, "judul-berita-keren", created.Slug)
+		assert.Equal(t, req.Content, created.Excerpt)
+		assert.Equal(t, req.Images["lg"], created.Images["lg"])
+	}
 }
 
 func TestArticleUsecase_Create_SlugCollision(t *testing.T) {
@@ -126,6 +132,7 @@ func TestArticleUsecase_Create_SlugCollision(t *testing.T) {
 		AuthorName: "Budi",
 		Content:    "Isi konten ini harus cukup panjang ya",
 		Status:     "DRAFT",
+		Images:     map[string]string{"lg": "https://img.com/lg.jpg"},
 	}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE slug = ?")).
@@ -147,8 +154,7 @@ func TestArticleUsecase_Create_SlugCollision(t *testing.T) {
 			sqlmock.AnyArg(),
 			"Isi konten ini harus cukup panjang ya",
 			"Isi konten ini harus cukup panjang ya",
-
-			"",
+			sqlmock.AnyArg(),
 			"DRAFT",
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
@@ -161,12 +167,9 @@ func TestArticleUsecase_Create_SlugCollision(t *testing.T) {
 	created, err := u.Create(req)
 
 	assert.NoError(t, err)
-
-	if created == nil {
-		t.FailNow()
+	if assert.NotNil(t, created) {
+		assert.Equal(t, "berita-sama-1", created.Slug)
 	}
-
-	assert.Equal(t, "berita-sama-1", created.Slug)
 }
 
 func TestArticleUsecase_Update(t *testing.T) {
@@ -178,11 +181,13 @@ func TestArticleUsecase_Update(t *testing.T) {
 		Content:    "Konten baru",
 		AuthorName: "Author",
 		Status:     "PUBLISHED",
+		Images:     map[string]string{"lg": "https://new.jpg"},
 	}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE id = ? LIMIT ?")).
 		WithArgs(id, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "slug"}).AddRow(id, "Judul Lama", "judul-lama"))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "slug", "images"}).
+			AddRow(id, "Judul Lama", "judul-lama", []byte(`{"lg":"old.jpg"}`)))
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE slug = ? AND id != ?")).
 		WithArgs("judul-baru", id).
@@ -198,7 +203,7 @@ func TestArticleUsecase_Update(t *testing.T) {
 			"",
 			"Konten baru",
 			req.Content,
-			"",
+			sqlmock.AnyArg(),
 			"PUBLISHED",
 			false,
 			sqlmock.AnyArg(),
@@ -212,9 +217,10 @@ func TestArticleUsecase_Update(t *testing.T) {
 	updated, err := u.Update(id, req)
 	assert.NoError(t, err)
 
-	if updated != nil {
+	if assert.NotNil(t, updated) {
 		assert.Equal(t, "Judul Baru", updated.Title)
 		assert.Equal(t, "judul-baru", updated.Slug)
+		assert.Equal(t, "https://new.jpg", updated.Images["lg"])
 	}
 }
 
@@ -224,7 +230,8 @@ func TestArticleUsecase_Delete(t *testing.T) {
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE id = ? LIMIT ?")).
 		WithArgs(id, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "title"}).AddRow(id, "To Delete"))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "images"}).
+			AddRow(id, "To Delete", []byte(`{}`)))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `articles` WHERE `articles`.`id` = ?")).

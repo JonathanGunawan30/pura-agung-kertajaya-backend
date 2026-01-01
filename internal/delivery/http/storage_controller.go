@@ -1,6 +1,8 @@
 package http
 
 import (
+	"strings"
+
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 
@@ -29,6 +31,21 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 		})
 	}
 
+	contentType := file.Header.Get("Content-Type")
+	if !isValidImageType(contentType) {
+		c.Log.WithField("content_type", contentType).Error("invalid file type")
+		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
+			Errors: "Only image files are allowed (JPEG, PNG, WEBP)",
+		})
+	}
+
+	if file.Size > 2*1024*1024 {
+		c.Log.WithField("size", file.Size).Error("file too large")
+		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
+			Errors: "File size must not exceed 2MB",
+		})
+	}
+
 	src, err := file.Open()
 	if err != nil {
 		c.Log.WithError(err).Error("failed to open file")
@@ -38,11 +55,11 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 	}
 	defer src.Close()
 
-	url, err := c.UseCase.UploadFile(
+	variants, err := c.UseCase.UploadFile(
 		ctx.Context(),
 		file.Filename,
 		src,
-		file.Header.Get("Content-Type"),
+		contentType,
 		file.Size,
 	)
 	if err != nil {
@@ -54,7 +71,7 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[fiber.Map]{
 		Data: fiber.Map{
-			"url":      url,
+			"variants": variants,
 			"filename": file.Filename,
 		},
 	})
@@ -71,7 +88,9 @@ func (c *StorageController) Delete(ctx *fiber.Ctx) error {
 	err := c.UseCase.DeleteFile(ctx.Context(), key)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to delete file")
-		return err
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
+			Errors: err.Error(),
+		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[string]{
@@ -87,12 +106,14 @@ func (c *StorageController) GetPresignedURL(ctx *fiber.Ctx) error {
 		})
 	}
 
-	expiration := ctx.QueryInt("expiration", 3600) // default 1 hour
+	expiration := ctx.QueryInt("expiration", 3600)
 
 	url, err := c.UseCase.GetPresignedURL(ctx.Context(), key, expiration)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to generate presigned URL")
-		return err
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
+			Errors: err.Error(),
+		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[fiber.Map]{
@@ -100,4 +121,21 @@ func (c *StorageController) GetPresignedURL(ctx *fiber.Ctx) error {
 			"url": url,
 		},
 	})
+}
+
+func isValidImageType(contentType string) bool {
+	validTypes := []string{
+		"image/jpeg",
+		"image/jpg",
+		"image/png",
+		"image/webp",
+	}
+
+	contentType = strings.ToLower(contentType)
+	for _, validType := range validTypes {
+		if contentType == validType {
+			return true
+		}
+	}
+	return false
 }

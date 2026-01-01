@@ -6,6 +6,7 @@ import (
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
 	"pura-agung-kertajaya-backend/internal/repository"
+	"pura-agung-kertajaya-backend/internal/util"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -144,7 +145,7 @@ func (u *articleUsecase) Create(req model.CreateArticleRequest) (*model.ArticleR
 		AuthorRole:  req.AuthorRole,
 		Excerpt:     finalExcerpt,
 		Content:     req.Content,
-		ImageURL:    req.ImageURL,
+		Images:      util.ImageMap(req.Images),
 		Status:      entity.ArticleStatus(req.Status),
 		IsFeatured:  req.IsFeatured,
 		PublishedAt: pubTime,
@@ -190,7 +191,7 @@ func (u *articleUsecase) Update(id string, req model.UpdateArticleRequest) (*mod
 	article.AuthorName = req.AuthorName
 	article.AuthorRole = req.AuthorRole
 	article.Content = req.Content
-	article.ImageURL = req.ImageURL
+	article.Images = util.ImageMap(req.Images)
 	article.Status = entity.ArticleStatus(req.Status)
 	article.IsFeatured = req.IsFeatured
 
