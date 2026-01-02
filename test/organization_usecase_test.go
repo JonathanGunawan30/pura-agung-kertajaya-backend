@@ -41,18 +41,19 @@ func TestOrganizationMemberUsecase_Create_Success(t *testing.T) {
 		Name:          "Ketut Test",
 		Position:      "Bendahara",
 		PositionOrder: 3,
+		Images:        map[string]string{"default": "image.jpg"},
 		OrderIndex:    1,
 		IsActive:      true,
 	}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `organization_members`")).
-		WithArgs(sqlmock.AnyArg(), req.EntityType, "Ketut Test", "Bendahara", 3, 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), req.EntityType, "Ketut Test", "Bendahara", 3, sqlmock.AnyArg(), 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "name", "position", "position_order", "order_index", "is_active"}).
-		AddRow("uuid-1", "Ketut Test", "Bendahara", 3, 1, true)
+	rows := sqlmock.NewRows([]string{"id", "name", "position", "position_order", "images", "order_index", "is_active"}).
+		AddRow("uuid-1", "Ketut Test", "Bendahara", 3, "{}", 1, true)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members`")).
 		WithArgs(sqlmock.AnyArg()).
@@ -91,12 +92,12 @@ func TestOrganizationMemberUsecase_Create_ValidationError(t *testing.T) {
 func TestOrganizationMemberUsecase_GetAll_OrderedCorrectly(t *testing.T) {
 	u, mock := setupMockOrganizationUsecase(t)
 
-	rows := sqlmock.NewRows([]string{"id", "name", "position", "position_order", "order_index", "is_active"}).
-		AddRow("m1", "Ketua", "Ketua", 1, 1, true).
-		AddRow("m2", "Wakil", "Wakil Ketua", 2, 1, true).
-		AddRow("m4", "Sekre 1", "Sekretaris", 3, 1, true).
-		AddRow("m3", "Sekre 2", "Sekretaris", 3, 2, true).
-		AddRow("m5", "NonAktif", "Anggota", 4, 1, false)
+	rows := sqlmock.NewRows([]string{"id", "name", "position", "position_order", "images", "order_index", "is_active"}).
+		AddRow("m1", "Ketua", "Ketua", 1, "{}", 1, true).
+		AddRow("m2", "Wakil", "Wakil Ketua", 2, "{}", 1, true).
+		AddRow("m4", "Sekre 1", "Sekretaris", 3, "{}", 1, true).
+		AddRow("m3", "Sekre 2", "Sekretaris", 3, "{}", 2, true).
+		AddRow("m5", "NonAktif", "Anggota", 4, "{}", 1, false)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE entity_type = ? ORDER BY position_order ASC, order_index ASC")).
 		WithArgs("pura").
@@ -116,11 +117,11 @@ func TestOrganizationMemberUsecase_GetAll_OrderedCorrectly(t *testing.T) {
 func TestOrganizationMemberUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
 	u, mock := setupMockOrganizationUsecase(t)
 
-	rows := sqlmock.NewRows([]string{"id", "name", "position", "position_order", "order_index", "is_active"}).
-		AddRow("m1", "Ketua", "Ketua", 1, 1, true).
-		AddRow("m2", "Wakil", "Wakil Ketua", 2, 1, true).
-		AddRow("m4", "Sekre 1", "Sekretaris", 3, 1, true).
-		AddRow("m3", "Sekre 2", "Sekretaris", 3, 2, true)
+	rows := sqlmock.NewRows([]string{"id", "name", "position", "position_order", "images", "order_index", "is_active"}).
+		AddRow("m1", "Ketua", "Ketua", 1, "{}", 1, true).
+		AddRow("m2", "Wakil", "Wakil Ketua", 2, "{}", 1, true).
+		AddRow("m4", "Sekre 1", "Sekretaris", 3, "{}", 1, true).
+		AddRow("m3", "Sekre 2", "Sekretaris", 3, "{}", 2, true)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `organization_members` WHERE entity_type = ? AND is_active = ? ORDER BY order_index ASC")).
 		WithArgs("pura", true).
@@ -162,6 +163,7 @@ func TestOrganizationMemberUsecase_Update_Success(t *testing.T) {
 		Name:          "New Name",
 		Position:      "New Pos",
 		PositionOrder: 5,
+		Images:        map[string]string{"default": "updated.jpg"},
 		OrderIndex:    2,
 		IsActive:      false,
 	}
@@ -172,7 +174,7 @@ func TestOrganizationMemberUsecase_Update_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `organization_members`")).
-		WithArgs(sqlmock.AnyArg(), "New Name", "New Pos", 5, 2, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs(sqlmock.AnyArg(), "New Name", "New Pos", 5, sqlmock.AnyArg(), 2, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 

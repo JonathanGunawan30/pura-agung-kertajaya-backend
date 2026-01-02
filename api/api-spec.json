@@ -4867,9 +4867,16 @@
             "type": "string",
             "example": "Ketua"
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/foto.jpg"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs (e.g. original, lg, md, sm)",
+            "example": {
+              "lg": "https://r2.example.com/member_lg.png",
+              "original": "https://r2.example.com/member.png"
+            }
           },
           "social_media": {
             "type": "string",
@@ -4898,7 +4905,8 @@
         "required": [
           "entity_type",
           "name",
-          "position"
+          "position",
+          "images"
         ],
         "properties": {
           "entity_type": {
@@ -4918,9 +4926,15 @@
             "type": "string",
             "example": "Sekretaris"
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/foto.jpg"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required.",
+            "example": {
+              "lg": "https://r2.example.com/member_lg.png"
+            }
           },
           "social_media": {
             "type": "string",
@@ -4940,7 +4954,8 @@
         "type": "object",
         "required": [
           "name",
-          "position"
+          "position",
+          "images"
         ],
         "properties": {
           "name": {
@@ -4951,9 +4966,12 @@
             "type": "string",
             "example": "Sekretaris"
           },
-          "image_url": {
-            "type": "string",
-            "example": "http://img.com/foto.jpg"
+          "images": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of image URLs. Required."
           },
           "social_media": {
             "type": "string",

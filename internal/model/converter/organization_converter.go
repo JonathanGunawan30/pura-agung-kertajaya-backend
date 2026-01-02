@@ -12,6 +12,7 @@ func ToOrganizationResponse(g *entity.OrganizationMember) model.OrganizationResp
 		Name:          g.Name,
 		Position:      g.Position,
 		PositionOrder: g.PositionOrder,
+		Images:        g.Images,
 		OrderIndex:    g.OrderIndex,
 		IsActive:      g.IsActive,
 		CreatedAt:     g.CreatedAt,

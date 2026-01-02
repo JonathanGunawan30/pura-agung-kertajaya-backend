@@ -154,8 +154,21 @@ func TestOrganizationMemberController_GetByID_NotFound(t *testing.T) {
 func TestOrganizationMemberController_Create_Success(t *testing.T) {
 	app, mockUC := setupOrganizationMemberController(t)
 
-	reqBody := model.CreateOrganizationRequest{Name: "New Member", Position: "Anggota", PositionOrder: 5, IsActive: true}
-	mockResponse := &model.OrganizationResponse{ID: "newID", Name: "New Member", Position: "Anggota", PositionOrder: 5, IsActive: true}
+	reqBody := model.CreateOrganizationRequest{
+		Name:          "New Member",
+		Position:      "Anggota",
+		PositionOrder: 5,
+		Images:        map[string]string{"default": "image.jpg"},
+		IsActive:      true,
+	}
+	mockResponse := &model.OrganizationResponse{
+		ID:            "newID",
+		Name:          "New Member",
+		Position:      "Anggota",
+		PositionOrder: 5,
+		Images:        map[string]string{"default": "image.jpg"},
+		IsActive:      true,
+	}
 	mockUC.On("Create", reqBody).Return(mockResponse, nil)
 
 	bodyBytes, _ := json.Marshal(reqBody)
@@ -206,8 +219,21 @@ func TestOrganizationMemberController_Create_UsecaseError(t *testing.T) {
 func TestOrganizationMemberController_Update_Success(t *testing.T) {
 	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "updateID"
-	reqBody := model.UpdateOrganizationRequest{Name: "Updated Name", Position: "Ketua", PositionOrder: 1, IsActive: true}
-	mockResponse := &model.OrganizationResponse{ID: memberID, Name: "Updated Name", Position: "Ketua", PositionOrder: 1, IsActive: true}
+	reqBody := model.UpdateOrganizationRequest{
+		Name:          "Updated Name",
+		Position:      "Ketua",
+		PositionOrder: 1,
+		Images:        map[string]string{"default": "updated.jpg"},
+		IsActive:      true,
+	}
+	mockResponse := &model.OrganizationResponse{
+		ID:            memberID,
+		Name:          "Updated Name",
+		Position:      "Ketua",
+		PositionOrder: 1,
+		Images:        map[string]string{"default": "updated.jpg"},
+		IsActive:      true,
+	}
 
 	mockUC.On("Update", memberID, reqBody).Return(mockResponse, nil)
 
