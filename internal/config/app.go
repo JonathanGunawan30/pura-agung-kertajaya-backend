@@ -85,6 +85,17 @@ func Bootstrap(cfg *BootstrapConfig) {
 	// Setup redis storage
 	storage := NewFiberRedisStorage(redisHost, redisPort, redisPass, rateLimiterDB)
 
+	cfg.App.Hooks().OnShutdown(func() error {
+		cfg.Log.Info("Closing Redis connections...")
+		if err := storage.Close(); err != nil {
+			cfg.Log.WithError(err).Error("Failed to close Redis Storage")
+		}
+		if err := redisClient.RDB.Close(); err != nil {
+			cfg.Log.WithError(err).Error("Failed to close Redis Client")
+		}
+		return nil
+	})
+
 	// Setup middleware
 	authMiddleware := middleware.AuthMiddleware(tokenUtil)
 

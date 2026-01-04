@@ -12,6 +12,7 @@ type OrganizationDetail struct {
 	VisionMissionImageURL string    `gorm:"column:vision_mission_image_url;type:text"`
 	WorkProgramImageURL   string    `gorm:"column:work_program_image_url;type:text"`
 	RulesImageURL         string    `gorm:"column:rules_image_url;type:text"`
+	StructureImageURL     string    `gorm:"column:structure_image_url;type:text"`
 	CreatedAt             time.Time `gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt             time.Time `gorm:"column:updated_at;autoUpdateTime"`
 }

@@ -54,6 +54,7 @@ func (u *organizationDetailUsecase) GetByEntityType(entityType string) (*model.O
 				VisionMissionImageURL: "",
 				WorkProgramImageURL:   "",
 				RulesImageURL:         "",
+				StructureImageURL:     "",
 			}, nil
 		}
 		return nil, err
@@ -87,6 +88,7 @@ func (u *organizationDetailUsecase) Update(entityType string, req model.UpdateOr
 			VisionMissionImageURL: req.VisionMissionImageURL,
 			WorkProgramImageURL:   req.WorkProgramImageURL,
 			RulesImageURL:         req.RulesImageURL,
+			StructureImageURL:     req.StructureImageURL,
 		}
 
 		if err := u.repo.Create(u.db, &detail); err != nil {
@@ -115,6 +117,10 @@ func (u *organizationDetailUsecase) Update(entityType string, req model.UpdateOr
 		}
 		if req.RulesImageURL != "" {
 			detail.RulesImageURL = req.RulesImageURL
+		}
+
+		if req.StructureImageURL != "" {
+			detail.StructureImageURL = req.StructureImageURL
 		}
 
 		if err := u.repo.Update(u.db, &detail); err != nil {

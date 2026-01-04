@@ -24,6 +24,7 @@ type CreateArticleRequest struct {
 	Title       string            `json:"title" validate:"required,min=5,max=200"`
 	AuthorName  string            `json:"author_name" validate:"required,min=2,max=100"`
 	AuthorRole  string            `json:"author_role" validate:"omitempty,max=100"`
+	Excerpt     string            `json:"excerpt" validate:"required,max=200"`
 	Content     string            `json:"content" validate:"required,min=10"`
 	Images      map[string]string `json:"images" validate:"required"`
 	IsFeatured  bool              `json:"is_featured"`
@@ -36,6 +37,7 @@ type UpdateArticleRequest struct {
 	Title       string            `json:"title" validate:"required,min=5,max=200"`
 	AuthorName  string            `json:"author_name" validate:"required,min=2,max=100"`
 	AuthorRole  string            `json:"author_role" validate:"omitempty,max=100"`
+	Excerpt     string            `json:"excerpt" validate:"required,min=10"`
 	Content     string            `json:"content" validate:"required,min=10"`
 	Images      map[string]string `json:"images" validate:"required"`
 	IsFeatured  bool              `json:"is_featured"`

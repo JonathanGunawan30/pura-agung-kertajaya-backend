@@ -39,10 +39,10 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if file.Size > 2*1024*1024 {
+	if file.Size > 10*1024*1024 {
 		c.Log.WithField("size", file.Size).Error("file too large")
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
-			Errors: "File size must not exceed 2MB",
+			Errors: "File size must not exceed 10MB",
 		})
 	}
 

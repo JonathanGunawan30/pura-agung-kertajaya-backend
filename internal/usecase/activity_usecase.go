@@ -1,10 +1,12 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
 	"pura-agung-kertajaya-backend/internal/repository"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -42,7 +44,7 @@ func (u *activityUsecase) GetAll(entityType string) ([]model.ActivityResponse, e
 	if entityType == "" {
 		entityType = "pura"
 	}
-	query := u.db.Where("entity_type = ?", entityType).Order("order_index ASC")
+	query := u.db.Where("entity_type = ?", entityType).Order("event_date DESC").Order("order_index ASC")
 
 	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func (u *activityUsecase) GetPublic(entityType string) ([]model.ActivityResponse
 	if entityType == "" {
 		entityType = "pura"
 	}
-	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
+	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("event_date DESC").Order("order_index ASC")
 
 	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
@@ -78,6 +80,12 @@ func (u *activityUsecase) Create(req model.CreateActivityRequest) (*model.Activi
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
+
+	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	if err != nil {
+		return nil, errors.New("format event_date is invalid")
+	}
+
 	a := entity.Activity{
 		ID:          uuid.New().String(),
 		EntityType:  req.EntityType,
@@ -85,6 +93,7 @@ func (u *activityUsecase) Create(req model.CreateActivityRequest) (*model.Activi
 		Description: req.Description,
 		TimeInfo:    req.TimeInfo,
 		Location:    req.Location,
+		EventDate:   eventDate,
 		OrderIndex:  req.OrderIndex,
 		IsActive:    req.IsActive,
 	}
@@ -103,10 +112,17 @@ func (u *activityUsecase) Update(id string, req model.UpdateActivityRequest) (*m
 	if err := u.repo.FindById(u.db, &a, id); err != nil {
 		return nil, err
 	}
+
+	eventDate, err := time.Parse("2006-01-02", req.EventDate)
+	if err != nil {
+		return nil, errors.New("format event_date is invalid")
+	}
+
 	a.Title = req.Title
 	a.Description = req.Description
 	a.TimeInfo = req.TimeInfo
 	a.Location = req.Location
+	a.EventDate = eventDate
 	a.OrderIndex = req.OrderIndex
 	a.IsActive = req.IsActive
 

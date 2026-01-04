@@ -13,6 +13,7 @@ func ToActivityResponse(a *entity.Activity) model.ActivityResponse {
 		Description: a.Description,
 		TimeInfo:    a.TimeInfo,
 		Location:    a.Location,
+		EventDate:   a.EventDate,
 		OrderIndex:  a.OrderIndex,
 		IsActive:    a.IsActive,
 		CreatedAt:   a.CreatedAt,

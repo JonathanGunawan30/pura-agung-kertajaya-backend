@@ -8,6 +8,7 @@ type CreateActivityRequest struct {
 	Description string `json:"description" validate:"required"`
 	TimeInfo    string `json:"time_info" validate:"omitempty,max=100"`
 	Location    string `json:"location" validate:"omitempty,max=100"`
+	EventDate   string `json:"event_date" validate:"required,datetime=2006-01-02"`
 	OrderIndex  int    `json:"order_index" validate:"required,min=1"`
 	IsActive    bool   `json:"is_active" validate:"boolean"`
 }
@@ -17,6 +18,7 @@ type UpdateActivityRequest struct {
 	Description string `json:"description" validate:"required"`
 	TimeInfo    string `json:"time_info" validate:"omitempty,max=100"`
 	Location    string `json:"location" validate:"omitempty,max=100"`
+	EventDate   string `json:"event_date" validate:"required,datetime=2006-01-02"`
 	OrderIndex  int    `json:"order_index" validate:"required,min=1"`
 	IsActive    bool   `json:"is_active" validate:"boolean"`
 }
@@ -27,6 +29,7 @@ type ActivityResponse struct {
 	Description string    `json:"description"`
 	TimeInfo    string    `json:"time_info"`
 	Location    string    `json:"location"`
+	EventDate   time.Time `json:"event_date"`
 	OrderIndex  int       `json:"order_index"`
 	IsActive    bool      `json:"is_active"`
 	CreatedAt   time.Time `json:"created_at"`

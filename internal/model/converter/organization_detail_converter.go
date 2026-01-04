@@ -16,9 +16,9 @@ func ToOrganizationDetailResponse(od *entity.OrganizationDetail) model.Organizat
 		VisionMissionImageURL: od.VisionMissionImageURL,
 		WorkProgramImageURL:   od.WorkProgramImageURL,
 		RulesImageURL:         od.RulesImageURL,
-
-		CreatedAt: od.CreatedAt,
-		UpdatedAt: od.UpdatedAt,
+		StructureImageURL:     od.StructureImageURL,
+		CreatedAt:             od.CreatedAt,
+		UpdatedAt:             od.UpdatedAt,
 	}
 }
 

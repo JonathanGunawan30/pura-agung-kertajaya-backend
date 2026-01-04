@@ -120,12 +120,6 @@ func (u *articleUsecase) Create(req model.CreateArticleRequest) (*model.ArticleR
 		counter++
 	}
 
-	finalExcerpt := req.Content
-
-	if len(finalExcerpt) > 200 {
-		finalExcerpt = finalExcerpt[:200] + "..."
-	}
-
 	var catID *string
 	if req.CategoryID != "" {
 		catID = &req.CategoryID
@@ -143,7 +137,7 @@ func (u *articleUsecase) Create(req model.CreateArticleRequest) (*model.ArticleR
 		Slug:        finalSlug,
 		AuthorName:  req.AuthorName,
 		AuthorRole:  req.AuthorRole,
-		Excerpt:     finalExcerpt,
+		Excerpt:     req.Excerpt,
 		Content:     req.Content,
 		Images:      util.ImageMap(req.Images),
 		Status:      entity.ArticleStatus(req.Status),
@@ -190,16 +184,11 @@ func (u *articleUsecase) Update(id string, req model.UpdateArticleRequest) (*mod
 	article.Title = req.Title
 	article.AuthorName = req.AuthorName
 	article.AuthorRole = req.AuthorRole
+	article.Excerpt = req.Excerpt
 	article.Content = req.Content
 	article.Images = util.ImageMap(req.Images)
 	article.Status = entity.ArticleStatus(req.Status)
 	article.IsFeatured = req.IsFeatured
-
-	if len(req.Content) > 200 {
-		article.Excerpt = req.Content[:200] + "..."
-	} else {
-		article.Excerpt = req.Content
-	}
 
 	if req.CategoryID != "" {
 		article.CategoryID = &req.CategoryID
