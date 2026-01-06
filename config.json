@@ -28,7 +28,8 @@
     "port": 0,
     "password": "",
     "db": 0,
-    "db_rate_limiter": 0
+    "db_rate_limiter": 0,
+    "tls": false
   },
   "jwt": {
     "secret": ""

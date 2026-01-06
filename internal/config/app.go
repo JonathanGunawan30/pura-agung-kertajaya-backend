@@ -30,7 +30,8 @@ func Bootstrap(cfg *BootstrapConfig) {
 	redisPass := cfg.Config.GetString("redis.password")
 	redisDB := cfg.Config.GetInt("redis.db")
 	rateLimiterDB := cfg.Config.GetInt("redis.rate_limiter_db")
-	redisClient := NewRedisClient(redisHost, redisPort, redisPass, redisDB)
+	redisTLS := cfg.Config.GetBool("redis.tls")
+	redisClient := NewRedisClient(redisHost, redisPort, redisPass, redisDB, redisTLS)
 
 	// Setup TokenUtil (JWT + Redis)
 	secretKey := cfg.Config.GetString("jwt.secret")
@@ -83,7 +84,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	articleController := http.NewArticleController(articleUsecase, cfg.Log)
 
 	// Setup redis storage
-	storage := NewFiberRedisStorage(redisHost, redisPort, redisPass, rateLimiterDB)
+	storage := NewFiberRedisStorage(redisHost, redisPort, redisPass, rateLimiterDB, redisTLS)
 
 	cfg.App.Hooks().OnShutdown(func() error {
 		cfg.Log.Info("Closing Redis connections...")
