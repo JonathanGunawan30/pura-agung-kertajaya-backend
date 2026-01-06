@@ -16,6 +16,7 @@
     "host": "",
     "port": 0,
     "name": "",
+    "tls": false,
     "pool": {
       "idle": 0,
       "max": 0,
