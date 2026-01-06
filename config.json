@@ -48,5 +48,9 @@
   },
   "cors": {
     "allow_origins": ""
+  },
+  "cookie": {
+    "domain": ""
   }
+
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -22,6 +23,7 @@ type userUseCase struct {
 	UserRepository *repository.UserRepository
 	TokenUtil      *util.TokenUtil
 	RecaptchaUtil  *util.RecaptchaUtil
+	Config         *viper.Viper
 }
 
 type UserUseCase interface {
@@ -31,7 +33,7 @@ type UserUseCase interface {
 	Logout(ctx context.Context, fiberCtx *fiber.Ctx) (bool, error)
 }
 
-func NewUserUseCase(db *gorm.DB, logger *logrus.Logger, validate *validator.Validate, userRepository *repository.UserRepository, tokenUtil *util.TokenUtil, recaptchaUtil *util.RecaptchaUtil) UserUseCase {
+func NewUserUseCase(db *gorm.DB, logger *logrus.Logger, validate *validator.Validate, userRepository *repository.UserRepository, tokenUtil *util.TokenUtil, recaptchaUtil *util.RecaptchaUtil, config *viper.Viper) UserUseCase {
 	return &userUseCase{
 		DB:             db,
 		Log:            logger,
@@ -39,6 +41,7 @@ func NewUserUseCase(db *gorm.DB, logger *logrus.Logger, validate *validator.Vali
 		UserRepository: userRepository,
 		TokenUtil:      tokenUtil,
 		RecaptchaUtil:  recaptchaUtil,
+		Config:         config,
 	}
 }
 
@@ -70,7 +73,8 @@ func (c *userUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fi
 		return nil, fiber.ErrInternalServerError
 	}
 
-	// Simpan ke cookie
+	domain := c.Config.GetString("cookie.domain")
+
 	fiberCtx.Cookie(&fiber.Cookie{
 		Name:     "access_token",
 		Value:    token,
@@ -78,7 +82,7 @@ func (c *userUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fi
 		SameSite: "None",
 		Secure:   true,
 		Path:     "/",
-		Domain:   "admin.puraagungkertajaya.my.id",
+		Domain:   domain,
 		MaxAge:   86400,
 	})
 

@@ -46,6 +46,10 @@ func main() {
 		&entity.AboutSection{},
 		&entity.AboutValue{},
 		&entity.OrganizationMember{},
+		&entity.OrganizationDetail{},
+		&entity.Remark{},
+		&entity.Category{},
+		&entity.Article{},
 	)
 
 	if err != nil {

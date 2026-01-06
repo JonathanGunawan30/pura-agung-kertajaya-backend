@@ -50,7 +50,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 	storageRepository := repository.NewStorageRepository(r2Client, cfg.Config, cfg.Log)
 
 	// Setup usecases
-	userUseCase := usecase.NewUserUseCase(cfg.DB, cfg.Log, cfg.Validate, userRepository, tokenUtil, recaptchaUtil)
+	userUseCase := usecase.NewUserUseCase(cfg.DB, cfg.Log, cfg.Validate, userRepository, tokenUtil, recaptchaUtil, cfg.Config)
 	storageUseCase := usecase.NewStorageUsecase(storageRepository, cfg.Log, cfg.Validate)
 	testimonialUseCase := usecase.NewTestimonialUsecase(cfg.DB, cfg.Log, cfg.Validate)
 	heroSlideUseCase := usecase.NewHeroSlideUsecase(cfg.DB, cfg.Log, cfg.Validate)
