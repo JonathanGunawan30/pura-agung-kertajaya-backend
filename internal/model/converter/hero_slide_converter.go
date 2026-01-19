@@ -9,7 +9,7 @@ func ToHeroSlideResponse(h entity.HeroSlide) model.HeroSlideResponse {
 	return model.HeroSlideResponse{
 		ID:         h.ID,
 		EntityType: h.EntityType,
-		Images:     h.Images,
+		Images:     ToImageVariants(h.Images),
 		OrderIndex: h.OrderIndex,
 		IsActive:   h.IsActive,
 		CreatedAt:  h.CreatedAt,

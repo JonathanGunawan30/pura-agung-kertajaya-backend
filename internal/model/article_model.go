@@ -11,7 +11,7 @@ type ArticleResponse struct {
 	AuthorRole  string            `json:"author_role"`
 	Excerpt     string            `json:"excerpt"`
 	Content     string            `json:"content"`
-	Images      map[string]string `json:"images"`
+	Images      ImageVariants     `json:"images"`
 	Status      string            `json:"status"`
 	IsFeatured  bool              `json:"is_featured"`
 	PublishedAt *time.Time        `json:"published_at"`

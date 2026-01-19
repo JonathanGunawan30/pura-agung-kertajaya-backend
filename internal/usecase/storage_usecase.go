@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -55,75 +54,42 @@ func (u *storageUsecase) UploadFile(ctx context.Context, filename string, file i
 	nameWithoutExt := strings.TrimSuffix(filename, ext)
 	timestamp := time.Now().Unix()
 
-	buf := new(bytes.Buffer)
-	if _, err := io.Copy(buf, file); err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-	fileBytes := buf.Bytes()
+	onProcessed := func(presetName string, data []byte) error {
+		key := fmt.Sprintf("uploads/%s_%d_%s.webp", nameWithoutExt, timestamp, presetName)
+		pSize := int64(len(data))
 
-	_, _, err := image.Decode(bytes.NewReader(fileBytes))
+		_, err := u.storageRepo.Upload(ctx, key, bytes.NewReader(data), "image/webp", pSize)
+		if err != nil {
+			u.log.WithError(err).Errorf("failed to upload variant: %s", presetName)
+			return err
+		}
+
+		mu.Lock()
+		uploadedKeys[presetName] = key
+		mu.Unlock()
+
+		return nil
+	}
+
+	err := util.ProcessAndHandleImage(file, util.AllPresets, onProcessed)
+
 	if err != nil {
-		u.log.WithError(err).Error("invalid image format")
-		return nil, fmt.Errorf("invalid image format: %w", err)
-	}
+		u.log.WithError(err).Error("failed to process image")
 
-	processedMap, err := util.ProcessImage(bytes.NewReader(fileBytes), util.AllPresets)
-	if err != nil {
-		u.log.WithError(err).Error("failed to process image variants")
-		return nil, fmt.Errorf("failed to process image variants: %w", err)
-	}
-
-	var wg sync.WaitGroup
-	var errOnce sync.Once
-	var uploadErr error
-
-	for presetName, data := range processedMap {
-		wg.Add(1)
-
-		pName := presetName
-		pData := data
-
-		go func() {
-			defer wg.Done()
-
-			key := fmt.Sprintf("uploads/%s_%d_%s.webp", nameWithoutExt, timestamp, pName)
-			fileReader := bytes.NewReader(pData)
-			pSize := int64(len(pData))
-
-			_, err = u.storageRepo.Upload(ctx, key, fileReader, "image/webp", pSize)
-			if err != nil {
-				u.log.WithError(err).Errorf("failed to upload variant: %s", pName)
-				errOnce.Do(func() {
-					uploadErr = err
-				})
-				return
-			}
-
-			mu.Lock()
-			uploadedKeys[pName] = key
-			mu.Unlock()
-		}()
-	}
-
-	wg.Wait()
-
-	if uploadErr != nil {
-		u.log.WithError(uploadErr).Warn("one or more uploads failed, rolling back...")
+		wrappedErr := fmt.Errorf("invalid image format: %w", err)
 
 		cleanupCtx := context.Background()
 		for _, key := range uploadedKeys {
 			errDelete := u.storageRepo.Delete(cleanupCtx, key)
 			if errDelete != nil {
-				u.log.WithError(errDelete).Errorf("CRITICAL: failed to rollback file: %s", key)
-			} else {
-				u.log.Infof("rollback successful for: %s", key)
+				u.log.WithError(errDelete).Errorf("failed to rollback file: %s", key)
 			}
 		}
 
-		return nil, uploadErr
+		return nil, wrappedErr
 	}
 
-	u.log.WithField("keys", uploadedKeys).Info("files uploaded successfully")
+	u.log.WithField("count", len(uploadedKeys)).Info("all variants uploaded successfully")
 	return uploadedKeys, nil
 }
 

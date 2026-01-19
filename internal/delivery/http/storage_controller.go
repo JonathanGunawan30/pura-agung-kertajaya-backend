@@ -64,15 +64,22 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 	)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to upload file")
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
+
+		statusCode := fiber.StatusInternalServerError
+		if strings.Contains(err.Error(), "invalid image") {
+			statusCode = fiber.StatusBadRequest
+		}
+
+		return ctx.Status(statusCode).JSON(model.WebResponse[any]{
 			Errors: err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[fiber.Map]{
 		Data: fiber.Map{
-			"variants": variants,
+			"message":  "File uploaded and processed successfully",
 			"filename": file.Filename,
+			"variants": variants,
 		},
 	})
 }

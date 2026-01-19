@@ -67,23 +67,26 @@ func (c *userUseCase) Login(ctx context.Context, req *model.LoginUserRequest, fi
 		return nil, fiber.ErrUnauthorized
 	}
 
-	token, jti, err := c.TokenUtil.CreateToken(ctx, &model.Auth{ID: user.ID})
+	token, jti, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
+		ID:   user.ID,
+		Role: user.Role,
+	})
 	if err != nil {
 		c.Log.Errorf("Failed to create token: %v", err)
 		return nil, fiber.ErrInternalServerError
 	}
 
-	domain := c.Config.GetString("cookie.domain")
+	//domain := c.Config.GetString("cookie.domain")
 
 	fiberCtx.Cookie(&fiber.Cookie{
 		Name:     "access_token",
 		Value:    token,
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   true,
+		Secure:   false,
 		Path:     "/",
-		Domain:   domain,
-		MaxAge:   86400,
+		//Domain:   domain,
+		MaxAge: 86400,
 	})
 
 	c.Log.Infof("User %s logged in (JTI=%s)", user.Email, jti)

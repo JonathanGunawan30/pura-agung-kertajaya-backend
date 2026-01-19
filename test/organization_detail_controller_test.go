@@ -42,6 +42,11 @@ func setupOrganizationDetailController() (*fiber.App, *usecasemock.OrganizationD
 		},
 	})
 
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("entity_type", "pura")
+		return c.Next()
+	})
+
 	api := app.Group("/api")
 	api.Get("/organization-details", controller.GetAdmin)
 	api.Put("/organization-details", controller.Update)
@@ -103,7 +108,7 @@ func TestOrganizationDetailController_GetAdmin_Success(t *testing.T) {
 		ID: "uuid-admin-1", EntityType: "yayasan", Mission: "Misi Yayasan",
 	}
 
-	mockUC.On("GetByEntityType", "yayasan").Return(expectedResp, nil)
+	mockUC.On("GetByEntityType", "pura").Return(expectedResp, nil)
 
 	req := httptest.NewRequest("GET", "/api/organization-details?entity_type=yayasan", nil)
 	resp, _ := app.Test(req)
@@ -164,7 +169,7 @@ func TestOrganizationDetailController_Update_UsecaseError(t *testing.T) {
 
 	reqBody := model.UpdateOrganizationDetailRequest{Vision: "Test"}
 
-	mockUC.On("Update", "yayasan", reqBody).Return((*model.OrganizationDetailResponse)(nil), errors.New("db connection failed"))
+	mockUC.On("Update", "pura", reqBody).Return((*model.OrganizationDetailResponse)(nil), errors.New("db connection failed"))
 
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("PUT", "/api/organization-details?entity_type=yayasan", bytes.NewReader(b))

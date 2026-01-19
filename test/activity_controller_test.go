@@ -39,7 +39,10 @@ func setupActivityController() (*fiber.App, *usecasemock.ActivityUsecaseMock) {
 			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
 		},
 	})
-
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("entity_type", "pura")
+		return c.Next()
+	})
 	api := app.Group("/api")
 	api.Get("/activities", controller.GetAll)
 	api.Get("/activities/:id", controller.GetByID)
@@ -78,7 +81,7 @@ func TestActivityController_GetAllPublic_Error(t *testing.T) {
 func TestActivityController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupActivityController()
 	items := []model.ActivityResponse{{ID: "1", Title: "A"}, {ID: "2", Title: "B"}}
-	mockUC.On("GetAll", "").Return(items, nil)
+	mockUC.On("GetAll", "pura").Return(items, nil)
 	req := httptest.NewRequest("GET", "/api/activities", nil)
 	resp, _ := app.Test(req, -1)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -87,7 +90,7 @@ func TestActivityController_GetAll_Success(t *testing.T) {
 
 func TestActivityController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupActivityController()
-	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "pura").Return(nil, errors.New("db error"))
 	req := httptest.NewRequest("GET", "/api/activities", nil)
 	resp, _ := app.Test(req, -1)
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
@@ -133,7 +136,7 @@ func TestActivityController_Create_Success(t *testing.T) {
 	app, mockUC := setupActivityController()
 	reqBody := model.CreateActivityRequest{EntityType: "pura", Title: "T", Description: "D", OrderIndex: 1, IsActive: true}
 	resBody := &model.ActivityResponse{ID: "1", Title: "T"}
-	mockUC.On("Create", reqBody).Return(resBody, nil)
+	mockUC.On("Create", "pura", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/activities", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -160,7 +163,8 @@ func TestActivityController_Create_UsecaseError(t *testing.T) {
 	err := validate.Struct(reqBody)
 	var validationErrs validator.ValidationErrors
 	errors.As(err, &validationErrs)
-	mockUC.On("Create", reqBody).Return((*model.ActivityResponse)(nil), validationErrs)
+	// entity_type is set to "pura" by test middleware
+	mockUC.On("Create", "pura", reqBody).Return((*model.ActivityResponse)(nil), validationErrs)
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/activities", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")

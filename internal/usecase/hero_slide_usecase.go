@@ -17,7 +17,7 @@ type HeroSlideUsecase interface {
 	GetAll(entityType string) ([]model.HeroSlideResponse, error)
 	GetPublic(entityType string) ([]model.HeroSlideResponse, error)
 	GetByID(id string) (*model.HeroSlideResponse, error)
-	Create(req model.HeroSlideRequest) (*model.HeroSlideResponse, error)
+	Create(entityType string, req model.HeroSlideRequest) (*model.HeroSlideResponse, error)
 	Update(id string, req model.HeroSlideRequest) (*model.HeroSlideResponse, error)
 	Delete(id string) error
 }
@@ -79,14 +79,14 @@ func (u *heroSlideUsecase) GetByID(id string) (*model.HeroSlideResponse, error) 
 	return &resp, nil
 }
 
-func (u *heroSlideUsecase) Create(req model.HeroSlideRequest) (*model.HeroSlideResponse, error) {
+func (u *heroSlideUsecase) Create(entityType string, req model.HeroSlideRequest) (*model.HeroSlideResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 
 	s := entity.HeroSlide{
 		ID:         uuid.New().String(),
-		EntityType: req.EntityType,
+		EntityType: entityType,
 		Images:     util.ImageMap(req.Images),
 		OrderIndex: req.OrderIndex,
 		IsActive:   req.IsActive,

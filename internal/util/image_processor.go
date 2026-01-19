@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"image"
 	"io"
-	"sync"
 
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
@@ -40,74 +39,41 @@ var AllPresets = []ImagePreset{
 	PresetFullHD,
 }
 
-type ProcessedImages map[string][]byte
+type ProcessCallback func(presetName string, data []byte) error
 
-func ProcessImage(r io.Reader, presets []ImagePreset) (ProcessedImages, error) {
+func ProcessAndHandleImage(r io.Reader, presets []ImagePreset, onProcessed ProcessCallback) error {
 	srcImage, _, err := image.Decode(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	results := make(ProcessedImages)
 	originalBounds := srcImage.Bounds()
 
-	var mu sync.Mutex
-	var wg sync.WaitGroup
+	var buf bytes.Buffer
+	for _, p := range presets {
+		targetWidth := p.Width
+		if originalBounds.Dx() < targetWidth {
+			targetWidth = originalBounds.Dx()
+		}
 
-	sem := make(chan struct{}, 3)
+		finalImage := imaging.Resize(srcImage, targetWidth, 0, imaging.Lanczos)
 
-	var firstErr error
-	var errOnce sync.Once
+		buf.Reset()
+		err = webp.Encode(&buf, finalImage, &webp.Options{
+			Lossless: false,
+			Quality:  p.Quality,
+		})
 
-	for _, preset := range presets {
-		wg.Add(1)
+		if err != nil {
+			return err
+		}
 
-		p := preset
+		if uploadErr := onProcessed(p.Name, buf.Bytes()); uploadErr != nil {
+			return uploadErr
+		}
 
-		go func() {
-			defer wg.Done()
-
-			sem <- struct{}{}
-
-			defer func() { <-sem }()
-
-			if firstErr != nil {
-				return
-			}
-
-			targetWidth := p.Width
-
-			if originalBounds.Dx() < targetWidth {
-				targetWidth = originalBounds.Dx()
-			}
-
-			finalImage := imaging.Resize(srcImage, targetWidth, 0, imaging.Lanczos)
-
-			var buf bytes.Buffer
-			err = webp.Encode(&buf, finalImage, &webp.Options{
-				Lossless: false,
-				Quality:  p.Quality,
-			})
-
-			if err != nil {
-				errOnce.Do(func() {
-					firstErr = err
-				})
-				return
-			}
-
-			mu.Lock()
-			results[p.Name] = buf.Bytes()
-			mu.Unlock()
-
-		}()
+		finalImage = nil
 	}
 
-	wg.Wait()
-
-	if firstErr != nil {
-		return nil, firstErr
-	}
-
-	return results, nil
+	return nil
 }

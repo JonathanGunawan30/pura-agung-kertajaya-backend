@@ -7,7 +7,8 @@ import (
 )
 
 type Auth struct {
-	ID int
+	ID   int
+	Role string
 }
 
 func AuthMiddleware(tokenUtil *util.TokenUtil) fiber.Handler {
@@ -22,7 +23,10 @@ func AuthMiddleware(tokenUtil *util.TokenUtil) fiber.Handler {
 			return fiber.ErrUnauthorized
 		}
 
-		c.Locals("user", &Auth{ID: auth.ID})
+		c.Locals("user", &Auth{
+			ID:   auth.ID,
+			Role: auth.Role,
+		})
 		return c.Next()
 	}
 }

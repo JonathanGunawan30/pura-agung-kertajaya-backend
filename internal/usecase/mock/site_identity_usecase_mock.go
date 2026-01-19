@@ -32,8 +32,8 @@ func (m *SiteIdentityUsecaseMock) GetByID(id string) (*model.SiteIdentityRespons
 	return args.Get(0).(*model.SiteIdentityResponse), args.Error(1)
 }
 
-func (m *SiteIdentityUsecaseMock) Create(req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error) {
-	args := m.Called(req)
+func (m *SiteIdentityUsecaseMock) Create(entityType string, req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error) {
+	args := m.Called(entityType, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

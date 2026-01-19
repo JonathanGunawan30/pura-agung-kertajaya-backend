@@ -34,8 +34,8 @@ func (m *HeroSlideUsecaseMock) GetByID(id string) (*model.HeroSlideResponse, err
 	return args.Get(0).(*model.HeroSlideResponse), args.Error(1)
 }
 
-func (m *HeroSlideUsecaseMock) Create(req model.HeroSlideRequest) (*model.HeroSlideResponse, error) {
-	args := m.Called(req)
+func (m *HeroSlideUsecaseMock) Create(entityType string, req model.HeroSlideRequest) (*model.HeroSlideResponse, error) {
+	args := m.Called(entityType, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

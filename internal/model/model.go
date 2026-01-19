@@ -17,3 +17,15 @@ type PageMetadata struct {
 	TotalItem int64 `json:"total_item"`
 	TotalPage int64 `json:"total_page"`
 }
+
+type ImageVariants struct {
+	Blur   string `json:"blur"`
+	Avatar string `json:"avatar"`
+	Xs     string `json:"xs"`
+	Sm     string `json:"sm"`
+	Md     string `json:"md"`
+	Lg     string `json:"lg"`
+	Xl     string `json:"xl"`
+	TwoXl  string `json:"2xl"`
+	Fhd    string `json:"fhd"`
+}

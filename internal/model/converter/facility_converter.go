@@ -11,7 +11,7 @@ func ToFacilityResponse(g entity.Facility) model.FacilityResponse {
 		EntityType:  g.EntityType,
 		Name:        g.Name,
 		Description: g.Description,
-		Images:      g.Images,
+		Images:      ToImageVariants(g.Images),
 		OrderIndex:  g.OrderIndex,
 		IsActive:    g.IsActive,
 		CreatedAt:   g.CreatedAt,

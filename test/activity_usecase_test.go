@@ -42,13 +42,14 @@ func TestActivityUsecase_Create_Success(t *testing.T) {
 		Description: "Deskripsi",
 		TimeInfo:    "08:00",
 		Location:    "Pura",
+		EventDate:   "2023-10-10",
 		OrderIndex:  1,
 		IsActive:    true,
 	}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `activities`")).
-		WithArgs(sqlmock.AnyArg(), req.EntityType, "Upacara", "Deskripsi", "08:00", "Pura", 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), req.EntityType, "Upacara", "Deskripsi", "08:00", "Pura", sqlmock.AnyArg(), 1, true, sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -59,7 +60,7 @@ func TestActivityUsecase_Create_Success(t *testing.T) {
 		WithArgs(sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
-	res, err := u.Create(req)
+	res, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -76,7 +77,7 @@ func TestActivityUsecase_Create_ValidationError(t *testing.T) {
 	u, _ := setupMockActivityUsecase(t)
 
 	req := model.CreateActivityRequest{}
-	res, err := u.Create(req)
+	res, err := u.Create(req.EntityType, req)
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }
@@ -88,7 +89,7 @@ func TestActivityUsecase_GetAll_OrderedByIndex(t *testing.T) {
 		AddRow("a1", "A", "d", 1, true).
 		AddRow("a2", "B", "d", 2, true)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE entity_type = ? ORDER BY order_index ASC")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE entity_type = ? ORDER BY event_date DESC,order_index ASC")).
 		WithArgs("pura").
 		WillReturnRows(rows)
 
@@ -106,7 +107,7 @@ func TestActivityUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
 		AddRow("a3", "A", "d", 1, true).
 		AddRow("a1", "B", "d", 2, true)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE entity_type = ? AND is_active = ? ORDER BY order_index ASC")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE entity_type = ? AND is_active = ? ORDER BY event_date DESC,order_index ASC")).
 		WithArgs("pura", true).
 		WillReturnRows(rows)
 
@@ -133,7 +134,7 @@ func TestActivityUsecase_Update_Success(t *testing.T) {
 	u, mock := setupMockActivityUsecase(t)
 	targetID := "act-1"
 
-	req := model.UpdateActivityRequest{Title: "New", Description: "new d", TimeInfo: "09:00", Location: "Pura", OrderIndex: 5, IsActive: false}
+	req := model.UpdateActivityRequest{Title: "New", Description: "new d", TimeInfo: "09:00", Location: "Pura", EventDate: "2023-12-12", OrderIndex: 5, IsActive: false}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `activities` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
@@ -141,7 +142,7 @@ func TestActivityUsecase_Update_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `activities`")).
-		WithArgs(sqlmock.AnyArg(), "New", "new d", "09:00", "Pura", 5, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs(sqlmock.AnyArg(), "New", "new d", "09:00", "Pura", sqlmock.AnyArg(), 5, false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 

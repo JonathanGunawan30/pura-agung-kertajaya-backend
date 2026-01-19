@@ -18,7 +18,7 @@ type ActivityUsecase interface {
 	GetAll(entityType string) ([]model.ActivityResponse, error)
 	GetPublic(entityType string) ([]model.ActivityResponse, error)
 	GetByID(id string) (*model.ActivityResponse, error)
-	Create(req model.CreateActivityRequest) (*model.ActivityResponse, error)
+	Create(entityType string, req model.CreateActivityRequest) (*model.ActivityResponse, error)
 	Update(id string, req model.UpdateActivityRequest) (*model.ActivityResponse, error)
 	Delete(id string) error
 }
@@ -41,9 +41,7 @@ func NewActivityUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Val
 
 func (u *activityUsecase) GetAll(entityType string) ([]model.ActivityResponse, error) {
 	var items []entity.Activity
-	if entityType == "" {
-		entityType = "pura"
-	}
+
 	query := u.db.Where("entity_type = ?", entityType).Order("event_date DESC").Order("order_index ASC")
 
 	if err := u.repo.FindAll(query, &items); err != nil {
@@ -55,9 +53,7 @@ func (u *activityUsecase) GetAll(entityType string) ([]model.ActivityResponse, e
 
 func (u *activityUsecase) GetPublic(entityType string) ([]model.ActivityResponse, error) {
 	var items []entity.Activity
-	if entityType == "" {
-		entityType = "pura"
-	}
+
 	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("event_date DESC").Order("order_index ASC")
 
 	if err := u.repo.FindAll(query, &items); err != nil {
@@ -76,7 +72,7 @@ func (u *activityUsecase) GetByID(id string) (*model.ActivityResponse, error) {
 	return &r, nil
 }
 
-func (u *activityUsecase) Create(req model.CreateActivityRequest) (*model.ActivityResponse, error) {
+func (u *activityUsecase) Create(entityType string, req model.CreateActivityRequest) (*model.ActivityResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
@@ -88,7 +84,7 @@ func (u *activityUsecase) Create(req model.CreateActivityRequest) (*model.Activi
 
 	a := entity.Activity{
 		ID:          uuid.New().String(),
-		EntityType:  req.EntityType,
+		EntityType:  entityType,
 		Title:       req.Title,
 		Description: req.Description,
 		TimeInfo:    req.TimeInfo,

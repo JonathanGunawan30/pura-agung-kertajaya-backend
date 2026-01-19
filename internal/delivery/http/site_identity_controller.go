@@ -1,6 +1,7 @@
 package http
 
 import (
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 
@@ -18,7 +19,7 @@ func NewSiteIdentityController(usecase usecase.SiteIdentityUsecase, log *logrus.
 }
 
 func (c *SiteIdentityController) GetAll(ctx *fiber.Ctx) error {
-	entityType := ctx.Query("entity_type")
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
 	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch site identities")
@@ -53,10 +54,12 @@ func (c *SiteIdentityController) GetByID(ctx *fiber.Ctx) error {
 
 func (c *SiteIdentityController) Create(ctx *fiber.Ctx) error {
 	var req model.SiteIdentityRequest
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
+
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
-	data, err := c.UseCase.Create(req)
+	data, err := c.UseCase.Create(entityType, req)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to create site identity")
 		return err

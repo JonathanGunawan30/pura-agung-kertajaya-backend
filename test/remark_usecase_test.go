@@ -121,7 +121,7 @@ func TestRemarkUsecase_Create_Success(t *testing.T) {
 		WithArgs("uuid-new", 1).
 		WillReturnRows(rows)
 
-	res, err := u.Create(req)
+	res, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
 	if err != nil {
 		return

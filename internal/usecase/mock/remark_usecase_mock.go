@@ -34,8 +34,8 @@ func (m *RemarkUsecaseMock) GetByID(id string) (*model.RemarkResponse, error) {
 	return args.Get(0).(*model.RemarkResponse), args.Error(1)
 }
 
-func (m *RemarkUsecaseMock) Create(req model.CreateRemarkRequest) (*model.RemarkResponse, error) {
-	args := m.Called(req)
+func (m *RemarkUsecaseMock) Create(entityType string, req model.CreateRemarkRequest) (*model.RemarkResponse, error) {
+	args := m.Called(entityType, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

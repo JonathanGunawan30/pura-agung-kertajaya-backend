@@ -37,10 +37,6 @@ func NewOrganizationDetailUsecase(db *gorm.DB, log *logrus.Logger, validate *val
 func (u *organizationDetailUsecase) GetByEntityType(entityType string) (*model.OrganizationDetailResponse, error) {
 	var detail entity.OrganizationDetail
 
-	if entityType == "" {
-		entityType = "pura"
-	}
-
 	query := u.db.Where("entity_type = ?", entityType)
 
 	if err := query.First(&detail).Error; err != nil {
@@ -67,10 +63,6 @@ func (u *organizationDetailUsecase) GetByEntityType(entityType string) (*model.O
 func (u *organizationDetailUsecase) Update(entityType string, req model.UpdateOrganizationDetailRequest) (*model.OrganizationDetailResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
-	}
-
-	if entityType == "" {
-		entityType = "pura"
 	}
 
 	var detail entity.OrganizationDetail

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 
@@ -21,7 +22,7 @@ func NewHeroSlideController(usecase usecase.HeroSlideUsecase, log *logrus.Logger
 }
 
 func (c *HeroSlideController) GetAll(ctx *fiber.Ctx) error {
-	entityType := ctx.Query("entity_type")
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
 	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch hero slides")
@@ -57,11 +58,13 @@ func (c *HeroSlideController) GetByID(ctx *fiber.Ctx) error {
 
 func (c *HeroSlideController) Create(ctx *fiber.Ctx) error {
 	var req model.HeroSlideRequest
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
+
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
 
-	data, err := c.UseCase.Create(req)
+	data, err := c.UseCase.Create(entityType, req)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to create hero slide")
 		return err

@@ -20,13 +20,13 @@ type UpdateFacilityRequest struct {
 }
 
 type FacilityResponse struct {
-	ID          string            `json:"id"`
-	EntityType  string            `json:"entity_type"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Images      map[string]string `json:"images"`
-	OrderIndex  int               `json:"order_index"`
-	IsActive    bool              `json:"is_active"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
+	ID          string        `json:"id"`
+	EntityType  string        `json:"entity_type"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Images      ImageVariants `json:"images"`
+	OrderIndex  int           `json:"order_index"`
+	IsActive    bool          `json:"is_active"`
+	CreatedAt   time.Time     `json:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at"`
 }

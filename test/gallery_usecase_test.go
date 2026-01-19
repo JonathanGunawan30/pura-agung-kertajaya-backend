@@ -49,7 +49,7 @@ func TestGalleryUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
 	assert.Equal(t, "g3", list[0].ID)
-	assert.Equal(t, "https://img3", list[0].Images["lg"])
+	assert.Equal(t, "https://img3", list[0].Images.Lg)
 	assert.Equal(t, "g1", list[1].ID)
 }
 
@@ -87,10 +87,10 @@ func TestGalleryUsecase_Create(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
 		WillReturnRows(rows)
 
-	created, err := u.Create(req)
+	created, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
 	if assert.NotNil(t, created) {
-		assert.Equal(t, "https://img.com/lg.jpg", created.Images["lg"])
+		assert.Equal(t, "https://img.com/lg.jpg", created.Images.Lg)
 	}
 }
 

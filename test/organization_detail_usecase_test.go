@@ -111,6 +111,7 @@ func TestOrgDetailUsecase_Update_TriggerCreate(t *testing.T) {
 			"new_img.jpg",
 			"",
 			"",
+			"",
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 		).
@@ -161,6 +162,7 @@ func TestOrgDetailUsecase_Update_TriggerUpdate(t *testing.T) {
 			"",
 			"",
 			"wp_update.jpg",
+			"",
 			"",
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),

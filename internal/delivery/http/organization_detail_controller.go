@@ -1,6 +1,7 @@
 package http
 
 import (
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 
@@ -33,7 +34,7 @@ func (c *OrganizationDetailController) GetPublic(ctx *fiber.Ctx) error {
 }
 
 func (c *OrganizationDetailController) GetAdmin(ctx *fiber.Ctx) error {
-	entityType := ctx.Query("entity_type")
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
 
 	data, err := c.UseCase.GetByEntityType(entityType)
 	if err != nil {
@@ -45,7 +46,7 @@ func (c *OrganizationDetailController) GetAdmin(ctx *fiber.Ctx) error {
 }
 
 func (c *OrganizationDetailController) Update(ctx *fiber.Ctx) error {
-	entityType := ctx.Query("entity_type")
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
 
 	var req model.UpdateOrganizationDetailRequest
 	if err := ctx.BodyParser(&req); err != nil {

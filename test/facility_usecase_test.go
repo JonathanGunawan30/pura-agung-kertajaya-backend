@@ -50,7 +50,7 @@ func TestFacilityUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
 	assert.Len(t, list, 2)
 	assert.Equal(t, "g3", list[0].ID)
 	assert.Equal(t, "g1", list[1].ID)
-	assert.Equal(t, "https://img3", list[0].Images["lg"])
+	assert.Equal(t, "https://img3", list[0].Images.Lg)
 }
 
 func TestFacilityUsecase_Create(t *testing.T) {
@@ -87,14 +87,14 @@ func TestFacilityUsecase_Create(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), 1).
 		WillReturnRows(rows)
 
-	created, err := u.Create(req)
+	created, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
 	if err != nil {
 		return
 	}
 	assert.NotNil(t, created)
 	assert.NotEmpty(t, created.ID)
-	assert.Equal(t, "https://img.com/lg.jpg", created.Images["lg"])
+	assert.Equal(t, "https://img.com/lg.jpg", created.Images.Lg)
 }
 
 func TestFacilityUsecase_Update(t *testing.T) {

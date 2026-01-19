@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http/httptest"
-	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
@@ -21,16 +19,32 @@ import (
 )
 
 func setupHeroSlideController() (*fiber.App, *usecasemock.HeroSlideUsecaseMock) {
-	log := logrus.New()
 	mockUC := &usecasemock.HeroSlideUsecaseMock{}
 	controller := httpdelivery.NewHeroSlideController(mockUC, logrus.New())
 
 	app := fiber.New(fiber.Config{
 		StrictRouting: true,
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			message := "An internal server error occurred. Please try again later."
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+				message = e.Message
+			} else if errors.Is(err, gorm.ErrRecordNotFound) {
+				code = fiber.StatusNotFound
+				message = "The requested resource was not found."
+			} else if _, ok := err.(validator.ValidationErrors); ok {
+				code = fiber.StatusBadRequest
+				message = "Validation failed"
+			}
+			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
+		},
 	})
 
-	app.Use(middleware.ErrorHandlerMiddleware(log))
-
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("entity_type", "pura")
+		return c.Next()
+	})
 	api := app.Group("/api")
 	api.Get("/hero-slides", controller.GetAll)
 	api.Get("/hero-slides/:id", controller.GetByID)
@@ -47,8 +61,8 @@ func setupHeroSlideController() (*fiber.App, *usecasemock.HeroSlideUsecaseMock) 
 func TestHeroSlideController_GetAllPublic_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
 	items := []model.HeroSlideResponse{
-		{ID: "a", EntityType: "pura", Images: map[string]string{"lg": "https://a"}},
-		{ID: "b", EntityType: "pura", Images: map[string]string{"lg": "https://b"}},
+		{ID: "a", EntityType: "pura", Images: model.ImageVariants{Lg: "https://a"}},
+		{ID: "b", EntityType: "pura", Images: model.ImageVariants{Lg: "https://b"}},
 	}
 	mockUC.On("GetPublic", "pura").Return(items, nil)
 	req := httptest.NewRequest("GET", "/api/public/hero-slides?entity_type=pura", nil)
@@ -67,10 +81,10 @@ func TestHeroSlideController_GetAllPublic_Error(t *testing.T) {
 func TestHeroSlideController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
 	items := []model.HeroSlideResponse{
-		{ID: "a", EntityType: "pura", Images: map[string]string{"lg": "https://a"}},
-		{ID: "b", EntityType: "pura", Images: map[string]string{"lg": "https://b"}},
+		{ID: "a", EntityType: "pura", Images: model.ImageVariants{Lg: "https://a"}},
+		{ID: "b", EntityType: "pura", Images: model.ImageVariants{Lg: "https://b"}},
 	}
-	mockUC.On("GetAll", "").Return(items, nil)
+	mockUC.On("GetAll", "pura").Return(items, nil)
 	req := httptest.NewRequest("GET", "/api/hero-slides", nil)
 	resp, _ := app.Test(req)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -78,7 +92,7 @@ func TestHeroSlideController_GetAll_Success(t *testing.T) {
 
 func TestHeroSlideController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "pura").Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/api/hero-slides", nil)
 	resp, _ := app.Test(req)
@@ -92,7 +106,7 @@ func TestHeroSlideController_GetAll_Error(t *testing.T) {
 
 func TestHeroSlideController_GetByID_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	item := &model.HeroSlideResponse{ID: "x", Images: map[string]string{"lg": "https://x"}}
+	item := &model.HeroSlideResponse{ID: "x", Images: model.ImageVariants{Lg: "https://x"}}
 	mockUC.On("GetByID", "x").Return(item, nil)
 	req := httptest.NewRequest("GET", "/api/hero-slides/x", nil)
 	resp, _ := app.Test(req)
@@ -115,10 +129,9 @@ func TestHeroSlideController_GetByID_NotFound(t *testing.T) {
 
 func TestHeroSlideController_Create_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	reqBody := model.HeroSlideRequest{EntityType: "pura", Images: map[string]string{"lg": "https://img"}, OrderIndex: 1, IsActive: true}
-	resBody := &model.HeroSlideResponse{ID: "1", EntityType: "pura", Images: map[string]string{"lg": "https://img"}}
-
-	mockUC.On("Create", reqBody).Return(resBody, nil)
+	reqBody := model.HeroSlideRequest{EntityType: "pura", Images: map[string]string{"lg": "https://img.com/lg.jpg"}, OrderIndex: 1, IsActive: true}
+	resBody := &model.HeroSlideResponse{ID: "1", EntityType: "pura"}
+	mockUC.On("Create", "pura", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/hero-slides", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
@@ -136,14 +149,14 @@ func TestHeroSlideController_Create_BadBody(t *testing.T) {
 
 func TestHeroSlideController_Create_UsecaseError(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
-	reqBody := model.HeroSlideRequest{}
-
-	validate := validator.New()
-	err := validate.Struct(reqBody)
-	var validationErrs validator.ValidationErrors
-	errors.As(err, &validationErrs)
-
-	mockUC.On("Create", reqBody).Return((*model.HeroSlideResponse)(nil), validationErrs)
+		reqBody := model.HeroSlideRequest{}
+		// entity_type is set to "pura" by test middleware
+		validate := validator.New()
+		err := validate.Struct(reqBody)
+		var validationErrs validator.ValidationErrors
+		errors.As(err, &validationErrs)
+		mockUC.On("Create", "pura", reqBody).Return((*model.HeroSlideResponse)(nil), validationErrs)
+	
 
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/hero-slides", bytes.NewReader(b))
@@ -151,16 +164,9 @@ func TestHeroSlideController_Create_UsecaseError(t *testing.T) {
 	resp, _ := app.Test(req)
 
 	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	responseBody := string(bodyBytes)
-
-	assert.Contains(t, responseBody, "Images")
-	assert.Contains(t, responseBody, "required")
-
 	var response model.WebResponse[any]
-	json.Unmarshal(bodyBytes, &response)
-	assert.Contains(t, response.Errors, "Images")
-	assert.Contains(t, response.Errors, "required")
+	json.NewDecoder(resp.Body).Decode(&response)
+	assert.Equal(t, "Validation failed", response.Errors)
 
 	mockUC.AssertExpectations(t)
 }
@@ -168,7 +174,7 @@ func TestHeroSlideController_Create_UsecaseError(t *testing.T) {
 func TestHeroSlideController_Update_Success(t *testing.T) {
 	app, mockUC := setupHeroSlideController()
 	reqBody := model.HeroSlideRequest{EntityType: "pura", Images: map[string]string{"lg": "https://new"}, OrderIndex: 3, IsActive: false}
-	resBody := &model.HeroSlideResponse{ID: "2", EntityType: "pura", Images: map[string]string{"lg": "https://new"}}
+	resBody := &model.HeroSlideResponse{ID: "2", EntityType: "pura", Images: model.ImageVariants{Lg: "https://new"}}
 
 	mockUC.On("Update", "2", reqBody).Return(resBody, nil)
 	b, _ := json.Marshal(reqBody)

@@ -99,6 +99,7 @@ func Bootstrap(cfg *BootstrapConfig) {
 
 	// Setup middleware
 	authMiddleware := middleware.AuthMiddleware(tokenUtil)
+	entityTypeMiddleware := middleware.EntityTypeMiddleware()
 
 	// Rate Limiter
 	publicRateLimiter := middleware.PublicRateLimiter(storage)
@@ -127,7 +128,8 @@ func Bootstrap(cfg *BootstrapConfig) {
 		CategoryController:           categoryController,
 		ArticleController:            articleController,
 
-		AuthMiddleware: authMiddleware,
+		AuthMiddleware:       authMiddleware,
+		EntityTypeMiddleware: entityTypeMiddleware,
 
 		PublicRateLimiter:   publicRateLimiter,
 		AuthRateLimiter:     authRateLimiter,

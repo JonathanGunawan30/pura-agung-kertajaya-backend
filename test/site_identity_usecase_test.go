@@ -51,7 +51,7 @@ func TestSiteIdentityUsecase_Create_Success(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), 1).
 		WillReturnRows(rows)
 
-	res, err := u.Create(req)
+	res, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -69,7 +69,7 @@ func TestSiteIdentityUsecase_Create_ValidationError(t *testing.T) {
 
 	req := model.SiteIdentityRequest{}
 
-	res, err := u.Create(req)
+	res, err := u.Create(req.EntityType, req)
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }

@@ -20,27 +20,60 @@ import (
 )
 
 func setupRemarkController() (*fiber.App, *usecasemock.RemarkUsecaseMock) {
+
 	mockUC := &usecasemock.RemarkUsecaseMock{}
+
 	controller := httpdelivery.NewRemarkController(mockUC, logrus.New())
 
+
+
 	app := fiber.New(fiber.Config{
+
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+
 			code := fiber.StatusInternalServerError
+
 			message := "An internal server error occurred."
 
+
+
 			if e, ok := err.(*fiber.Error); ok {
+
 				code = e.Code
+
 				message = e.Message
+
 			} else if errors.Is(err, gorm.ErrRecordNotFound) {
+
 				code = fiber.StatusNotFound
+
 				message = "The requested resource was not found."
+
 			} else if _, ok := err.(validator.ValidationErrors); ok {
+
 				code = fiber.StatusBadRequest
+
 				message = "Validation failed"
+
 			}
+
 			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
+
 		},
+
 	})
+
+
+
+	app.Use(func(c *fiber.Ctx) error {
+
+		c.Locals("entity_type", "pura")
+
+		return c.Next()
+
+	})
+
+
 
 	api := app.Group("/api")
 	api.Get("/remarks", controller.GetAll)
@@ -100,7 +133,7 @@ func TestRemarkController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupRemarkController()
 	items := []model.RemarkResponse{{ID: "uuid-1", Name: "A"}}
 
-	mockUC.On("GetAll", "").Return(items, nil)
+	mockUC.On("GetAll", "pura").Return(items, nil)
 
 	req := httptest.NewRequest("GET", "/api/remarks", nil)
 	resp, _ := app.Test(req)
@@ -144,11 +177,14 @@ func TestRemarkController_Create_Success(t *testing.T) {
 
 	reqBody := model.CreateRemarkRequest{
 		EntityType: "pura",
-		Name:       "New Person", Position: "Staff", Content: "Hello", OrderIndex: 1,
+		Name:       "Test",
+		Position:   "Pos",
+		Content:    "Content",
+		OrderIndex: 1,
 	}
-	resBody := &model.RemarkResponse{ID: "new-uuid-1", Name: "New Person", EntityType: "pura"}
+	resBody := &model.RemarkResponse{ID: "new-uuid-1", Name: "Test"}
 
-	mockUC.On("Create", reqBody).Return(resBody, nil)
+	mockUC.On("Create", "pura", reqBody).Return(resBody, nil)
 
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/remarks", bytes.NewReader(b))

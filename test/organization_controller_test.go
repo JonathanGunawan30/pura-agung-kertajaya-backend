@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
-	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	httpdelivery "pura-agung-kertajaya-backend/internal/delivery/http"
 	"pura-agung-kertajaya-backend/internal/model"
@@ -18,17 +19,35 @@ import (
 )
 
 func setupOrganizationMemberController(t *testing.T) (*fiber.App, *usecasemock.OrganizationMemberUsecaseMock) {
-	log := logrus.New()
 	mockUC := &usecasemock.OrganizationMemberUsecaseMock{}
 	controller := httpdelivery.NewOrganizationController(mockUC, logrus.New())
 	app := fiber.New(fiber.Config{
 		StrictRouting: true,
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			message := "An internal server error occurred. Please try again later."
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+				message = e.Message
+			} else if errors.Is(err, gorm.ErrRecordNotFound) {
+				code = fiber.StatusNotFound
+				message = "The requested resource was not found."
+			} else if _, ok := err.(validator.ValidationErrors); ok {
+				code = fiber.StatusBadRequest
+				message = "Validation failed"
+			}
+			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
+		},
 	})
 
-	app.Use(middleware.ErrorHandlerMiddleware(log))
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("entity_type", "pura")
+		return c.Next()
+	})
 
 	api := app.Group("/api")
 	members := api.Group("/organization-members")
+
 	members.Get("/", controller.GetAll)
 	members.Get("/:id", controller.GetByID)
 	members.Post("/", controller.Create)
@@ -86,7 +105,7 @@ func TestOrganizationMemberController_GetAll_Success(t *testing.T) {
 		{ID: "1", Name: "Member A"},
 		{ID: "2", Name: "Member B", IsActive: false},
 	}
-	mockUC.On("GetAll", "").Return(mockResponse, nil)
+	mockUC.On("GetAll", "pura").Return(mockResponse, nil)
 
 	req := httptest.NewRequest("GET", "/api/organization-members/", nil) // Note trailing slash might matter depending on StrictRouting
 
@@ -105,7 +124,7 @@ func TestOrganizationMemberController_GetAll_Success(t *testing.T) {
 func TestOrganizationMemberController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupOrganizationMemberController(t)
 
-	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "pura").Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/api/organization-members/", nil)
 
@@ -140,7 +159,7 @@ func TestOrganizationMemberController_GetByID_Success(t *testing.T) {
 func TestOrganizationMemberController_GetByID_NotFound(t *testing.T) {
 	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "notfound"
-	mockUC.On("GetByID", memberID).Return((*model.OrganizationResponse)(nil), errors.New("not found")) // Assuming controller maps this to 404
+	mockUC.On("GetByID", memberID).Return((*model.OrganizationResponse)(nil), gorm.ErrRecordNotFound) // Assuming controller maps this to 404
 
 	req := httptest.NewRequest("GET", "/api/organization-members/"+memberID, nil)
 
@@ -158,7 +177,6 @@ func TestOrganizationMemberController_Create_Success(t *testing.T) {
 		Name:          "New Member",
 		Position:      "Anggota",
 		PositionOrder: 5,
-		Images:        map[string]string{"default": "image.jpg"},
 		IsActive:      true,
 	}
 	mockResponse := &model.OrganizationResponse{
@@ -166,10 +184,9 @@ func TestOrganizationMemberController_Create_Success(t *testing.T) {
 		Name:          "New Member",
 		Position:      "Anggota",
 		PositionOrder: 5,
-		Images:        map[string]string{"default": "image.jpg"},
 		IsActive:      true,
 	}
-	mockUC.On("Create", reqBody).Return(mockResponse, nil)
+	mockUC.On("Create", "pura", reqBody).Return(mockResponse, nil)
 
 	bodyBytes, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/organization-members/", bytes.NewReader(bodyBytes))
@@ -203,7 +220,12 @@ func TestOrganizationMemberController_Create_UsecaseError(t *testing.T) {
 	app, mockUC := setupOrganizationMemberController(t)
 
 	reqBody := model.CreateOrganizationRequest{Name: "", Position: "Pos"}
-	mockUC.On("Create", reqBody).Return((*model.OrganizationResponse)(nil), errors.New("validation failed: Name is required"))
+	// entity_type is set to "pura" by test middleware
+	validate := validator.New()
+	err := validate.Struct(reqBody)
+	var validationErrs validator.ValidationErrors
+	errors.As(err, &validationErrs)
+	mockUC.On("Create", "pura", reqBody).Return((*model.OrganizationResponse)(nil), validationErrs)
 
 	bodyBytes, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/organization-members/", bytes.NewReader(bodyBytes))
@@ -223,7 +245,6 @@ func TestOrganizationMemberController_Update_Success(t *testing.T) {
 		Name:          "Updated Name",
 		Position:      "Ketua",
 		PositionOrder: 1,
-		Images:        map[string]string{"default": "updated.jpg"},
 		IsActive:      true,
 	}
 	mockResponse := &model.OrganizationResponse{
@@ -231,7 +252,6 @@ func TestOrganizationMemberController_Update_Success(t *testing.T) {
 		Name:          "Updated Name",
 		Position:      "Ketua",
 		PositionOrder: 1,
-		Images:        map[string]string{"default": "updated.jpg"},
 		IsActive:      true,
 	}
 
@@ -271,7 +291,7 @@ func TestOrganizationMemberController_Update_NotFound(t *testing.T) {
 	memberID := "notfound"
 	reqBody := model.UpdateOrganizationRequest{Name: "Update"}
 
-	mockUC.On("Update", memberID, reqBody).Return((*model.OrganizationResponse)(nil), errors.New("not found")) // Simulate use case not found
+	mockUC.On("Update", memberID, reqBody).Return((*model.OrganizationResponse)(nil), gorm.ErrRecordNotFound) // Simulate use case not found
 
 	bodyBytes, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("PUT", "/api/organization-members/"+memberID, bytes.NewReader(bodyBytes))
@@ -307,7 +327,7 @@ func TestOrganizationMemberController_Delete_NotFound(t *testing.T) {
 	app, mockUC := setupOrganizationMemberController(t)
 	memberID := "notfound"
 
-	mockUC.On("Delete", memberID).Return(errors.New("not found"))
+	mockUC.On("Delete", memberID).Return(gorm.ErrRecordNotFound)
 
 	req := httptest.NewRequest("DELETE", "/api/organization-members/"+memberID, nil)
 

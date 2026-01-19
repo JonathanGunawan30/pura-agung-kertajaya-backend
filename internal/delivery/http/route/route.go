@@ -24,6 +24,7 @@ type RouteConfig struct {
 	CategoryController           *http.CategoryController
 	ArticleController            *http.ArticleController
 	AuthMiddleware               fiber.Handler
+	EntityTypeMiddleware         fiber.Handler
 
 	PublicRateLimiter   fiber.Handler
 	AuthRateLimiter     fiber.Handler
@@ -60,7 +61,7 @@ func (c *RouteConfig) SetupGuestRoute() {
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
-	auth := c.App.Group("/api", c.AuthMiddleware)
+	auth := c.App.Group("/api", c.AuthMiddleware, c.EntityTypeMiddleware)
 
 	auth.Post("/users/_logout", c.CMSWriteRateLimiter, c.UserController.Logout)
 	auth.Patch("/users/_current", c.CMSWriteRateLimiter, c.UserController.UpdateProfile)

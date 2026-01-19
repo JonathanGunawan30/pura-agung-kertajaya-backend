@@ -1,6 +1,7 @@
 package http
 
 import (
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 
@@ -18,7 +19,7 @@ func NewFacilityController(usecase usecase.FacilityUsecase, log *logrus.Logger) 
 }
 
 func (c *FacilityController) GetAll(ctx *fiber.Ctx) error {
-	entityType := ctx.Query("entity_type")
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
 	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to fetch facilities")
@@ -27,7 +28,6 @@ func (c *FacilityController) GetAll(ctx *fiber.Ctx) error {
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
 
-// GetAllPublic returns only active facilities for public consumption
 func (c *FacilityController) GetAllPublic(ctx *fiber.Ctx) error {
 	entityType := ctx.Query("entity_type")
 	data, err := c.UseCase.GetPublic(entityType)
@@ -53,10 +53,12 @@ func (c *FacilityController) GetByID(ctx *fiber.Ctx) error {
 
 func (c *FacilityController) Create(ctx *fiber.Ctx) error {
 	var req model.CreateFacilityRequest
+	entityType := ctx.Locals(middleware.CtxEntityType).(string)
+
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
-	data, err := c.UseCase.Create(req)
+	data, err := c.UseCase.Create(entityType, req)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to create Facility")
 		return err

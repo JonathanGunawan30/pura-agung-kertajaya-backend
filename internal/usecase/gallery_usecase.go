@@ -17,7 +17,7 @@ type GalleryUsecase interface {
 	GetAll(entityType string) ([]model.GalleryResponse, error)
 	GetPublic(entityType string) ([]model.GalleryResponse, error)
 	GetByID(id string) (*model.GalleryResponse, error)
-	Create(req model.CreateGalleryRequest) (*model.GalleryResponse, error)
+	Create(entityType string, req model.CreateGalleryRequest) (*model.GalleryResponse, error)
 	Update(id string, req model.UpdateGalleryRequest) (*model.GalleryResponse, error)
 	Delete(id string) error
 }
@@ -41,10 +41,6 @@ func NewGalleryUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Vali
 func (u *galleryUsecase) GetAll(entityType string) ([]model.GalleryResponse, error) {
 	var items []entity.Gallery
 
-	if entityType == "" {
-		entityType = "pura"
-	}
-
 	query := u.db.Where("entity_type = ?", entityType).Order("order_index ASC")
 
 	if err := u.repo.FindAll(query, &items); err != nil {
@@ -56,10 +52,6 @@ func (u *galleryUsecase) GetAll(entityType string) ([]model.GalleryResponse, err
 
 func (u *galleryUsecase) GetPublic(entityType string) ([]model.GalleryResponse, error) {
 	var items []entity.Gallery
-
-	if entityType == "" {
-		entityType = "pura"
-	}
 
 	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
 
@@ -79,13 +71,13 @@ func (u *galleryUsecase) GetByID(id string) (*model.GalleryResponse, error) {
 	return &r, nil
 }
 
-func (u *galleryUsecase) Create(req model.CreateGalleryRequest) (*model.GalleryResponse, error) {
+func (u *galleryUsecase) Create(entityType string, req model.CreateGalleryRequest) (*model.GalleryResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 	g := entity.Gallery{
 		ID:          uuid.New().String(),
-		EntityType:  req.EntityType,
+		EntityType:  entityType,
 		Title:       req.Title,
 		Description: req.Description,
 		Images:      util.ImageMap(req.Images),

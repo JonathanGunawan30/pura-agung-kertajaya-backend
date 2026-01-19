@@ -32,8 +32,8 @@ func (m *FacilityUsecaseMock) GetByID(id string) (*model.FacilityResponse, error
 	return args.Get(0).(*model.FacilityResponse), args.Error(1)
 }
 
-func (m *FacilityUsecaseMock) Create(req model.CreateFacilityRequest) (*model.FacilityResponse, error) {
-	args := m.Called(req)
+func (m *FacilityUsecaseMock) Create(entityType string, req model.CreateFacilityRequest) (*model.FacilityResponse, error) {
+	args := m.Called(entityType, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

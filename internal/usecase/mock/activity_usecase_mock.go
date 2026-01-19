@@ -32,8 +32,8 @@ func (m *ActivityUsecaseMock) GetByID(id string) (*model.ActivityResponse, error
 	return args.Get(0).(*model.ActivityResponse), args.Error(1)
 }
 
-func (m *ActivityUsecaseMock) Create(req model.CreateActivityRequest) (*model.ActivityResponse, error) {
-	args := m.Called(req)
+func (m *ActivityUsecaseMock) Create(entityType string, req model.CreateActivityRequest) (*model.ActivityResponse, error) {
+	args := m.Called(entityType, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

@@ -16,7 +16,7 @@ type RemarkUsecase interface {
 	GetAll(entityType string) ([]model.RemarkResponse, error)
 	GetPublic(entityType string) ([]model.RemarkResponse, error)
 	GetByID(id string) (*model.RemarkResponse, error)
-	Create(req model.CreateRemarkRequest) (*model.RemarkResponse, error)
+	Create(entityType string, req model.CreateRemarkRequest) (*model.RemarkResponse, error)
 	Update(id string, req model.UpdateRemarkRequest) (*model.RemarkResponse, error)
 	Delete(id string) error
 }
@@ -40,10 +40,6 @@ func NewRemarkUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Valid
 func (u *remarkUsecase) GetAll(entityType string) ([]model.RemarkResponse, error) {
 	var remarks []entity.Remark
 
-	if entityType == "" {
-		entityType = "pura"
-	}
-
 	query := u.db.Where("entity_type = ?", entityType).Order("order_index ASC")
 
 	if err := u.repo.FindAll(query, &remarks); err != nil {
@@ -55,9 +51,6 @@ func (u *remarkUsecase) GetAll(entityType string) ([]model.RemarkResponse, error
 
 func (u *remarkUsecase) GetPublic(entityType string) ([]model.RemarkResponse, error) {
 	var remarks []entity.Remark
-	if entityType == "" {
-		entityType = "pura"
-	}
 
 	query := u.db.Where("is_active = ? AND entity_type = ?", true, entityType).
 		Order("order_index ASC")
@@ -78,14 +71,14 @@ func (u *remarkUsecase) GetByID(id string) (*model.RemarkResponse, error) {
 	return &response, nil
 }
 
-func (u *remarkUsecase) Create(req model.CreateRemarkRequest) (*model.RemarkResponse, error) {
+func (u *remarkUsecase) Create(entityType string, req model.CreateRemarkRequest) (*model.RemarkResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 
 	r := entity.Remark{
 		ID:         uuid.New().String(),
-		EntityType: req.EntityType,
+		EntityType: entityType,
 		Name:       req.Name,
 		Position:   req.Position,
 		ImageURL:   req.ImageURL,

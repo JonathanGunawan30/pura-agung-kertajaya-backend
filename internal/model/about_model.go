@@ -31,7 +31,7 @@ type AboutSectionResponse struct {
 	EntityType  string               `json:"entity_type"`
 	Title       string               `json:"title"`
 	Description string               `json:"description"`
-	Images      map[string]string    `json:"images"`
+	Images      ImageVariants        `json:"images"`
 	IsActive    bool                 `json:"is_active"`
 	CreatedAt   time.Time            `json:"created_at"`
 	UpdatedAt   time.Time            `json:"updated_at"`

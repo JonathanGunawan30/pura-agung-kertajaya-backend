@@ -20,9 +20,19 @@ func setupGalleryController(t *testing.T) (*fiber.App, *usecasemock.GalleryUseca
 	mockUC := new(usecasemock.GalleryUsecaseMock)
 	controller := httpdelivery.NewGalleryController(mockUC, logrus.New())
 
-	app := fiber.New()
+		app := fiber.New()
 
-	api := app.Group("/api")
+		app.Use(func(c *fiber.Ctx) error {
+
+			c.Locals("entity_type", "pura")
+
+			return c.Next()
+
+		})
+
+		api := app.Group("/api")
+
+	
 	api.Get("/galleries", controller.GetAll)
 	api.Get("/galleries/:id", controller.GetByID)
 	api.Post("/galleries", controller.Create)
@@ -66,7 +76,7 @@ func TestGalleryController_GetAll_Success(t *testing.T) {
 	app, mockUC := setupGalleryController(t)
 	items := []model.GalleryResponse{{ID: "g1", Title: "Admin View"}}
 
-	mockUC.On("GetAll", "").Return(items, nil)
+	mockUC.On("GetAll", "pura").Return(items, nil)
 
 	req := httptest.NewRequest("GET", "/api/galleries", nil)
 	resp, _ := app.Test(req)
@@ -92,10 +102,11 @@ func TestGalleryController_GetByID_Success(t *testing.T) {
 func TestGalleryController_Create_Success(t *testing.T) {
 	app, mockUC := setupGalleryController(t)
 
-	reqBody := model.CreateGalleryRequest{Title: "New", Images: map[string]string{"lg": "https://img.com/lg.jpg"}, EntityType: "pura"}
-	resBody := &model.GalleryResponse{ID: "new-id", Title: "New"}
+		reqBody := model.CreateGalleryRequest{Title: "New", Images: map[string]string{"lg": "https://img.com/lg.jpg"}, EntityType: "pura"}
 
-	mockUC.On("Create", mock.AnythingOfType("model.CreateGalleryRequest")).Return(resBody, nil)
+		resBody := &model.GalleryResponse{ID: "1", Title: "New", EntityType: "pura"}
+
+		mockUC.On("Create", "pura", mock.AnythingOfType("model.CreateGalleryRequest")).Return(resBody, nil)
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/api/galleries", strings.NewReader(string(body)))

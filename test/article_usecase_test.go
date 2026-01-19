@@ -53,7 +53,7 @@ func TestArticleUsecase_GetPublic(t *testing.T) {
 
 	if len(results) > 0 {
 		assert.Equal(t, "Berita 1", results[0].Title)
-		assert.Equal(t, "img1.jpg", results[0].Images["lg"])
+		assert.Equal(t, "img1.jpg", results[0].Images.Lg)
 	}
 }
 
@@ -74,7 +74,7 @@ func TestArticleUsecase_GetBySlug(t *testing.T) {
 	assert.NoError(t, err)
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "Upacara Ngaben", res.Title)
-		assert.Equal(t, "img1.jpg", res.Images["lg"])
+		assert.Equal(t, "img1.jpg", res.Images.Lg)
 	}
 }
 
@@ -85,6 +85,7 @@ func TestArticleUsecase_Create_AutoSlugAndExcerpt(t *testing.T) {
 		Title:      "Judul Berita Keren",
 		AuthorName: "Admin",
 		Content:    "Ini adalah konten yang sangat panjang sekali...",
+		Excerpt:    "Ini adalah konten yang sangat panjang sekali...",
 		Status:     "PUBLISHED",
 		Images:     map[string]string{"lg": "https://img.com/lg.jpg"},
 	}
@@ -120,7 +121,7 @@ func TestArticleUsecase_Create_AutoSlugAndExcerpt(t *testing.T) {
 	if assert.NotNil(t, created) {
 		assert.Equal(t, "judul-berita-keren", created.Slug)
 		assert.Equal(t, req.Content, created.Excerpt)
-		assert.Equal(t, req.Images["lg"], created.Images["lg"])
+		assert.Equal(t, req.Images["lg"], created.Images.Lg)
 	}
 }
 
@@ -131,6 +132,7 @@ func TestArticleUsecase_Create_SlugCollision(t *testing.T) {
 		Title:      "Berita Sama",
 		AuthorName: "Budi",
 		Content:    "Isi konten ini harus cukup panjang ya",
+		Excerpt:    "Isi konten ini harus cukup panjang ya",
 		Status:     "DRAFT",
 		Images:     map[string]string{"lg": "https://img.com/lg.jpg"},
 	}
@@ -179,6 +181,7 @@ func TestArticleUsecase_Update(t *testing.T) {
 	req := model.UpdateArticleRequest{
 		Title:      "Judul Baru",
 		Content:    "Konten baru",
+		Excerpt:    "Konten baru",
 		AuthorName: "Author",
 		Status:     "PUBLISHED",
 		Images:     map[string]string{"lg": "https://new.jpg"},
@@ -220,7 +223,7 @@ func TestArticleUsecase_Update(t *testing.T) {
 	if assert.NotNil(t, updated) {
 		assert.Equal(t, "Judul Baru", updated.Title)
 		assert.Equal(t, "judul-baru", updated.Slug)
-		assert.Equal(t, "https://new.jpg", updated.Images["lg"])
+		assert.Equal(t, "https://new.jpg", updated.Images.Lg)
 	}
 }
 

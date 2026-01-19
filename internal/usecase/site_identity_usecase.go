@@ -17,7 +17,7 @@ type SiteIdentityUsecase interface {
 	// GetPublic returns the latest SiteIdentity (by created_at DESC) for public consumption
 	GetPublic(entityType string) (*model.SiteIdentityResponse, error)
 	GetByID(id string) (*model.SiteIdentityResponse, error)
-	Create(req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error)
+	Create(entityType string, req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error)
 	Update(id string, req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error)
 	Delete(id string) error
 }
@@ -76,13 +76,13 @@ func (u *siteIdentityUsecase) GetByID(id string) (*model.SiteIdentityResponse, e
 	return &r, nil
 }
 
-func (u *siteIdentityUsecase) Create(req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error) {
+func (u *siteIdentityUsecase) Create(entityType string, req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 	e := entity.SiteIdentity{
 		ID:                  uuid.New().String(),
-		EntityType:          req.EntityType,
+		EntityType:          entityType,
 		SiteName:            req.SiteName,
 		LogoURL:             req.LogoURL,
 		Tagline:             req.Tagline,

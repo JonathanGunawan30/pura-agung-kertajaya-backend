@@ -96,7 +96,7 @@ func TestAboutUsecase_Create_WithValues(t *testing.T) {
 		return
 	}
 	assert.Equal(t, 2, len(res.Values))
-	assert.Equal(t, "https://img.com/lg.jpg", res.Images["lg"])
+	assert.Equal(t, "https://img.com/lg.jpg", res.Images.Lg)
 }
 
 func TestAboutUsecase_GetPublic_FilterActive(t *testing.T) {
@@ -204,7 +204,7 @@ func TestAboutUsecase_Update_ReplacesValues(t *testing.T) {
 		return
 	}
 	assert.Equal(t, "New", res.Title)
-	assert.Equal(t, "https://img.com/lg.jpg", res.Images["lg"])
+	assert.Equal(t, "https://img.com/lg.jpg", res.Images.Lg)
 }
 
 func TestAboutUsecase_Delete_Success(t *testing.T) {

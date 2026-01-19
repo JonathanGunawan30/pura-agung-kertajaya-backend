@@ -16,7 +16,7 @@ type OrganizationUsecase interface {
 	GetAll(entityType string) ([]model.OrganizationResponse, error)
 	GetPublic(entityType string) ([]model.OrganizationResponse, error)
 	GetByID(id string) (*model.OrganizationResponse, error)
-	Create(req model.CreateOrganizationRequest) (*model.OrganizationResponse, error)
+	Create(entityType string, req model.CreateOrganizationRequest) (*model.OrganizationResponse, error)
 	Update(id string, req model.UpdateOrganizationRequest) (*model.OrganizationResponse, error)
 	Delete(id string) error
 }
@@ -40,10 +40,6 @@ func NewOrganizationRequest(db *gorm.DB, log *logrus.Logger, validate *validator
 func (u *organizationUsecase) GetAll(entityType string) ([]model.OrganizationResponse, error) {
 	var items []entity.OrganizationMember
 
-	if entityType == "" {
-		entityType = "pura"
-	}
-
 	query := u.db.Where("entity_type = ?", entityType).Order("position_order ASC, order_index ASC")
 
 	if err := u.repo.FindAll(query, &items); err != nil {
@@ -55,10 +51,6 @@ func (u *organizationUsecase) GetAll(entityType string) ([]model.OrganizationRes
 
 func (u *organizationUsecase) GetPublic(entityType string) ([]model.OrganizationResponse, error) {
 	var items []entity.OrganizationMember
-
-	if entityType == "" {
-		entityType = "pura"
-	}
 
 	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
 
@@ -78,13 +70,13 @@ func (u *organizationUsecase) GetByID(id string) (*model.OrganizationResponse, e
 	return &r, nil
 }
 
-func (u *organizationUsecase) Create(req model.CreateOrganizationRequest) (*model.OrganizationResponse, error) {
+func (u *organizationUsecase) Create(entityType string, req model.CreateOrganizationRequest) (*model.OrganizationResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 	g := entity.OrganizationMember{
 		ID:            uuid.New().String(),
-		EntityType:    req.EntityType,
+		EntityType:    entityType,
 		Name:          req.Name,
 		Position:      req.Position,
 		PositionOrder: req.PositionOrder,

@@ -53,10 +53,10 @@ func TestHeroSlideUsecase_Create_Success(t *testing.T) {
 		AddRow("id-1", "pura", []byte(`{"lg":"https://example.com/image.jpg"}`), 1, true)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `hero_slides`")).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+		WithArgs(sqlmock.AnyArg(), 1).
 		WillReturnRows(rows)
 
-	res, err := u.Create(req)
+	res, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -66,7 +66,7 @@ func TestHeroSlideUsecase_Create_Success(t *testing.T) {
 		return
 	}
 	assert.Equal(t, req.EntityType, res.EntityType)
-	assert.Equal(t, req.Images["lg"], res.Images["lg"])
+	assert.Equal(t, req.Images["lg"], res.Images.Lg)
 	assert.Equal(t, req.OrderIndex, res.OrderIndex)
 }
 
@@ -75,7 +75,7 @@ func TestHeroSlideUsecase_Create_ValidationError(t *testing.T) {
 
 	req := model.HeroSlideRequest{}
 
-	res, err := u.Create(req)
+	res, err := u.Create(req.EntityType, req)
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }
@@ -95,8 +95,8 @@ func TestHeroSlideUsecase_GetAll_OrderedByIndex(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
 	assert.Equal(t, "pura", list[0].EntityType)
-	assert.Equal(t, "https://example.com/1.jpg", list[0].Images["lg"])
-	assert.Equal(t, "https://example.com/2.jpg", list[1].Images["lg"])
+	assert.Equal(t, "https://example.com/1.jpg", list[0].Images.Lg)
+	assert.Equal(t, "https://example.com/2.jpg", list[1].Images.Lg)
 }
 
 func TestHeroSlideUsecase_GetByID_NotFound(t *testing.T) {
@@ -143,7 +143,7 @@ func TestHeroSlideUsecase_Update_Success(t *testing.T) {
 		return
 	}
 	assert.Equal(t, req.EntityType, res.EntityType)
-	assert.Equal(t, req.Images["lg"], res.Images["lg"])
+	assert.Equal(t, req.Images["lg"], res.Images.Lg)
 	assert.Equal(t, req.OrderIndex, res.OrderIndex)
 	assert.Equal(t, req.IsActive, res.IsActive)
 }

@@ -17,7 +17,7 @@ type FacilityUsecase interface {
 	GetAll(entityType string) ([]model.FacilityResponse, error)
 	GetPublic(entityType string) ([]model.FacilityResponse, error)
 	GetByID(id string) (*model.FacilityResponse, error)
-	Create(req model.CreateFacilityRequest) (*model.FacilityResponse, error)
+	Create(entityType string, req model.CreateFacilityRequest) (*model.FacilityResponse, error)
 	Update(id string, req model.UpdateFacilityRequest) (*model.FacilityResponse, error)
 	Delete(id string) error
 }
@@ -40,9 +40,6 @@ func NewFacilityUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Val
 
 func (u *facilityUsecase) GetAll(entityType string) ([]model.FacilityResponse, error) {
 	var items []entity.Facility
-	if entityType == "" {
-		entityType = "pura"
-	}
 
 	query := u.db.Where("entity_type = ?", entityType).Order("order_index ASC")
 	if err := u.repo.FindAll(query, &items); err != nil {
@@ -54,9 +51,6 @@ func (u *facilityUsecase) GetAll(entityType string) ([]model.FacilityResponse, e
 
 func (u *facilityUsecase) GetPublic(entityType string) ([]model.FacilityResponse, error) {
 	var items []entity.Facility
-	if entityType == "" {
-		entityType = "pura"
-	}
 
 	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
 	if err := u.repo.FindAll(query, &items); err != nil {
@@ -75,13 +69,13 @@ func (u *facilityUsecase) GetByID(id string) (*model.FacilityResponse, error) {
 	return &r, nil
 }
 
-func (u *facilityUsecase) Create(req model.CreateFacilityRequest) (*model.FacilityResponse, error) {
+func (u *facilityUsecase) Create(entityType string, req model.CreateFacilityRequest) (*model.FacilityResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
 	g := entity.Facility{
 		ID:          uuid.New().String(),
-		EntityType:  req.EntityType,
+		EntityType:  entityType,
 		Name:        req.Name,
 		Description: req.Description,
 		Images:      util.ImageMap(req.Images),

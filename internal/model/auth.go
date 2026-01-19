@@ -2,5 +2,7 @@ package model
 
 type Auth struct {
 	// Login user id
-	ID int
+	ID    int
+	Role  string
+	Email string
 }

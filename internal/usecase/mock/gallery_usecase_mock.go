@@ -34,8 +34,8 @@ func (m *GalleryUsecaseMock) GetByID(id string) (*model.GalleryResponse, error) 
 	return args.Get(0).(*model.GalleryResponse), args.Error(1)
 }
 
-func (m *GalleryUsecaseMock) Create(req model.CreateGalleryRequest) (*model.GalleryResponse, error) {
-	args := m.Called(req)
+func (m *GalleryUsecaseMock) Create(entityType string, req model.CreateGalleryRequest) (*model.GalleryResponse, error) {
+	args := m.Called(entityType, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

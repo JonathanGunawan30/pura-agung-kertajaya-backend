@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"pura-agung-kertajaya-backend/internal/model"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,9 +29,10 @@ func (t *TokenUtil) CreateToken(ctx context.Context, auth *model.Auth) (string, 
 
 	exp := time.Now().Add(24 * time.Hour)
 	claims := jwt.MapClaims{
-		"id":  auth.ID,
-		"exp": exp.Unix(),
-		"jti": jti,
+		"id":   auth.ID,
+		"role": auth.Role,
+		"exp":  exp.Unix(),
+		"jti":  jti,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -39,8 +41,20 @@ func (t *TokenUtil) CreateToken(ctx context.Context, auth *model.Auth) (string, 
 		return "", "", err
 	}
 
-	err = t.Redis.SetEx(ctx, "session:"+jti, auth.ID, 24*time.Hour).Err()
-	if err != nil {
+	key := "session:" + jti
+
+	data := map[string]string{
+		"user_id":   strconv.Itoa(auth.ID),
+		"email":     auth.Email,
+		"role":      auth.Role,
+		"issued_at": strconv.FormatInt(time.Now().Unix(), 10),
+	}
+
+	if err = t.Redis.HSet(ctx, key, data).Err(); err != nil {
+		return "", "", err
+	}
+
+	if err = t.Redis.Expire(ctx, key, 24*time.Hour).Err(); err != nil {
 		return "", "", err
 	}
 
@@ -62,16 +76,21 @@ func (t *TokenUtil) ParseToken(ctx context.Context, jwtToken string) (*model.Aut
 
 	jti, _ := claims["jti"].(string)
 	id, _ := claims["id"].(float64)
+	role, _ := claims["role"].(string)
 
-	exists, err := t.Redis.Exists(ctx, "session:"+jti).Result()
+	key := "session:" + jti
+	exists, err := t.Redis.Exists(ctx, key).Result()
 	if err != nil {
 		return nil, "", err
 	}
 	if exists == 0 {
-		return nil, "", errors.New("token revoked or expired")
+		return nil, "", errors.New("session expired or revoked")
 	}
 
-	return &model.Auth{ID: int(id)}, jti, nil
+	return &model.Auth{
+		ID:   int(id),
+		Role: role,
+	}, jti, nil
 }
 
 func (t *TokenUtil) RevokeToken(ctx context.Context, jti string) error {

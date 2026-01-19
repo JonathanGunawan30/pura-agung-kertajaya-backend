@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
-	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 
 	httpdelivery "pura-agung-kertajaya-backend/internal/delivery/http"
 	"pura-agung-kertajaya-backend/internal/model"
@@ -18,14 +19,31 @@ import (
 )
 
 func setupSiteIdentityController() (*fiber.App, *usecasemock.SiteIdentityUsecaseMock) {
-	log := logrus.New()
 	mockUC := &usecasemock.SiteIdentityUsecaseMock{}
 	controller := httpdelivery.NewSiteIdentityController(mockUC, logrus.New())
 	app := fiber.New(fiber.Config{
 		StrictRouting: true,
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			message := "An internal server error occurred. Please try again later."
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+				message = e.Message
+			} else if errors.Is(err, gorm.ErrRecordNotFound) {
+				code = fiber.StatusNotFound
+				message = "The requested resource was not found."
+			} else if _, ok := err.(validator.ValidationErrors); ok {
+				code = fiber.StatusBadRequest
+				message = "Validation failed"
+			}
+			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
+		},
 	})
 
-	app.Use(middleware.ErrorHandlerMiddleware(log))
+	app.Use(func(c *fiber.Ctx) error {
+		c.Locals("entity_type", "pura")
+		return c.Next()
+	})
 
 	app.Get("/site-identity", controller.GetAll)
 	app.Get("/site-identity/:id", controller.GetByID)
@@ -86,7 +104,7 @@ func TestSiteIdentityController_GetAll_Success(t *testing.T) {
 
 func TestSiteIdentityController_GetAll_Error(t *testing.T) {
 	app, mockUC := setupSiteIdentityController()
-	mockUC.On("GetAll", "").Return(nil, errors.New("db error"))
+	mockUC.On("GetAll", "pura").Return(nil, errors.New("db error"))
 
 	req := httptest.NewRequest("GET", "/site-identity", nil)
 	resp, _ := app.Test(req)
@@ -109,7 +127,7 @@ func TestSiteIdentityController_GetByID_Success(t *testing.T) {
 
 func TestSiteIdentityController_GetByID_NotFound(t *testing.T) {
 	app, mockUC := setupSiteIdentityController()
-	mockUC.On("GetByID", "missing").Return((*model.SiteIdentityResponse)(nil), errors.New("not found"))
+	mockUC.On("GetByID", "missing").Return((*model.SiteIdentityResponse)(nil), gorm.ErrRecordNotFound)
 
 	req := httptest.NewRequest("GET", "/site-identity/missing", nil)
 	resp, _ := app.Test(req)
@@ -118,9 +136,9 @@ func TestSiteIdentityController_GetByID_NotFound(t *testing.T) {
 
 func TestSiteIdentityController_Create_Success(t *testing.T) {
 	app, mockUC := setupSiteIdentityController()
-	reqBody := model.SiteIdentityRequest{EntityType: "pura", SiteName: "X"}
-	resBody := &model.SiteIdentityResponse{ID: "1", EntityType: "pura", SiteName: "X"}
-	mockUC.On("Create", reqBody).Return(resBody, nil)
+	reqBody := model.SiteIdentityRequest{EntityType: "pura", SiteName: "Pura", LogoURL: "http://logo.com/logo.png", Tagline: "T"}
+	resBody := &model.SiteIdentityResponse{ID: "1", SiteName: "Pura"}
+	mockUC.On("Create", "pura", reqBody).Return(resBody, nil)
 
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/site-identity", bytes.NewReader(b))
@@ -144,7 +162,12 @@ func TestSiteIdentityController_Create_BadBody(t *testing.T) {
 func TestSiteIdentityController_Create_UsecaseError(t *testing.T) {
 	app, mockUC := setupSiteIdentityController()
 	reqBody := model.SiteIdentityRequest{}
-	mockUC.On("Create", reqBody).Return((*model.SiteIdentityResponse)(nil), errors.New("validation failed"))
+	// entity_type is set to "pura" by test middleware
+	validate := validator.New()
+	err := validate.Struct(reqBody)
+	var validationErrs validator.ValidationErrors
+	errors.As(err, &validationErrs)
+	mockUC.On("Create", "pura", reqBody).Return((*model.SiteIdentityResponse)(nil), validationErrs)
 
 	b, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest("POST", "/site-identity", bytes.NewReader(b))

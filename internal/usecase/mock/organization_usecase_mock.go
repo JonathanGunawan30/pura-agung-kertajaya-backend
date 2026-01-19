@@ -34,8 +34,8 @@ func (m *OrganizationMemberUsecaseMock) GetByID(id string) (*model.OrganizationR
 	return args.Get(0).(*model.OrganizationResponse), args.Error(1)
 }
 
-func (m *OrganizationMemberUsecaseMock) Create(req model.CreateOrganizationRequest) (*model.OrganizationResponse, error) {
-	args := m.Called(req)
+func (m *OrganizationMemberUsecaseMock) Create(entityType string, req model.CreateOrganizationRequest) (*model.OrganizationResponse, error) {
+	args := m.Called(entityType, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
