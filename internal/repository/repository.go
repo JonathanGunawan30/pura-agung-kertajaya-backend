@@ -1,6 +1,8 @@
 package repository
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type Repository[T any] struct {
 	DB *gorm.DB
@@ -47,5 +49,11 @@ func (r *Repository[T]) CountBySlugIgnoringID(db *gorm.DB, slug string, id any) 
 	err := db.Model(new(T)).
 		Where("slug = ? AND id != ?", slug, id).
 		Count(&total).Error
+	return total, err
+}
+
+func (r *Repository[T]) CountReference(db *gorm.DB, modelToCheck any, column string, value any) (int64, error) {
+	var total int64
+	err := db.Model(modelToCheck).Where(column+" = ?", value).Count(&total).Error
 	return total, err
 }

@@ -150,9 +150,13 @@ func TestCategoryUsecase_Delete(t *testing.T) {
 	u, mock := setupMockCategoryUsecase(t)
 	targetID := "cat-delete"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `categories` WHERE id = ? LIMIT ?")).
-		WithArgs(targetID, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "To Delete"))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `categories` WHERE id = ?")).
+		WithArgs(targetID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE category_id = ?")).
+		WithArgs(targetID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `categories` WHERE `categories`.`id` = ?")).
@@ -162,4 +166,21 @@ func TestCategoryUsecase_Delete(t *testing.T) {
 
 	err := u.Delete(targetID)
 	assert.NoError(t, err)
+}
+
+func TestCategoryUsecase_Delete_Fail_Referenced(t *testing.T) {
+	u, mock := setupMockCategoryUsecase(t)
+	targetID := "cat-busy"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `categories` WHERE id = ?")).
+		WithArgs(targetID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE category_id = ?")).
+		WithArgs(targetID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(5))
+
+	err := u.Delete(targetID)
+	assert.Error(t, err)
+	assert.Equal(t, "cannot delete: category is used by articles", err.Error())
 }

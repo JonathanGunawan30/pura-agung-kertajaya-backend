@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
@@ -135,9 +136,23 @@ func (u *categoryUsecase) Update(id string, req model.UpdateCategoryRequest) (*m
 }
 
 func (u *categoryUsecase) Delete(id string) error {
-	var c entity.Category
-	if err := u.repo.FindById(u.db, &c, id); err != nil {
+
+	exists, err := u.repo.CountById(u.db, id)
+	if err != nil {
 		return err
 	}
-	return u.repo.Delete(u.db, &c)
+	if exists == 0 {
+		return errors.New("category not found")
+	}
+
+	totalUsed, err := u.repo.CountReference(u.db, &entity.Article{}, "category_id", id)
+	if err != nil {
+		return err
+	}
+
+	if totalUsed > 0 {
+		return errors.New("cannot delete: category is used by articles")
+	}
+
+	return u.repo.Delete(u.db, &entity.Category{ID: id})
 }
