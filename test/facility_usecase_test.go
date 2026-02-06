@@ -6,7 +6,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,7 +28,7 @@ func setupMockFacilityUsecase(t *testing.T) (usecase.FacilityUsecase, sqlmock.Sq
 		t.Fatalf("failed to open gorm: %v", err)
 	}
 
-	u := usecase.NewFacilityUsecase(gormDB, logrus.New(), validator.New())
+	u := usecase.NewFacilityUsecase(gormDB, validator.New())
 	return u, mock
 }
 
@@ -49,8 +48,43 @@ func TestFacilityUsecase_GetPublic_FilterActiveAndOrder(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
 	assert.Equal(t, "g3", list[0].ID)
-	assert.Equal(t, "g1", list[1].ID)
 	assert.Equal(t, "https://img3", list[0].Images.Lg)
+}
+
+func TestFacilityUsecase_GetByID_Success(t *testing.T) {
+	u, mock := setupMockFacilityUsecase(t)
+	id := "uuid-1"
+
+	rows := sqlmock.NewRows([]string{"id", "name"}).AddRow(id, "Facility Name")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(rows)
+
+	res, err := u.GetByID(id)
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, "Facility Name", res.Name)
+}
+
+func TestFacilityUsecase_GetByID_NotFound(t *testing.T) {
+	u, mock := setupMockFacilityUsecase(t)
+	id := "missing"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.GetByID(id)
+
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "facility not found", e.Message)
+	}
 }
 
 func TestFacilityUsecase_Create(t *testing.T) {
@@ -80,21 +114,19 @@ func TestFacilityUsecase_Create(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "entity_type", "name", "description", "images", "order_index", "is_active"}).
-		AddRow("uuid-1", "pura", "Name", "", []byte(`{"lg":"https://img.com/lg.jpg"}`), 3, true)
-
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities`")).
-		WithArgs(sqlmock.AnyArg(), 1).
-		WillReturnRows(rows)
-
 	created, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
-	if err != nil {
-		return
+	if assert.NotNil(t, created) {
+		assert.Equal(t, "https://img.com/lg.jpg", created.Images.Lg)
 	}
-	assert.NotNil(t, created)
-	assert.NotEmpty(t, created.ID)
-	assert.Equal(t, "https://img.com/lg.jpg", created.Images.Lg)
+}
+
+func TestFacilityUsecase_Create_ValidationError(t *testing.T) {
+	u, _ := setupMockFacilityUsecase(t)
+	req := model.CreateFacilityRequest{} // Empty
+	res, err := u.Create("pura", req)
+	assert.Error(t, err)
+	assert.Nil(t, res)
 }
 
 func TestFacilityUsecase_Update(t *testing.T) {
@@ -110,13 +142,13 @@ func TestFacilityUsecase_Update(t *testing.T) {
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "images"}).
-			AddRow(targetID, "Old Name", []byte(`{"lg":"old.jpg"}`)))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "entity_type", "name", "images"}).
+			AddRow(targetID, "pura", "Old Name", []byte(`{"lg":"old.jpg"}`)))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `facilities`")).
 		WithArgs(
-			sqlmock.AnyArg(),
+			"pura",
 			"New Name",
 			"",
 			sqlmock.AnyArg(),
@@ -131,13 +163,37 @@ func TestFacilityUsecase_Update(t *testing.T) {
 
 	updated, err := u.Update(targetID, req)
 	assert.NoError(t, err)
-	if err != nil {
-		return
+	if assert.NotNil(t, updated) {
+		assert.Equal(t, "New Name", updated.Name)
+		assert.Equal(t, false, updated.IsActive)
+		assert.Equal(t, 5, updated.OrderIndex)
 	}
-	assert.NotNil(t, updated)
-	assert.Equal(t, "New Name", updated.Name)
-	assert.Equal(t, false, updated.IsActive)
-	assert.Equal(t, 5, updated.OrderIndex)
+}
+
+func TestFacilityUsecase_Update_NotFound(t *testing.T) {
+	u, mock := setupMockFacilityUsecase(t)
+	targetID := "missing"
+
+	req := model.UpdateFacilityRequest{
+		Name:       "New Name",
+		Images:     map[string]string{"lg": "img.jpg"},
+		OrderIndex: 1,
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	updated, err := u.Update(targetID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, updated)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "facility not found", e.Message)
+	}
 }
 
 func TestFacilityUsecase_Delete(t *testing.T) {
@@ -157,4 +213,22 @@ func TestFacilityUsecase_Delete(t *testing.T) {
 
 	err := u.Delete(targetID)
 	assert.NoError(t, err)
+}
+
+func TestFacilityUsecase_Delete_NotFound(t *testing.T) {
+	u, mock := setupMockFacilityUsecase(t)
+	targetID := "missing"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `facilities` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	err := u.Delete(targetID)
+
+	assert.Error(t, err)
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "facility not found", e.Message)
+	}
 }

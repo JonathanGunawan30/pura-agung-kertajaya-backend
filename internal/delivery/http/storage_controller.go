@@ -1,8 +1,10 @@
 package http
 
 import (
+	"fmt"
 	"strings"
 
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 
@@ -22,10 +24,29 @@ func NewStorageController(usecase usecase.StorageUsecase, log *logrus.Logger) *S
 	}
 }
 
+func (c *StorageController) getLogger(ctx *fiber.Ctx) *logrus.Entry {
+	user := middleware.GetUser(ctx)
+
+	userID := "guest"
+	userRole := "unknown"
+
+	if user != nil {
+		userID = fmt.Sprintf("%d", user.ID)
+		userRole = user.Role
+	}
+
+	return c.Log.WithFields(logrus.Fields{
+		"user_id":   userID,
+		"user_role": userRole,
+		"ip":        ctx.IP(),
+		"req_id":    ctx.Get("X-Request-ID"),
+	})
+}
+
 func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 	file, err := ctx.FormFile("file")
 	if err != nil {
-		c.Log.WithError(err).Error("failed to get file from form")
+		c.getLogger(ctx).Warnf("failed to get file from form: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
 			Errors: "No file uploaded",
 		})
@@ -33,14 +54,14 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 
 	contentType := file.Header.Get("Content-Type")
 	if !isValidImageType(contentType) {
-		c.Log.WithField("content_type", contentType).Error("invalid file type")
+		c.getLogger(ctx).WithField("content_type", contentType).Warn("invalid file type upload attempt")
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
 			Errors: "Only image files are allowed (JPEG, PNG, WEBP)",
 		})
 	}
 
-	if file.Size > 10*1024*1024 {
-		c.Log.WithField("size", file.Size).Error("file too large")
+	if file.Size > 10*1024*1024 { // 10MB Limit
+		c.getLogger(ctx).WithField("size", file.Size).Warn("file too large upload attempt")
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
 			Errors: "File size must not exceed 10MB",
 		})
@@ -48,7 +69,7 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 
 	src, err := file.Open()
 	if err != nil {
-		c.Log.WithError(err).Error("failed to open file")
+		c.getLogger(ctx).WithError(err).Error("failed to open file stream")
 		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
 			Errors: "Cannot open file",
 		})
@@ -63,17 +84,23 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 		file.Size,
 	)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to upload file")
-
-		statusCode := fiber.StatusInternalServerError
-		if strings.Contains(err.Error(), "invalid image") {
-			statusCode = fiber.StatusBadRequest
+		if strings.Contains(err.Error(), "invalid image") || strings.Contains(err.Error(), "format") {
+			c.getLogger(ctx).WithError(err).Warn("image processing failed")
+			return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
+				Errors: "Invalid image format or corrupted file",
+			})
 		}
 
-		return ctx.Status(statusCode).JSON(model.WebResponse[any]{
-			Errors: err.Error(),
+		c.getLogger(ctx).WithError(err).Error("failed to upload/process file")
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
+			Errors: "Internal server error during file upload",
 		})
 	}
+
+	c.getLogger(ctx).WithFields(logrus.Fields{
+		"filename": file.Filename,
+		"variants": len(variants),
+	}).Info("File uploaded and processed successfully")
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[fiber.Map]{
 		Data: fiber.Map{
@@ -94,12 +121,13 @@ func (c *StorageController) Delete(ctx *fiber.Ctx) error {
 
 	err := c.UseCase.DeleteFile(ctx.Context(), key)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to delete file")
+		c.getLogger(ctx).WithField("key", key).WithError(err).Error("failed to delete file")
 		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
 			Errors: err.Error(),
 		})
 	}
 
+	c.getLogger(ctx).WithField("key", key).Info("File deleted successfully")
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[string]{
 		Data: "File deleted successfully",
 	})
@@ -117,7 +145,7 @@ func (c *StorageController) GetPresignedURL(ctx *fiber.Ctx) error {
 
 	url, err := c.UseCase.GetPresignedURL(ctx.Context(), key, expiration)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to generate presigned URL")
+		c.getLogger(ctx).WithField("key", key).WithError(err).Error("failed to generate presigned URL")
 		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
 			Errors: err.Error(),
 		})

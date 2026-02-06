@@ -3,10 +3,10 @@ package test
 import (
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,7 +29,7 @@ func setupMockContactInfoUsecase(t *testing.T) (usecase.ContactInfoUsecase, sqlm
 		t.Fatalf("failed to open gorm: %v", err)
 	}
 
-	u := usecase.NewContactInfoUsecase(gormDB, logrus.New(), validator.New())
+	u := usecase.NewContactInfoUsecase(gormDB, validator.New())
 	return u, mock
 }
 
@@ -51,24 +51,12 @@ func TestContactInfoUsecase_Create_Success(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "entity_type", "address", "phone", "email", "visiting_hours", "map_embed_url"}).
-		AddRow("ci-1", "pura", "Jl. Contoh No.1", "+62 8123456789", "info@example.com", "08:00 - 17:00", "https://maps.google.com/?q=x")
-
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info`")).
-		WithArgs(sqlmock.AnyArg(), 1).
-		WillReturnRows(rows)
-
 	res, err := u.Create(req)
 	assert.NoError(t, err)
-	if err != nil {
-		return
+	if assert.NotNil(t, res) {
+		assert.Equal(t, req.Address, res.Address)
+		assert.Equal(t, req.Email, res.Email)
 	}
-	assert.NotNil(t, res)
-	if res == nil {
-		return
-	}
-	assert.Equal(t, req.Address, res.Address)
-	assert.Equal(t, req.Email, res.Email)
 }
 
 func TestContactInfoUsecase_Create_ValidationError(t *testing.T) {
@@ -84,9 +72,9 @@ func TestContactInfoUsecase_Create_ValidationError(t *testing.T) {
 func TestContactInfoUsecase_GetAll(t *testing.T) {
 	u, mock := setupMockContactInfoUsecase(t)
 
-	rows := sqlmock.NewRows([]string{"id", "address", "email"}).
-		AddRow("1", "A", "email1").
-		AddRow("2", "B", "email2")
+	rows := sqlmock.NewRows([]string{"id", "address", "email", "created_at"}).
+		AddRow("1", "A", "email1", time.Now()).
+		AddRow("2", "B", "email2", time.Now())
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE entity_type = ? ORDER BY created_at ASC")).
 		WithArgs("pura").
@@ -97,52 +85,119 @@ func TestContactInfoUsecase_GetAll(t *testing.T) {
 	assert.Len(t, list, 2)
 }
 
+func TestContactInfoUsecase_GetByID_Success(t *testing.T) {
+	u, mock := setupMockContactInfoUsecase(t)
+	id := "ci-1"
+
+	rows := sqlmock.NewRows([]string{"id", "address", "email"}).
+		AddRow(id, "Addr", "email@test.com")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(rows)
+
+	res, err := u.GetByID(id)
+	assert.NoError(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, "Addr", res.Address)
+	}
+}
+
 func TestContactInfoUsecase_GetByID_NotFound(t *testing.T) {
 	u, mock := setupMockContactInfoUsecase(t)
+	id := "missing"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ?")).
-		WithArgs("not-exists", 1).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
 		WillReturnRows(sqlmock.NewRows(nil))
 
-	res, err := u.GetByID("not-exists")
+	res, err := u.GetByID(id)
+
 	assert.Error(t, err)
 	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "contact info not found", e.Message)
+	}
 }
 
 func TestContactInfoUsecase_Update_Success(t *testing.T) {
 	u, mock := setupMockContactInfoUsecase(t)
 	targetID := "ci-1"
 
-	req := model.UpdateContactInfoRequest{Address: "New Addr", Email: "new@example.com", Phone: "000"}
+	req := model.UpdateContactInfoRequest{
+		Address:       "New Addr",
+		Email:         "new@example.com",
+		Phone:         "000",
+		VisitingHours: "09:00 - 15:00",
+		MapEmbedURL:   "http://maps.com/new",
+	}
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "address", "email"}).AddRow(targetID, "Old Addr", "old@example.com"))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "entity_type", "address", "email"}).
+			AddRow(targetID, "pura", "Old Addr", "old@example.com"))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `contact_info`")).
-		WithArgs(sqlmock.AnyArg(), "New Addr", "000", "new@example.com", "", "", sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs(
+			"pura",
+			"New Addr",
+			"000",
+			"new@example.com",
+			"09:00 - 15:00",
+			"http://maps.com/new",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			targetID,
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	res, err := u.Update(targetID, req)
 	assert.NoError(t, err)
-	if err != nil {
-		return
+
+	if assert.NotNil(t, res) {
+		assert.Equal(t, "New Addr", res.Address)
+		assert.Equal(t, "new@example.com", res.Email)
 	}
-	assert.NotNil(t, res)
-	if res == nil {
-		return
+}
+
+func TestContactInfoUsecase_Update_NotFound(t *testing.T) {
+	u, mock := setupMockContactInfoUsecase(t)
+	targetID := "missing"
+
+	req := model.UpdateContactInfoRequest{
+		Address:       "New Addr",
+		Email:         "new@example.com",
+		Phone:         "000",
+		VisitingHours: "09:00 - 15:00",
+		MapEmbedURL:   "http://maps.com/new",
 	}
-	assert.Equal(t, "New Addr", res.Address)
-	assert.Equal(t, "new@example.com", res.Email)
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.Update(targetID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "contact info not found", e.Message)
+	}
 }
 
 func TestContactInfoUsecase_Delete_Success(t *testing.T) {
 	u, mock := setupMockContactInfoUsecase(t)
 	targetID := "to-del"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "address"}).AddRow(targetID, "Addr"))
 
@@ -154,4 +209,22 @@ func TestContactInfoUsecase_Delete_Success(t *testing.T) {
 
 	err := u.Delete(targetID)
 	assert.NoError(t, err)
+}
+
+func TestContactInfoUsecase_Delete_NotFound(t *testing.T) {
+	u, mock := setupMockContactInfoUsecase(t)
+	targetID := "missing"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `contact_info` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	err := u.Delete(targetID)
+
+	assert.Error(t, err)
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "contact info not found", e.Message)
+	}
 }

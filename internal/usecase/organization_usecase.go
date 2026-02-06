@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -24,15 +24,13 @@ type OrganizationUsecase interface {
 type organizationUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.OrganizationMember]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewOrganizationRequest(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) OrganizationUsecase {
+func NewOrganizationUsecase(db *gorm.DB, validate *validator.Validate) OrganizationUsecase {
 	return &organizationUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.OrganizationMember]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -51,8 +49,9 @@ func (u *organizationUsecase) GetAll(entityType string) ([]model.OrganizationRes
 
 func (u *organizationUsecase) GetPublic(entityType string) ([]model.OrganizationResponse, error) {
 	var items []entity.OrganizationMember
-
-	query := u.db.Where("entity_type = ?", entityType).Where("is_active = ?", true).Order("order_index ASC")
+	query := u.db.Where("entity_type = ?", entityType).
+		Where("is_active = ?", true).
+		Order("position_order ASC, order_index ASC")
 
 	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
@@ -62,11 +61,14 @@ func (u *organizationUsecase) GetPublic(entityType string) ([]model.Organization
 }
 
 func (u *organizationUsecase) GetByID(id string) (*model.OrganizationResponse, error) {
-	var g entity.OrganizationMember
-	if err := u.repo.FindById(u.db, &g, id); err != nil {
+	var m entity.OrganizationMember
+	if err := u.repo.FindById(u.db, &m, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("organization member not found")
+		}
 		return nil, err
 	}
-	r := converter.ToOrganizationResponse(&g)
+	r := converter.ToOrganizationResponse(&m)
 	return &r, nil
 }
 
@@ -74,7 +76,7 @@ func (u *organizationUsecase) Create(entityType string, req model.CreateOrganiza
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
-	g := entity.OrganizationMember{
+	m := entity.OrganizationMember{
 		ID:            uuid.New().String(),
 		EntityType:    entityType,
 		Name:          req.Name,
@@ -83,10 +85,10 @@ func (u *organizationUsecase) Create(entityType string, req model.CreateOrganiza
 		OrderIndex:    req.OrderIndex,
 		IsActive:      req.IsActive,
 	}
-	if err := u.repo.Create(u.db, &g); err != nil {
+	if err := u.repo.Create(u.db, &m); err != nil {
 		return nil, err
 	}
-	r := converter.ToOrganizationResponse(&g)
+	r := converter.ToOrganizationResponse(&m)
 	return &r, nil
 }
 
@@ -94,26 +96,34 @@ func (u *organizationUsecase) Update(id string, req model.UpdateOrganizationRequ
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
-	var g entity.OrganizationMember
-	if err := u.repo.FindById(u.db, &g, id); err != nil {
+	var m entity.OrganizationMember
+	if err := u.repo.FindById(u.db, &m, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("organization member not found")
+		}
 		return nil, err
 	}
-	g.Name = req.Name
-	g.Position = req.Position
-	g.PositionOrder = req.PositionOrder
-	g.OrderIndex = req.OrderIndex
-	g.IsActive = req.IsActive
-	if err := u.repo.Update(u.db, &g); err != nil {
+
+	m.Name = req.Name
+	m.Position = req.Position
+	m.PositionOrder = req.PositionOrder
+	m.OrderIndex = req.OrderIndex
+	m.IsActive = req.IsActive
+
+	if err := u.repo.Update(u.db, &m); err != nil {
 		return nil, err
 	}
-	r := converter.ToOrganizationResponse(&g)
+	r := converter.ToOrganizationResponse(&m)
 	return &r, nil
 }
 
 func (u *organizationUsecase) Delete(id string) error {
-	var g entity.OrganizationMember
-	if err := u.repo.FindById(u.db, &g, id); err != nil {
+	var m entity.OrganizationMember
+	if err := u.repo.FindById(u.db, &m, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("organization member not found")
+		}
 		return err
 	}
-	return u.repo.Delete(u.db, &g)
+	return u.repo.Delete(u.db, &m)
 }

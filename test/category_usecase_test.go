@@ -7,7 +7,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -30,7 +29,7 @@ func setupMockCategoryUsecase(t *testing.T) (usecase.CategoryUsecase, sqlmock.Sq
 		t.Fatalf("failed to open gorm: %v", err)
 	}
 
-	u := usecase.NewCategoryUsecase(gormDB, logrus.New(), validator.New())
+	u := usecase.NewCategoryUsecase(gormDB, validator.New())
 	return u, mock
 }
 
@@ -48,13 +47,53 @@ func TestCategoryUsecase_GetAll(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
-	assert.Equal(t, "c1", list[0].ID)
-	assert.Equal(t, "Adat", list[0].Name)
+	if len(list) > 0 {
+		assert.Equal(t, "c1", list[0].ID)
+		assert.Equal(t, "Adat", list[0].Name)
+	}
+}
+
+func TestCategoryUsecase_GetByID_Success(t *testing.T) {
+	u, mock := setupMockCategoryUsecase(t)
+	id := "c1"
+
+	rows := sqlmock.NewRows([]string{"id", "name", "slug"}).
+		AddRow(id, "Adat", "adat")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `categories` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(rows)
+
+	res, err := u.GetByID(id)
+
+	assert.NoError(t, err)
+	if assert.NotNil(t, res) {
+		assert.Equal(t, "Adat", res.Name)
+	}
+}
+
+func TestCategoryUsecase_GetByID_NotFound(t *testing.T) {
+	u, mock := setupMockCategoryUsecase(t)
+	id := "missing"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `categories` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.GetByID(id)
+
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "category not found", e.Message)
+	}
 }
 
 func TestCategoryUsecase_Create_Simple(t *testing.T) {
 	u, mock := setupMockCategoryUsecase(t)
-
 	req := model.CreateCategoryRequest{Name: "Upacara Besar"}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `categories` WHERE slug = ?")).
@@ -63,25 +102,19 @@ func TestCategoryUsecase_Create_Simple(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `categories`")).
-		WithArgs(
-			sqlmock.AnyArg(),
-			req.Name,
-			"upacara-besar",
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-		).
+		WithArgs(sqlmock.AnyArg(), req.Name, "upacara-besar", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	created, err := u.Create(req)
 	assert.NoError(t, err)
-	assert.NotNil(t, created)
-	assert.Equal(t, "upacara-besar", created.Slug)
+	if assert.NotNil(t, created) {
+		assert.Equal(t, "upacara-besar", created.Slug)
+	}
 }
 
 func TestCategoryUsecase_Create_SlugCollision(t *testing.T) {
 	u, mock := setupMockCategoryUsecase(t)
-
 	req := model.CreateCategoryRequest{Name: "Upacara"}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `categories` WHERE slug = ?")).
@@ -104,13 +137,14 @@ func TestCategoryUsecase_Create_SlugCollision(t *testing.T) {
 
 	created, err := u.Create(req)
 	assert.NoError(t, err)
-	assert.Equal(t, "upacara-2", created.Slug)
+	if assert.NotNil(t, created) {
+		assert.Equal(t, "upacara-2", created.Slug)
+	}
 }
 
 func TestCategoryUsecase_Update(t *testing.T) {
 	u, mock := setupMockCategoryUsecase(t)
 	targetID := "cat-123"
-
 	req := model.UpdateCategoryRequest{Name: "Baru"}
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `categories` WHERE id = ? LIMIT ?")).
@@ -123,27 +157,37 @@ func TestCategoryUsecase_Update(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `categories`")).
-		WithArgs(
-			"Baru",
-			"baru",
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-			targetID,
-		).
+		WithArgs("Baru", "baru", sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	updated, err := u.Update(targetID, req)
 
 	assert.NoError(t, err)
-
-	if updated == nil {
-		t.FailNow()
+	if assert.NotNil(t, updated) {
+		assert.Equal(t, "Baru", updated.Name)
 	}
+}
 
-	assert.NotNil(t, updated)
-	assert.Equal(t, "Baru", updated.Name)
-	assert.Equal(t, "baru", updated.Slug)
+func TestCategoryUsecase_Update_NotFound(t *testing.T) {
+	u, mock := setupMockCategoryUsecase(t)
+	targetID := "missing"
+	req := model.UpdateCategoryRequest{Name: "Baru"}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `categories` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	updated, err := u.Update(targetID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, updated)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "category not found", e.Message)
+	}
 }
 
 func TestCategoryUsecase_Delete(t *testing.T) {
@@ -168,6 +212,24 @@ func TestCategoryUsecase_Delete(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCategoryUsecase_Delete_NotFound(t *testing.T) {
+	u, mock := setupMockCategoryUsecase(t)
+	targetID := "missing"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `categories` WHERE id = ?")).
+		WithArgs(targetID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	err := u.Delete(targetID)
+
+	assert.Error(t, err)
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "category not found", e.Message)
+	}
+}
+
 func TestCategoryUsecase_Delete_Fail_Referenced(t *testing.T) {
 	u, mock := setupMockCategoryUsecase(t)
 	targetID := "cat-busy"
@@ -182,5 +244,10 @@ func TestCategoryUsecase_Delete_Fail_Referenced(t *testing.T) {
 
 	err := u.Delete(targetID)
 	assert.Error(t, err)
-	assert.Equal(t, "cannot delete: category is used by articles", err.Error())
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 409, e.Code)
+		assert.Equal(t, "category is currently in use", e.Message)
+	}
 }

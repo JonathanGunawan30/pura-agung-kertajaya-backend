@@ -6,19 +6,48 @@ import (
 	"pura-agung-kertajaya-backend/internal/config"
 	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/entity"
+	"time"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/gofiber/contrib/fibersentry"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
 	viperConfig := config.NewViper()
-	log := config.NewLogger(viperConfig)
-	db := config.NewDatabase(viperConfig, log)
-	validate := config.NewValidator(viperConfig)
+	logger := config.NewLogger(viperConfig)
+
+	sentryDSN := viperConfig.GetString("sentry.dsn")
+	appEnv := viperConfig.GetString("app.env")
+
+	if sentryDSN != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              sentryDSN,
+			EnableTracing:    true,
+			TracesSampleRate: 0.2,
+			Environment:      appEnv,
+		})
+		if err != nil {
+			logger.Fatalf("sentry.Init: %v", err)
+		}
+		defer sentry.Flush(2 * time.Second)
+		logger.Info("Sentry initialized successfully")
+	} else {
+		logger.Warn("Sentry DSN not found, skipping Sentry initialization")
+	}
+
+	db := config.NewDatabase(viperConfig, logger)
+	validate, trans := config.NewValidator(viperConfig)
 	app := config.NewFiber(viperConfig)
 
-	app.Use(middleware.ErrorHandlerMiddleware(log))
+	if sentryDSN != "" {
+		app.Use(fibersentry.New(fibersentry.Config{
+			Repanic:         true,
+			WaitForDelivery: true,
+		}))
+	}
 
+	app.Use(middleware.ErrorHandlerMiddleware(logger, trans))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     viperConfig.GetString("cors.allow_origins"),
 		AllowCredentials: true,
@@ -29,7 +58,7 @@ func main() {
 	config.Bootstrap(&config.BootstrapConfig{
 		DB:       db,
 		App:      app,
-		Log:      log,
+		Log:      logger,
 		Validate: validate,
 		Config:   viperConfig,
 	})
@@ -51,18 +80,20 @@ func main() {
 		&entity.Category{},
 		&entity.Article{},
 	)
-
 	if err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+		logger.Fatalf("Failed to run migrations: %v", err)
+	}
+	logger.Info("Database migration completed")
+
+	if viperConfig.GetBool("db.seed_on_start") {
+		seeder.SeedUsers(db)
+		logger.Info("Seeding completed")
 	}
 
-	log.Info("Database migration completed")
-
-	seeder.SeedUsers(db)
-
 	webPort := viperConfig.GetInt("web.port")
+	logger.Infof("Starting server on port %d", webPort)
 	err = app.Listen(fmt.Sprintf(":%d", webPort))
 	if err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		logger.Fatalf("Failed to start server: %v", err)
 	}
 }

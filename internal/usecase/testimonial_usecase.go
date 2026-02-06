@@ -1,12 +1,13 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
+	"pura-agung-kertajaya-backend/internal/model/converter"
 	"pura-agung-kertajaya-backend/internal/repository"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -22,81 +23,52 @@ type TestimonialUsecase interface {
 type testimonialUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.Testimonial]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewTestimonialUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) TestimonialUsecase {
+func NewTestimonialUsecase(db *gorm.DB, validate *validator.Validate) TestimonialUsecase {
 	return &testimonialUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.Testimonial]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
 
 func (u *testimonialUsecase) GetAll() ([]model.TestimonialResponse, error) {
 	var testimonials []entity.Testimonial
-	if err := u.db.Order("order_index ASC").Find(&testimonials).Error; err != nil {
+
+	query := u.db.Order("order_index ASC")
+
+	if err := u.repo.FindAll(query, &testimonials); err != nil {
 		return nil, err
 	}
 
-	responses := make([]model.TestimonialResponse, 0, len(testimonials))
-	for _, t := range testimonials {
-		responses = append(responses, model.TestimonialResponse{
-			ID:         t.ID,
-			Name:       t.Name,
-			AvatarURL:  t.AvatarURL,
-			Rating:     t.Rating,
-			Comment:    t.Comment,
-			IsActive:   t.IsActive,
-			OrderIndex: t.OrderIndex,
-			CreatedAt:  t.CreatedAt,
-			UpdatedAt:  t.UpdatedAt,
-		})
-	}
-	return responses, nil
+	return converter.ToTestimonialResponses(testimonials), nil
 }
 
 func (u *testimonialUsecase) GetPublic() ([]model.TestimonialResponse, error) {
 	var testimonials []entity.Testimonial
-	if err := u.db.Where("is_active = ?", true).Order("order_index ASC").Find(&testimonials).Error; err != nil {
+
+	query := u.db.Where("is_active = ?", true).Order("order_index ASC")
+
+	if err := u.repo.FindAll(query, &testimonials); err != nil {
 		return nil, err
 	}
-	responses := make([]model.TestimonialResponse, 0, len(testimonials))
-	for _, t := range testimonials {
-		responses = append(responses, model.TestimonialResponse{
-			ID:         t.ID,
-			Name:       t.Name,
-			AvatarURL:  t.AvatarURL,
-			Rating:     t.Rating,
-			Comment:    t.Comment,
-			IsActive:   t.IsActive,
-			OrderIndex: t.OrderIndex,
-			CreatedAt:  t.CreatedAt,
-			UpdatedAt:  t.UpdatedAt,
-		})
-	}
-	return responses, nil
+
+	return converter.ToTestimonialResponses(testimonials), nil
 }
 
 func (u *testimonialUsecase) GetByID(id int) (*model.TestimonialResponse, error) {
 	var t entity.Testimonial
 	if err := u.repo.FindById(u.db, &t, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("testimonial not found")
+		}
 		return nil, err
 	}
 
-	return &model.TestimonialResponse{
-		ID:         t.ID,
-		Name:       t.Name,
-		AvatarURL:  t.AvatarURL,
-		Rating:     t.Rating,
-		Comment:    t.Comment,
-		IsActive:   t.IsActive,
-		OrderIndex: t.OrderIndex,
-		CreatedAt:  t.CreatedAt,
-		UpdatedAt:  t.UpdatedAt,
-	}, nil
+	response := converter.ToTestimonialResponse(&t)
+	return &response, nil
 }
 
 func (u *testimonialUsecase) Create(req model.TestimonialRequest) (*model.TestimonialResponse, error) {
@@ -117,17 +89,8 @@ func (u *testimonialUsecase) Create(req model.TestimonialRequest) (*model.Testim
 		return nil, err
 	}
 
-	return &model.TestimonialResponse{
-		ID:         t.ID,
-		Name:       t.Name,
-		AvatarURL:  t.AvatarURL,
-		Rating:     t.Rating,
-		Comment:    t.Comment,
-		IsActive:   t.IsActive,
-		OrderIndex: t.OrderIndex,
-		CreatedAt:  t.CreatedAt,
-		UpdatedAt:  t.UpdatedAt,
-	}, nil
+	response := converter.ToTestimonialResponse(&t)
+	return &response, nil
 }
 
 func (u *testimonialUsecase) Update(id int, req model.TestimonialRequest) (*model.TestimonialResponse, error) {
@@ -137,6 +100,9 @@ func (u *testimonialUsecase) Update(id int, req model.TestimonialRequest) (*mode
 
 	var t entity.Testimonial
 	if err := u.repo.FindById(u.db, &t, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("testimonial not found")
+		}
 		return nil, err
 	}
 
@@ -151,22 +117,16 @@ func (u *testimonialUsecase) Update(id int, req model.TestimonialRequest) (*mode
 		return nil, err
 	}
 
-	return &model.TestimonialResponse{
-		ID:         t.ID,
-		Name:       t.Name,
-		AvatarURL:  t.AvatarURL,
-		Rating:     t.Rating,
-		Comment:    t.Comment,
-		IsActive:   t.IsActive,
-		OrderIndex: t.OrderIndex,
-		CreatedAt:  t.CreatedAt,
-		UpdatedAt:  t.UpdatedAt,
-	}, nil
+	response := converter.ToTestimonialResponse(&t)
+	return &response, nil
 }
 
 func (u *testimonialUsecase) Delete(id int) error {
 	var t entity.Testimonial
 	if err := u.repo.FindById(u.db, &t, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("testimonial not found")
+		}
 		return err
 	}
 	return u.repo.Delete(u.db, &t)

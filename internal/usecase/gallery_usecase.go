@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -25,15 +25,13 @@ type GalleryUsecase interface {
 type galleryUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.Gallery]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewGalleryUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) GalleryUsecase {
+func NewGalleryUsecase(db *gorm.DB, validate *validator.Validate) GalleryUsecase {
 	return &galleryUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.Gallery]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -65,6 +63,9 @@ func (u *galleryUsecase) GetPublic(entityType string) ([]model.GalleryResponse, 
 func (u *galleryUsecase) GetByID(id string) (*model.GalleryResponse, error) {
 	var g entity.Gallery
 	if err := u.repo.FindById(u.db, &g, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("gallery not found")
+		}
 		return nil, err
 	}
 	r := converter.ToGalleryResponse(&g)
@@ -97,13 +98,18 @@ func (u *galleryUsecase) Update(id string, req model.UpdateGalleryRequest) (*mod
 	}
 	var g entity.Gallery
 	if err := u.repo.FindById(u.db, &g, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("gallery not found")
+		}
 		return nil, err
 	}
+
 	g.Title = req.Title
 	g.Description = req.Description
 	g.Images = util.ImageMap(req.Images)
 	g.OrderIndex = req.OrderIndex
 	g.IsActive = req.IsActive
+
 	if err := u.repo.Update(u.db, &g); err != nil {
 		return nil, err
 	}
@@ -114,6 +120,9 @@ func (u *galleryUsecase) Update(id string, req model.UpdateGalleryRequest) (*mod
 func (u *galleryUsecase) Delete(id string) error {
 	var g entity.Gallery
 	if err := u.repo.FindById(u.db, &g, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("gallery not found")
+		}
 		return err
 	}
 	return u.repo.Delete(u.db, &g)

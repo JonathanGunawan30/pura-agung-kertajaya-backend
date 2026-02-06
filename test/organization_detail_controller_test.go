@@ -7,67 +7,46 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gorm.io/gorm"
-
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	httpdelivery "pura-agung-kertajaya-backend/internal/delivery/http"
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	usecasemock "pura-agung-kertajaya-backend/internal/usecase/mock"
 )
 
-func setupOrganizationDetailController() (*fiber.App, *usecasemock.OrganizationDetailUsecaseMock) {
-	mockUC := &usecasemock.OrganizationDetailUsecaseMock{}
-	controller := httpdelivery.NewOrganizationDetailController(mockUC, logrus.New())
-
-	app := fiber.New(fiber.Config{
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-			message := "An internal server error occurred."
-
-			if e, ok := err.(*fiber.Error); ok {
-				code = e.Code
-				message = e.Message
-			} else if errors.Is(err, gorm.ErrRecordNotFound) {
-				code = fiber.StatusNotFound
-				message = "The requested resource was not found."
-			} else if _, ok := err.(validator.ValidationErrors); ok {
-				code = fiber.StatusBadRequest
-				message = "Validation failed"
-			}
-			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: message})
-		},
-	})
-
-	app.Use(func(c *fiber.Ctx) error {
-		c.Locals("entity_type", "pura")
-		return c.Next()
-	})
-
-	api := app.Group("/api")
-	api.Get("/organization-details", controller.GetAdmin)
-	api.Put("/organization-details", controller.Update)
+func setupOrganizationDetailController(mockUC *usecasemock.OrganizationDetailUsecaseMock) *fiber.App {
+	app, logger, _ := NewTestApp()
+	controller := httpdelivery.NewOrganizationDetailController(mockUC, logger)
 
 	publicApi := app.Group("/api/public")
 	publicApi.Get("/organization-details", controller.GetPublic)
 
-	return app, mockUC
+	api := app.Group("/api", func(c *fiber.Ctx) error {
+		c.Locals(middleware.CtxEntityType, "pura")
+		return c.Next()
+	})
+	api.Get("/organization-details", controller.GetAdmin)
+	api.Put("/organization-details", controller.Update)
+
+	return app
 }
 
 func TestOrganizationDetailController_GetPublic_Success(t *testing.T) {
-	app, mockUC := setupOrganizationDetailController()
+	mockUC := &usecasemock.OrganizationDetailUsecaseMock{}
+	app := setupOrganizationDetailController(mockUC)
 
 	expectedResp := &model.OrganizationDetailResponse{
-		ID: "uuid-1", EntityType: "pura", Vision: "Visi Pura", VisionMissionImageURL: "img.jpg",
+		ID:         "uuid-1",
+		EntityType: "pura",
+		Vision:     "Visi Pura",
 	}
 
 	mockUC.On("GetByEntityType", "pura").Return(expectedResp, nil)
 
 	req := httptest.NewRequest("GET", "/api/public/organization-details?entity_type=pura", nil)
-	resp, _ := app.Test(req)
+	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
@@ -78,40 +57,32 @@ func TestOrganizationDetailController_GetPublic_Success(t *testing.T) {
 	mockUC.AssertExpectations(t)
 }
 
-func TestOrganizationDetailController_GetPublic_NotFound_ReturnsEmpty(t *testing.T) {
-	app, mockUC := setupOrganizationDetailController()
+func TestOrganizationDetailController_GetPublic_Error(t *testing.T) {
+	mockUC := &usecasemock.OrganizationDetailUsecaseMock{}
+	app := setupOrganizationDetailController(mockUC)
 
-	emptyResp := &model.OrganizationDetailResponse{
-		EntityType: "pasraman",
-		Vision:     "",
-		Mission:    "",
-	}
+	mockUC.On("GetByEntityType", "pura").Return((*model.OrganizationDetailResponse)(nil), errors.New("db error"))
 
-	mockUC.On("GetByEntityType", "pasraman").Return(emptyResp, nil)
+	req := httptest.NewRequest("GET", "/api/public/organization-details?entity_type=pura", nil)
+	resp, _ := app.Test(req, -1)
 
-	req := httptest.NewRequest("GET", "/api/public/organization-details?entity_type=pasraman", nil)
-	resp, _ := app.Test(req)
-
-	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-
-	var response model.WebResponse[*model.OrganizationDetailResponse]
-	json.NewDecoder(resp.Body).Decode(&response)
-	assert.Equal(t, "", response.Data.Vision)
-
-	mockUC.AssertExpectations(t)
+	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
 }
 
 func TestOrganizationDetailController_GetAdmin_Success(t *testing.T) {
-	app, mockUC := setupOrganizationDetailController()
+	mockUC := &usecasemock.OrganizationDetailUsecaseMock{}
+	app := setupOrganizationDetailController(mockUC)
 
 	expectedResp := &model.OrganizationDetailResponse{
-		ID: "uuid-admin-1", EntityType: "yayasan", Mission: "Misi Yayasan",
+		ID:         "uuid-admin-1",
+		EntityType: "pura",
+		Mission:    "Misi Yayasan",
 	}
 
 	mockUC.On("GetByEntityType", "pura").Return(expectedResp, nil)
 
-	req := httptest.NewRequest("GET", "/api/organization-details?entity_type=yayasan", nil)
-	resp, _ := app.Test(req)
+	req := httptest.NewRequest("GET", "/api/organization-details", nil)
+	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
@@ -123,23 +94,29 @@ func TestOrganizationDetailController_GetAdmin_Success(t *testing.T) {
 }
 
 func TestOrganizationDetailController_Update_Success(t *testing.T) {
-	app, mockUC := setupOrganizationDetailController()
+	mockUC := &usecasemock.OrganizationDetailUsecaseMock{}
+	app := setupOrganizationDetailController(mockUC)
 
 	reqBody := model.UpdateOrganizationDetailRequest{
-		Vision: "Visi Baru", Mission: "Misi Baru", VisionMissionImageURL: "new.jpg",
+		Vision:                "Visi Baru",
+		Mission:               "Misi Baru",
+		VisionMissionImageURL: "new.jpg",
 	}
 
 	resBody := &model.OrganizationDetailResponse{
-		ID: "uuid-upserted", EntityType: "pura", Vision: "Visi Baru", VisionMissionImageURL: "new.jpg",
+		ID:                    "uuid-upserted",
+		EntityType:            "pura",
+		Vision:                "Visi Baru",
+		VisionMissionImageURL: "new.jpg",
 	}
 
 	mockUC.On("Update", "pura", reqBody).Return(resBody, nil)
 
 	b, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest("PUT", "/api/organization-details?entity_type=pura", bytes.NewReader(b))
+	req := httptest.NewRequest("PUT", "/api/organization-details", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, _ := app.Test(req)
+	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
@@ -152,12 +129,13 @@ func TestOrganizationDetailController_Update_Success(t *testing.T) {
 }
 
 func TestOrganizationDetailController_Update_InvalidBody(t *testing.T) {
-	app, mockUC := setupOrganizationDetailController()
+	mockUC := &usecasemock.OrganizationDetailUsecaseMock{}
+	app := setupOrganizationDetailController(mockUC)
 
-	req := httptest.NewRequest("PUT", "/api/organization-details?entity_type=pura", bytes.NewReader([]byte("{invalid-json")))
+	req := httptest.NewRequest("PUT", "/api/organization-details", bytes.NewReader([]byte("{invalid-json")))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, _ := app.Test(req)
+	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
 
@@ -165,17 +143,18 @@ func TestOrganizationDetailController_Update_InvalidBody(t *testing.T) {
 }
 
 func TestOrganizationDetailController_Update_UsecaseError(t *testing.T) {
-	app, mockUC := setupOrganizationDetailController()
+	mockUC := &usecasemock.OrganizationDetailUsecaseMock{}
+	app := setupOrganizationDetailController(mockUC)
 
 	reqBody := model.UpdateOrganizationDetailRequest{Vision: "Test"}
 
 	mockUC.On("Update", "pura", reqBody).Return((*model.OrganizationDetailResponse)(nil), errors.New("db connection failed"))
 
 	b, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest("PUT", "/api/organization-details?entity_type=yayasan", bytes.NewReader(b))
+	req := httptest.NewRequest("PUT", "/api/organization-details", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, _ := app.Test(req)
+	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
 

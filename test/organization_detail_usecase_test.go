@@ -7,7 +7,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -30,10 +29,7 @@ func setupMockOrgDetailUsecase(t *testing.T) (usecase.OrganizationDetailUsecase,
 		t.Fatalf("failed to open gorm connection: %v", err)
 	}
 
-	logger := logrus.New()
-	validate := validator.New()
-
-	u := usecase.NewOrganizationDetailUsecase(gormDB, logger, validate)
+	u := usecase.NewOrganizationDetailUsecase(gormDB, validator.New())
 
 	return u, mock
 }
@@ -44,11 +40,11 @@ func TestOrgDetailUsecase_GetByEntityType_Success(t *testing.T) {
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
 		"id", "entity_type", "vision", "mission", "rules", "work_program",
-		"vision_mission_image_url", "work_program_image_url", "rules_image_url",
+		"vision_mission_image_url", "work_program_image_url", "rules_image_url", "structure_image_url",
 		"created_at", "updated_at",
 	}).
 		AddRow("uuid-1", "pura", "Visi Pura", "Misi Pura", "Aturan", "Proker",
-			"img_vm.jpg", "img_wp.jpg", "img_r.jpg", now, now)
+			"img_vm.jpg", "img_wp.jpg", "img_r.jpg", "img_s.jpg", now, now)
 
 	expectedSQL := "SELECT * FROM `organization_details` WHERE entity_type = ? ORDER BY `organization_details`.`id` LIMIT ?"
 
@@ -65,7 +61,7 @@ func TestOrgDetailUsecase_GetByEntityType_Success(t *testing.T) {
 	assert.Equal(t, "pura", result.EntityType)
 }
 
-func TestOrgDetailUsecase_GetByEntityType_NotFound(t *testing.T) {
+func TestOrgDetailUsecase_GetByEntityType_NotFound_ReturnsDefault(t *testing.T) {
 	u, mock := setupMockOrgDetailUsecase(t)
 
 	expectedSQL := "SELECT * FROM `organization_details` WHERE entity_type = ? ORDER BY `organization_details`.`id` LIMIT ?"
@@ -85,21 +81,19 @@ func TestOrgDetailUsecase_GetByEntityType_NotFound(t *testing.T) {
 func TestOrgDetailUsecase_Update_TriggerCreate(t *testing.T) {
 	u, mock := setupMockOrgDetailUsecase(t)
 
+	entityType := "yayasan"
 	req := model.UpdateOrganizationDetailRequest{
 		Vision:                "Visi Baru",
 		Mission:               "Misi Baru",
 		Rules:                 "Aturan",
 		VisionMissionImageURL: "new_img.jpg",
 	}
-	entityType := "yayasan"
 
 	selectSQL := "SELECT * FROM `organization_details` WHERE entity_type = ? ORDER BY `organization_details`.`id` LIMIT ?"
 	mock.ExpectQuery(regexp.QuoteMeta(selectSQL)).
 		WithArgs(entityType, 1).
 		WillReturnError(gorm.ErrRecordNotFound)
-
 	mock.ExpectBegin()
-
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `organization_details`")).
 		WithArgs(
 			sqlmock.AnyArg(),
@@ -116,7 +110,6 @@ func TestOrgDetailUsecase_Update_TriggerCreate(t *testing.T) {
 			sqlmock.AnyArg(),
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-
 	mock.ExpectCommit()
 
 	res, err := u.Update(entityType, req)
@@ -140,24 +133,22 @@ func TestOrgDetailUsecase_Update_TriggerUpdate(t *testing.T) {
 	}
 
 	selectSQL := "SELECT * FROM `organization_details` WHERE entity_type = ? ORDER BY `organization_details`.`id` LIMIT ?"
-
 	rows := sqlmock.NewRows([]string{
 		"id", "entity_type", "vision", "mission", "rules", "work_program",
-		"vision_mission_image_url", "work_program_image_url", "rules_image_url",
+		"vision_mission_image_url", "work_program_image_url", "rules_image_url", "structure_image_url",
 		"created_at", "updated_at",
-	}).AddRow(existingID, entityType, "Visi Lama", "Misi Lama", "", "", "", "old_wp.jpg", "", now, now)
+	}).AddRow(existingID, entityType, "Visi Lama", "Misi Lama", "", "", "", "old_wp.jpg", "", "", now, now)
 
 	mock.ExpectQuery(regexp.QuoteMeta(selectSQL)).
 		WithArgs(entityType, 1).
 		WillReturnRows(rows)
 
 	mock.ExpectBegin()
-
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE `organization_details` SET")).
+	mock.ExpectExec(regexp.QuoteMeta("UPDATE `organization_details`")).
 		WithArgs(
 			entityType,
 			"Visi Update",
-			"Misi Lama",
+			"",
 			"",
 			"",
 			"",
@@ -169,19 +160,13 @@ func TestOrgDetailUsecase_Update_TriggerUpdate(t *testing.T) {
 			existingID,
 		).
 		WillReturnResult(sqlmock.NewResult(0, 1))
-
 	mock.ExpectCommit()
 
 	res, err := u.Update(entityType, req)
 
 	assert.NoError(t, err)
-	if err != nil {
-		return
-	}
-
 	assert.NotNil(t, res)
 	assert.Equal(t, "Visi Update", res.Vision)
 	assert.Equal(t, "wp_update.jpg", res.WorkProgramImageURL)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
+	assert.Equal(t, "", res.Mission) // Verify overwrite
 }

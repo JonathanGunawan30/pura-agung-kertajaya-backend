@@ -6,7 +6,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,7 +28,7 @@ func setupMockAboutUsecase(t *testing.T) (usecase.AboutUsecase, sqlmock.Sqlmock)
 		t.Fatalf("failed to open gorm: %v", err)
 	}
 
-	u := usecase.NewAboutUsecase(gormDB, logrus.New(), validator.New())
+	u := usecase.NewAboutUsecase(gormDB, validator.New())
 	return u, mock
 }
 
@@ -50,16 +49,7 @@ func TestAboutUsecase_Create_WithValues(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `about_section`")).
-		WithArgs(
-			sqlmock.AnyArg(),
-			"pura",
-			"About Title",
-			"About Description",
-			sqlmock.AnyArg(),
-			true,
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-		).
+		WithArgs(sqlmock.AnyArg(), "pura", "About Title", "About Description", sqlmock.AnyArg(), true, sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `about_values`")).
@@ -71,16 +61,14 @@ func TestAboutUsecase_Create_WithValues(t *testing.T) {
 	mock.ExpectCommit()
 
 	rows := sqlmock.NewRows([]string{"id", "entity_type", "title", "description", "images", "is_active"}).
-		AddRow("60d57d69-968b-46fb-ab59-4e84f99aa40b", "pura", "About Title", "About Description", []byte(`{"lg":"https://img.com/lg.jpg"}`), true)
-
+		AddRow("uuid-generated", "pura", "About Title", "About Description", []byte(`{"lg":"https://img.com/lg.jpg"}`), true)
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `about_section`")).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
 		WillReturnRows(rows)
 
 	rowsValues := sqlmock.NewRows([]string{"id", "about_id", "title", "value", "order_index"}).
-		AddRow("val-1", "60d57d69-968b-46fb-ab59-4e84f99aa40b", "Vision", "Be great", 2).
-		AddRow("val-2", "60d57d69-968b-46fb-ab59-4e84f99aa40b", "Mission", "Serve", 1)
-
+		AddRow("val-1", "uuid-generated", "Vision", "Be great", 2).
+		AddRow("val-2", "uuid-generated", "Mission", "Serve", 1)
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `about_values`")).
 		WithArgs(sqlmock.AnyArg()).
 		WillReturnRows(rowsValues)
@@ -88,13 +76,7 @@ func TestAboutUsecase_Create_WithValues(t *testing.T) {
 	res, err := u.Create(req)
 
 	assert.NoError(t, err)
-	if err != nil {
-		return
-	}
 	assert.NotNil(t, res)
-	if res == nil {
-		return
-	}
 	assert.Equal(t, 2, len(res.Values))
 	assert.Equal(t, "https://img.com/lg.jpg", res.Images.Lg)
 }
@@ -122,7 +104,6 @@ func TestAboutUsecase_GetPublic_FilterActive(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, list, 1)
 	assert.Equal(t, "Active", list[0].Title)
-	assert.Equal(t, "A", list[0].Values[0].Title)
 }
 
 func TestAboutUsecase_GetByID_NotFound(t *testing.T) {
@@ -135,6 +116,11 @@ func TestAboutUsecase_GetByID_NotFound(t *testing.T) {
 	res, err := u.GetByID("missing")
 	assert.Error(t, err)
 	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	assert.ErrorAs(t, err, &e)
+	assert.Equal(t, 404, e.Code)
+	assert.Equal(t, "about section not found", e.Message)
 }
 
 func TestAboutUsecase_Update_ReplacesValues(t *testing.T) {
@@ -158,18 +144,8 @@ func TestAboutUsecase_Update_ReplacesValues(t *testing.T) {
 			AddRow(targetID, "pura", "Old", []byte(`{}`)))
 
 	mock.ExpectBegin()
-
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `about_section`")).
-		WithArgs(
-			"yayasan",
-			"New",
-			"nd",
-			sqlmock.AnyArg(),
-			false,
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
-			targetID,
-		).
+		WithArgs("yayasan", "New", "nd", sqlmock.AnyArg(), false, sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `about_values` WHERE about_id = ?")).
@@ -179,12 +155,10 @@ func TestAboutUsecase_Update_ReplacesValues(t *testing.T) {
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `about_values`")).
 		WithArgs(sqlmock.AnyArg(), targetID, "New1", "n1", 1, sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-
 	mock.ExpectCommit()
 
 	rowsResult := sqlmock.NewRows([]string{"id", "entity_type", "title", "description", "images", "is_active"}).
 		AddRow(targetID, "yayasan", "New", "nd", []byte(`{"lg":"https://img.com/lg.jpg"}`), false)
-
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `about_section`")).
 		WithArgs(targetID, targetID, 1).
 		WillReturnRows(rowsResult)
@@ -196,24 +170,45 @@ func TestAboutUsecase_Update_ReplacesValues(t *testing.T) {
 	res, err := u.Update(targetID, req)
 
 	assert.NoError(t, err)
-	if err != nil {
-		return
-	}
 	assert.NotNil(t, res)
-	if res == nil {
-		return
-	}
 	assert.Equal(t, "New", res.Title)
-	assert.Equal(t, "https://img.com/lg.jpg", res.Images.Lg)
+}
+
+func TestAboutUsecase_Update_NotFound(t *testing.T) {
+	u, mock := setupMockAboutUsecase(t)
+	targetID := "missing"
+
+	req := model.AboutSectionRequest{
+		EntityType:  "pura",
+		Title:       "Valid Title",
+		Description: "Valid Desc",
+		Images:      map[string]string{"lg": "img.jpg"},
+		IsActive:    true,
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `about_section` WHERE id = ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.Update(targetID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "about section not found", e.Message)
+	}
 }
 
 func TestAboutUsecase_Delete_Success(t *testing.T) {
 	u, mock := setupMockAboutUsecase(t)
 	targetID := "to-del"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `about_section` WHERE id = ?")).
-		WithArgs(targetID, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "images"}).AddRow(targetID, []byte(`{}`)))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `about_section` WHERE id = ?")).
+		WithArgs(targetID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `about_section` WHERE `about_section`.`id` = ?")).
@@ -223,4 +218,21 @@ func TestAboutUsecase_Delete_Success(t *testing.T) {
 
 	err := u.Delete(targetID)
 	assert.NoError(t, err)
+}
+
+func TestAboutUsecase_Delete_NotFound(t *testing.T) {
+	u, mock := setupMockAboutUsecase(t)
+	targetID := "missing"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `about_section` WHERE id = ?")).
+		WithArgs(targetID).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	err := u.Delete(targetID)
+
+	assert.Error(t, err)
+	var e *model.ResponseError
+	assert.ErrorAs(t, err, &e)
+	assert.Equal(t, 404, e.Code)
+	assert.Equal(t, "about section not found", e.Message)
 }

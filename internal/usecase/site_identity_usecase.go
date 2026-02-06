@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -8,13 +9,11 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type SiteIdentityUsecase interface {
 	GetAll(entityType string) ([]model.SiteIdentityResponse, error)
-	// GetPublic returns the latest SiteIdentity (by created_at DESC) for public consumption
 	GetPublic(entityType string) (*model.SiteIdentityResponse, error)
 	GetByID(id string) (*model.SiteIdentityResponse, error)
 	Create(entityType string, req model.SiteIdentityRequest) (*model.SiteIdentityResponse, error)
@@ -25,15 +24,13 @@ type SiteIdentityUsecase interface {
 type siteIdentityUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.SiteIdentity]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewSiteIdentityUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) SiteIdentityUsecase {
+func NewSiteIdentityUsecase(db *gorm.DB, validate *validator.Validate) SiteIdentityUsecase {
 	return &siteIdentityUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.SiteIdentity]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -44,7 +41,8 @@ func (u *siteIdentityUsecase) GetAll(entityType string) ([]model.SiteIdentityRes
 	if entityType != "" {
 		query = query.Where("entity_type = ?", entityType)
 	}
-	if err := query.Find(&items).Error; err != nil {
+
+	if err := u.repo.FindAll(query, &items); err != nil {
 		return nil, err
 	}
 	resp := make([]model.SiteIdentityResponse, 0, len(items))
@@ -57,12 +55,17 @@ func (u *siteIdentityUsecase) GetAll(entityType string) ([]model.SiteIdentityRes
 func (u *siteIdentityUsecase) GetPublic(entityType string) (*model.SiteIdentityResponse, error) {
 	var e entity.SiteIdentity
 	query := u.db.Order("created_at DESC")
+
 	if entityType != "" {
 		query = query.Where("entity_type = ?", entityType)
 	}
 	if err := query.Limit(1).Take(&e).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("site identity not found")
+		}
 		return nil, err
 	}
+
 	r := converter.ToSiteIdentityResponse(e)
 	return &r, nil
 }
@@ -70,6 +73,9 @@ func (u *siteIdentityUsecase) GetPublic(entityType string) (*model.SiteIdentityR
 func (u *siteIdentityUsecase) GetByID(id string) (*model.SiteIdentityResponse, error) {
 	var e entity.SiteIdentity
 	if err := u.repo.FindById(u.db, &e, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("site identity not found")
+		}
 		return nil, err
 	}
 	r := converter.ToSiteIdentityResponse(e)
@@ -104,8 +110,12 @@ func (u *siteIdentityUsecase) Update(id string, req model.SiteIdentityRequest) (
 	}
 	var e entity.SiteIdentity
 	if err := u.repo.FindById(u.db, &e, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("site identity not found")
+		}
 		return nil, err
 	}
+
 	e.EntityType = req.EntityType
 	e.SiteName = req.SiteName
 	e.LogoURL = req.LogoURL
@@ -125,6 +135,9 @@ func (u *siteIdentityUsecase) Update(id string, req model.SiteIdentityRequest) (
 func (u *siteIdentityUsecase) Delete(id string) error {
 	var e entity.SiteIdentity
 	if err := u.repo.FindById(u.db, &e, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("site identity not found")
+		}
 		return err
 	}
 	return u.repo.Delete(u.db, &e)

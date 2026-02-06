@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -23,15 +23,13 @@ type ContactInfoUsecase interface {
 type contactInfoUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.ContactInfo]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewContactInfoUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) ContactInfoUsecase {
+func NewContactInfoUsecase(db *gorm.DB, validate *validator.Validate) ContactInfoUsecase {
 	return &contactInfoUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.ContactInfo]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -50,6 +48,9 @@ func (u *contactInfoUsecase) GetAll(entityType string) ([]model.ContactInfoRespo
 func (u *contactInfoUsecase) GetByID(id string) (*model.ContactInfoResponse, error) {
 	var e entity.ContactInfo
 	if err := u.repo.FindById(u.db, &e, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("contact info not found")
+		}
 		return nil, err
 	}
 	r := converter.ToContactInfoResponse(e)
@@ -86,6 +87,9 @@ func (u *contactInfoUsecase) Update(id string, req model.UpdateContactInfoReques
 
 	var e entity.ContactInfo
 	if err := u.repo.FindById(u.db, &e, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("contact info not found")
+		}
 		return nil, err
 	}
 
@@ -106,6 +110,9 @@ func (u *contactInfoUsecase) Update(id string, req model.UpdateContactInfoReques
 func (u *contactInfoUsecase) Delete(id string) error {
 	var e entity.ContactInfo
 	if err := u.repo.FindById(u.db, &e, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("contact info not found")
+		}
 		return err
 	}
 	return u.repo.Delete(u.db, &e)

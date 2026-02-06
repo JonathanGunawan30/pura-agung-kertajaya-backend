@@ -1,6 +1,9 @@
 package http
 
 import (
+	"errors"
+	"fmt"
+	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
 	"strconv"
@@ -18,13 +21,32 @@ func NewArticleController(usecase usecase.ArticleUsecase, log *logrus.Logger) *A
 	return &ArticleController{UseCase: usecase, Log: log}
 }
 
+func (c *ArticleController) getLogger(ctx *fiber.Ctx) *logrus.Entry {
+	user := middleware.GetUser(ctx)
+
+	userID := "guest"
+	userRole := "unknown"
+
+	if user != nil {
+		userID = fmt.Sprintf("%d", user.ID)
+		userRole = user.Role
+	}
+
+	return c.Log.WithFields(logrus.Fields{
+		"user_id":   userID,
+		"user_role": userRole,
+		"ip":        ctx.IP(),
+		"req_id":    ctx.Get("X-Request-ID"),
+	})
+}
+
 func (c *ArticleController) GetPublic(ctx *fiber.Ctx) error {
 	limitQuery := ctx.Query("limit", "0")
 	limit, _ := strconv.Atoi(limitQuery)
 
 	data, err := c.UseCase.GetPublic(limit)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to fetch public articles")
+		c.getLogger(ctx).WithError(err).Error("failed to fetch public articles")
 		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
@@ -38,8 +60,13 @@ func (c *ArticleController) GetBySlug(ctx *fiber.Ctx) error {
 
 	data, err := c.UseCase.GetBySlug(slug)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to get article by slug")
-		return ctx.Status(fiber.StatusNotFound).JSON(model.WebResponse[any]{Errors: "Article not found"})
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code == fiber.StatusNotFound {
+			c.getLogger(ctx).WithField("slug", slug).Warn("article slug not found")
+		} else {
+			c.getLogger(ctx).WithField("slug", slug).WithError(err).Error("failed to get article by slug")
+		}
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -49,7 +76,7 @@ func (c *ArticleController) GetAll(ctx *fiber.Ctx) error {
 
 	data, err := c.UseCase.GetAll(filter)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to fetch articles")
+		c.getLogger(ctx).WithError(err).Error("failed to fetch articles")
 		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
@@ -63,8 +90,13 @@ func (c *ArticleController) GetByID(ctx *fiber.Ctx) error {
 
 	data, err := c.UseCase.GetByID(id)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to get article by id")
-		return ctx.Status(fiber.StatusNotFound).JSON(model.WebResponse[any]{Errors: "Article not found"})
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code == fiber.StatusNotFound {
+			c.getLogger(ctx).WithField("article_id", id).Warn("article not found")
+		} else {
+			c.getLogger(ctx).WithField("article_id", id).WithError(err).Error("failed to get article by id")
+		}
+		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
@@ -72,14 +104,21 @@ func (c *ArticleController) GetByID(ctx *fiber.Ctx) error {
 func (c *ArticleController) Create(ctx *fiber.Ctx) error {
 	var req model.CreateArticleRequest
 	if err := ctx.BodyParser(&req); err != nil {
+		c.getLogger(ctx).Warnf("invalid request body: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
 
 	data, err := c.UseCase.Create(req)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to create article")
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code < fiber.StatusInternalServerError {
+			c.getLogger(ctx).WithField("payload", req).Warnf("failed to create article: %s", e.Message)
+		} else {
+			c.getLogger(ctx).WithField("payload", req).WithError(err).Error("failed to create article")
+		}
 		return err
 	}
+	c.getLogger(ctx).WithField("article_id", data.ID).Info("article created successfully")
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse[any]{Data: data})
 }
 
@@ -91,14 +130,25 @@ func (c *ArticleController) Update(ctx *fiber.Ctx) error {
 
 	var req model.UpdateArticleRequest
 	if err := ctx.BodyParser(&req); err != nil {
+		c.getLogger(ctx).Warnf("invalid request body: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
 
 	data, err := c.UseCase.Update(id, req)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to update article")
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code == fiber.StatusNotFound {
+			c.getLogger(ctx).WithField("article_id", id).Warn("attempted update on non-existent article")
+		} else {
+			c.getLogger(ctx).WithFields(logrus.Fields{
+				"article_id": id,
+				"payload":    req,
+			}).WithError(err).Error("failed to update article")
+		}
 		return err
 	}
+	c.getLogger(ctx).WithField("article_id", data.ID).Info("article updated successfully")
+
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
 
@@ -109,8 +159,14 @@ func (c *ArticleController) Delete(ctx *fiber.Ctx) error {
 	}
 
 	if err := c.UseCase.Delete(id); err != nil {
-		c.Log.WithError(err).Error("failed to delete article")
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code == fiber.StatusNotFound {
+			c.getLogger(ctx).WithField("article_id", id).Warn("attempted delete non-existent article")
+		} else {
+			c.getLogger(ctx).WithField("article_id", id).WithError(err).Error("failed to delete article")
+		}
 		return err
 	}
+	c.getLogger(ctx).WithField("article_id", id).Info("article deleted successfully")
 	return ctx.JSON(model.WebResponse[string]{Data: "Article deleted successfully"})
 }

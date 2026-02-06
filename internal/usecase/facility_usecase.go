@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -25,15 +25,13 @@ type FacilityUsecase interface {
 type facilityUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.Facility]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewFacilityUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) FacilityUsecase {
+func NewFacilityUsecase(db *gorm.DB, validate *validator.Validate) FacilityUsecase {
 	return &facilityUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.Facility]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -61,11 +59,14 @@ func (u *facilityUsecase) GetPublic(entityType string) ([]model.FacilityResponse
 }
 
 func (u *facilityUsecase) GetByID(id string) (*model.FacilityResponse, error) {
-	var g entity.Facility
-	if err := u.repo.FindById(u.db, &g, id); err != nil {
+	var f entity.Facility
+	if err := u.repo.FindById(u.db, &f, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("facility not found")
+		}
 		return nil, err
 	}
-	r := converter.ToFacilityResponse(g)
+	r := converter.ToFacilityResponse(f)
 	return &r, nil
 }
 
@@ -73,7 +74,7 @@ func (u *facilityUsecase) Create(entityType string, req model.CreateFacilityRequ
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
-	g := entity.Facility{
+	f := entity.Facility{
 		ID:          uuid.New().String(),
 		EntityType:  entityType,
 		Name:        req.Name,
@@ -82,10 +83,10 @@ func (u *facilityUsecase) Create(entityType string, req model.CreateFacilityRequ
 		OrderIndex:  req.OrderIndex,
 		IsActive:    req.IsActive,
 	}
-	if err := u.repo.Create(u.db, &g); err != nil {
+	if err := u.repo.Create(u.db, &f); err != nil {
 		return nil, err
 	}
-	r := converter.ToFacilityResponse(g)
+	r := converter.ToFacilityResponse(f)
 	return &r, nil
 }
 
@@ -93,26 +94,34 @@ func (u *facilityUsecase) Update(id string, req model.UpdateFacilityRequest) (*m
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
-	var g entity.Facility
-	if err := u.repo.FindById(u.db, &g, id); err != nil {
+	var f entity.Facility
+	if err := u.repo.FindById(u.db, &f, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("facility not found")
+		}
 		return nil, err
 	}
-	g.Name = req.Name
-	g.Description = req.Description
-	g.Images = util.ImageMap(req.Images)
-	g.OrderIndex = req.OrderIndex
-	g.IsActive = req.IsActive
-	if err := u.repo.Update(u.db, &g); err != nil {
+
+	f.Name = req.Name
+	f.Description = req.Description
+	f.Images = util.ImageMap(req.Images)
+	f.OrderIndex = req.OrderIndex
+	f.IsActive = req.IsActive
+
+	if err := u.repo.Update(u.db, &f); err != nil {
 		return nil, err
 	}
-	r := converter.ToFacilityResponse(g)
+	r := converter.ToFacilityResponse(f)
 	return &r, nil
 }
 
 func (u *facilityUsecase) Delete(id string) error {
-	var g entity.Facility
-	if err := u.repo.FindById(u.db, &g, id); err != nil {
+	var f entity.Facility
+	if err := u.repo.FindById(u.db, &f, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("facility not found")
+		}
 		return err
 	}
-	return u.repo.Delete(u.db, &g)
+	return u.repo.Delete(u.db, &f)
 }

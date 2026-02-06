@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gosimple/slug"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -25,15 +24,13 @@ type CategoryUsecase interface {
 type categoryUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.Category]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewCategoryUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) CategoryUsecase {
+func NewCategoryUsecase(db *gorm.DB, validate *validator.Validate) CategoryUsecase {
 	return &categoryUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.Category]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -53,6 +50,9 @@ func (u *categoryUsecase) GetAll() ([]model.CategoryResponse, error) {
 func (u *categoryUsecase) GetByID(id string) (*model.CategoryResponse, error) {
 	var c entity.Category
 	if err := u.repo.FindById(u.db, &c, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("category not found")
+		}
 		return nil, err
 	}
 	r := converter.ToCategoryResponse(&c)
@@ -101,6 +101,9 @@ func (u *categoryUsecase) Update(id string, req model.UpdateCategoryRequest) (*m
 
 	var c entity.Category
 	if err := u.repo.FindById(u.db, &c, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("category not found")
+		}
 		return nil, err
 	}
 
@@ -136,13 +139,12 @@ func (u *categoryUsecase) Update(id string, req model.UpdateCategoryRequest) (*m
 }
 
 func (u *categoryUsecase) Delete(id string) error {
-
 	exists, err := u.repo.CountById(u.db, id)
 	if err != nil {
 		return err
 	}
 	if exists == 0 {
-		return errors.New("category not found")
+		return model.ErrNotFound("category not found")
 	}
 
 	totalUsed, err := u.repo.CountReference(u.db, &entity.Article{}, "category_id", id)
@@ -151,7 +153,7 @@ func (u *categoryUsecase) Delete(id string) error {
 	}
 
 	if totalUsed > 0 {
-		return errors.New("cannot delete: category is used by articles")
+		return model.ErrConflict("category is currently in use")
 	}
 
 	return u.repo.Delete(u.db, &entity.Category{ID: id})

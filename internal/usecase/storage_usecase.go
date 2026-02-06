@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
+	_ "image/gif"  // Penting untuk decode image
+	_ "image/jpeg" // Penting untuk decode image
+	_ "image/png"  // Penting untuk decode image
 	"io"
 	"path/filepath"
 	"strings"
@@ -16,9 +16,7 @@ import (
 	"pura-agung-kertajaya-backend/internal/repository"
 	"pura-agung-kertajaya-backend/internal/util"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
-	_ "golang.org/x/image/webp"
+	_ "golang.org/x/image/webp" // Penting untuk decode/encode webp
 )
 
 type StorageUsecase interface {
@@ -30,19 +28,11 @@ type StorageUsecase interface {
 
 type storageUsecase struct {
 	storageRepo repository.StorageRepository
-	log         *logrus.Logger
-	validate    *validator.Validate
 }
 
-func NewStorageUsecase(
-	storageRepo repository.StorageRepository,
-	log *logrus.Logger,
-	validate *validator.Validate,
-) StorageUsecase {
+func NewStorageUsecase(storageRepo repository.StorageRepository) StorageUsecase {
 	return &storageUsecase{
 		storageRepo: storageRepo,
-		log:         log,
-		validate:    validate,
 	}
 }
 
@@ -60,8 +50,7 @@ func (u *storageUsecase) UploadFile(ctx context.Context, filename string, file i
 
 		_, err := u.storageRepo.Upload(ctx, key, bytes.NewReader(data), "image/webp", pSize)
 		if err != nil {
-			u.log.WithError(err).Errorf("failed to upload variant: %s", presetName)
-			return err
+			return fmt.Errorf("failed to upload variant %s: %w", presetName, err)
 		}
 
 		mu.Lock()
@@ -72,41 +61,28 @@ func (u *storageUsecase) UploadFile(ctx context.Context, filename string, file i
 	}
 
 	err := util.ProcessAndHandleImage(file, util.AllPresets, onProcessed)
-
 	if err != nil {
-		u.log.WithError(err).Error("failed to process image")
-
-		wrappedErr := fmt.Errorf("invalid image format: %w", err)
+		wrappedErr := fmt.Errorf("image processing failed: %w", err)
 
 		cleanupCtx := context.Background()
 		for _, key := range uploadedKeys {
-			errDelete := u.storageRepo.Delete(cleanupCtx, key)
-			if errDelete != nil {
-				u.log.WithError(errDelete).Errorf("failed to rollback file: %s", key)
-			}
+			_ = u.storageRepo.Delete(cleanupCtx, key)
 		}
 
 		return nil, wrappedErr
 	}
 
-	u.log.WithField("count", len(uploadedKeys)).Info("all variants uploaded successfully")
 	return uploadedKeys, nil
 }
 
 func (u *storageUsecase) DownloadFile(ctx context.Context, key string) (io.ReadCloser, error) {
-	u.log.WithField("key", key).Info("downloading file")
 	return u.storageRepo.Download(ctx, key)
 }
 
 func (u *storageUsecase) DeleteFile(ctx context.Context, key string) error {
-	u.log.WithField("key", key).Info("deleting file")
 	return u.storageRepo.Delete(ctx, key)
 }
 
 func (u *storageUsecase) GetPresignedURL(ctx context.Context, key string, expiration int) (string, error) {
-	u.log.WithFields(logrus.Fields{
-		"key":        key,
-		"expiration": expiration,
-	}).Info("generating presigned URL")
 	return u.storageRepo.GetPresignedURL(ctx, key, expiration)
 }

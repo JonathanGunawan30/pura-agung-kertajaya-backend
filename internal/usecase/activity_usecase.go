@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -26,15 +25,13 @@ type ActivityUsecase interface {
 type activityUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.Activity]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewActivityUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) ActivityUsecase {
+func NewActivityUsecase(db *gorm.DB, validate *validator.Validate) ActivityUsecase {
 	return &activityUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.Activity]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -66,6 +63,9 @@ func (u *activityUsecase) GetPublic(entityType string) ([]model.ActivityResponse
 func (u *activityUsecase) GetByID(id string) (*model.ActivityResponse, error) {
 	var a entity.Activity
 	if err := u.repo.FindById(u.db, &a, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("activity not found")
+		}
 		return nil, err
 	}
 	r := converter.ToActivityResponse(&a)
@@ -79,7 +79,7 @@ func (u *activityUsecase) Create(entityType string, req model.CreateActivityRequ
 
 	eventDate, err := time.Parse("2006-01-02", req.EventDate)
 	if err != nil {
-		return nil, errors.New("format event_date is invalid")
+		return nil, model.ErrBadRequest("invalid event_date format, expected YYYY-MM-DD")
 	}
 
 	a := entity.Activity{
@@ -93,6 +93,7 @@ func (u *activityUsecase) Create(entityType string, req model.CreateActivityRequ
 		OrderIndex:  req.OrderIndex,
 		IsActive:    req.IsActive,
 	}
+
 	if err := u.repo.Create(u.db, &a); err != nil {
 		return nil, err
 	}
@@ -104,14 +105,18 @@ func (u *activityUsecase) Update(id string, req model.UpdateActivityRequest) (*m
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
+
 	var a entity.Activity
 	if err := u.repo.FindById(u.db, &a, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("activity not found")
+		}
 		return nil, err
 	}
 
 	eventDate, err := time.Parse("2006-01-02", req.EventDate)
 	if err != nil {
-		return nil, errors.New("format event_date is invalid")
+		return nil, model.ErrBadRequest("invalid event_date format, expected YYYY-MM-DD")
 	}
 
 	a.Title = req.Title
@@ -132,6 +137,9 @@ func (u *activityUsecase) Update(id string, req model.UpdateActivityRequest) (*m
 func (u *activityUsecase) Delete(id string) error {
 	var a entity.Activity
 	if err := u.repo.FindById(u.db, &a, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("activity not found")
+		}
 		return err
 	}
 	return u.repo.Delete(u.db, &a)

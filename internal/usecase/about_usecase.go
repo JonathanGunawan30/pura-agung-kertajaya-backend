@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -26,16 +26,14 @@ type aboutUsecase struct {
 	db        *gorm.DB
 	repoAbout *repository.Repository[entity.AboutSection]
 	repoValue *repository.Repository[entity.AboutValue]
-	log       *logrus.Logger
 	validate  *validator.Validate
 }
 
-func NewAboutUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) AboutUsecase {
+func NewAboutUsecase(db *gorm.DB, validate *validator.Validate) AboutUsecase {
 	return &aboutUsecase{
 		db:        db,
 		repoAbout: &repository.Repository[entity.AboutSection]{DB: db},
 		repoValue: &repository.Repository[entity.AboutValue]{DB: db},
-		log:       log,
 		validate:  validate,
 	}
 }
@@ -78,7 +76,10 @@ func (u *aboutUsecase) GetPublic(entityType string) ([]model.AboutSectionRespons
 
 func (u *aboutUsecase) GetByID(id string) (*model.AboutSectionResponse, error) {
 	var a entity.AboutSection
-	if err := preloadValuesOrdered(u.db).Where("id = ?", id).Take(&a).Error; err != nil {
+	if err := preloadValuesOrdered(u.db).Where("id = ?", id).First(&a).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("about section not found")
+		}
 		return nil, err
 	}
 	r := converter.ToAboutSectionResponse(a)
@@ -139,6 +140,9 @@ func (u *aboutUsecase) Update(id string, req model.AboutSectionRequest) (*model.
 
 	var a entity.AboutSection
 	if err := u.repoAbout.FindById(u.db, &a, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("about section not found")
+		}
 		return nil, err
 	}
 
@@ -184,9 +188,12 @@ func (u *aboutUsecase) Update(id string, req model.AboutSectionRequest) (*model.
 }
 
 func (u *aboutUsecase) Delete(id string) error {
-	var a entity.AboutSection
-	if err := u.repoAbout.FindById(u.db, &a, id); err != nil {
+	exists, err := u.repoAbout.CountById(u.db, id)
+	if err != nil {
 		return err
 	}
-	return u.repoAbout.Delete(u.db, &a)
+	if exists == 0 {
+		return model.ErrNotFound("about section not found")
+	}
+	return u.repoAbout.Delete(u.db, &entity.AboutSection{ID: id})
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,47 +28,48 @@ func setupMockSiteIdentityUsecase(t *testing.T) (usecase.SiteIdentityUsecase, sq
 		t.Fatalf("failed to open gorm: %v", err)
 	}
 
-	u := usecase.NewSiteIdentityUsecase(gormDB, logrus.New(), validator.New())
+	u := usecase.NewSiteIdentityUsecase(gormDB, validator.New())
 	return u, mock
 }
 
 func TestSiteIdentityUsecase_Create_Success(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 
-	req := model.SiteIdentityRequest{EntityType: "pura", SiteName: "Pura", LogoURL: "https://logo", Tagline: "Tag"}
+	req := model.SiteIdentityRequest{
+		EntityType: "pura",
+		SiteName:   "Pura Agung",
+		LogoURL:    "https://logo.com/img.png",
+		Tagline:    "Tagline",
+	}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `site_identity`")).
-		WithArgs(sqlmock.AnyArg(), "pura", "Pura", "https://logo", "Tag", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(
+			sqlmock.AnyArg(),
+			"pura",
+			"Pura Agung",
+			"https://logo.com/img.png",
+			"Tagline",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	rows := sqlmock.NewRows([]string{"id", "entity_type", "site_name", "logo_url", "tagline"}).
-		AddRow("uuid-1", "pura", "Pura", "https://logo", "Tag")
-
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity`")).
-		WithArgs(sqlmock.AnyArg(), 1).
-		WillReturnRows(rows)
-
 	res, err := u.Create(req.EntityType, req)
 	assert.NoError(t, err)
-	if err != nil {
-		return
-	}
 	assert.NotNil(t, res)
-	if res == nil {
-		return
-	}
-	assert.Equal(t, "pura", res.EntityType)
-	assert.Equal(t, "Pura", res.SiteName)
+	assert.Equal(t, "Pura Agung", res.SiteName)
 }
 
 func TestSiteIdentityUsecase_Create_ValidationError(t *testing.T) {
 	u, _ := setupMockSiteIdentityUsecase(t)
-
 	req := model.SiteIdentityRequest{}
-
-	res, err := u.Create(req.EntityType, req)
+	res, err := u.Create("pura", req)
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }
@@ -81,7 +81,7 @@ func TestSiteIdentityUsecase_GetAll(t *testing.T) {
 		AddRow("s1", "pura", "A").
 		AddRow("s2", "pura", "B")
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE entity_type = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE entity_type = ? ORDER BY created_at ASC")).
 		WithArgs("pura").
 		WillReturnRows(rows)
 
@@ -90,52 +90,111 @@ func TestSiteIdentityUsecase_GetAll(t *testing.T) {
 	assert.Len(t, list, 2)
 }
 
+func TestSiteIdentityUsecase_GetByID_Success(t *testing.T) {
+	u, mock := setupMockSiteIdentityUsecase(t)
+	targetID := "sid-123"
+
+	rows := sqlmock.NewRows([]string{"id", "site_name"}).AddRow(targetID, "My Site")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(rows)
+
+	res, err := u.GetByID(targetID)
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+}
+
 func TestSiteIdentityUsecase_GetByID_NotFound(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ? LIMIT ?")).
 		WithArgs("missing", 1).
 		WillReturnRows(sqlmock.NewRows(nil))
 
 	res, err := u.GetByID("missing")
+
 	assert.Error(t, err)
 	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "site identity not found", e.Message)
+	}
 }
 
 func TestSiteIdentityUsecase_Update_Success(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 	targetID := "sid-1"
 
-	req := model.SiteIdentityRequest{EntityType: "yayasan", SiteName: "New", Tagline: "New", PrimaryButtonText: "Go"}
+	req := model.SiteIdentityRequest{
+		EntityType:        "yayasan",
+		SiteName:          "New Site",
+		Tagline:           "New Tag",
+		PrimaryButtonText: "Go",
+	}
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "entity_type", "site_name", "tagline"}).AddRow(targetID, "pura", "Old", "Old"))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE `site_identity`")).
-		WithArgs("yayasan", "New", sqlmock.AnyArg(), "New", "Go", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), targetID).
+		WithArgs(
+			"yayasan",
+			"New Site",
+			sqlmock.AnyArg(),
+			"New Tag",
+			"Go",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+			targetID,
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	res, err := u.Update(targetID, req)
 	assert.NoError(t, err)
-	if err != nil {
-		return
+	if assert.NotNil(t, res) {
+		assert.Equal(t, "New Site", res.SiteName)
+		assert.Equal(t, "Go", res.PrimaryButtonText)
 	}
-	assert.NotNil(t, res)
-	if res == nil {
-		return
+}
+
+func TestSiteIdentityUsecase_Update_NotFound(t *testing.T) {
+	u, mock := setupMockSiteIdentityUsecase(t)
+	targetID := "missing"
+
+	req := model.SiteIdentityRequest{
+		EntityType: "pura",
+		SiteName:   "Valid Name",
 	}
-	assert.Equal(t, "New", res.SiteName)
-	assert.Equal(t, "Go", res.PrimaryButtonText)
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.Update(targetID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "site identity not found", e.Message)
+	}
 }
 
 func TestSiteIdentityUsecase_Delete_Success(t *testing.T) {
 	u, mock := setupMockSiteIdentityUsecase(t)
 	targetID := "del-1"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ?")).
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "site_name"}).AddRow(targetID, "Name"))
 
@@ -147,6 +206,24 @@ func TestSiteIdentityUsecase_Delete_Success(t *testing.T) {
 
 	err := u.Delete(targetID)
 	assert.NoError(t, err)
+}
+
+func TestSiteIdentityUsecase_Delete_NotFound(t *testing.T) {
+	u, mock := setupMockSiteIdentityUsecase(t)
+	targetID := "missing"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE id = ? LIMIT ?")).
+		WithArgs(targetID, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	err := u.Delete(targetID)
+
+	assert.Error(t, err)
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "site identity not found", e.Message)
+	}
 }
 
 func TestSiteIdentityUsecase_GetPublic_ReturnsLatest(t *testing.T) {
@@ -162,12 +239,25 @@ func TestSiteIdentityUsecase_GetPublic_ReturnsLatest(t *testing.T) {
 	result, err := u.GetPublic("pura")
 
 	assert.NoError(t, err)
-	if err != nil {
-		return
-	}
 	assert.NotNil(t, result)
-	if result == nil {
-		return
-	}
 	assert.Equal(t, "New", result.SiteName)
+}
+
+func TestSiteIdentityUsecase_GetPublic_NotFound(t *testing.T) {
+	u, mock := setupMockSiteIdentityUsecase(t)
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `site_identity` WHERE entity_type = ? ORDER BY created_at DESC LIMIT ?")).
+		WithArgs("pura", 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	result, err := u.GetPublic("pura")
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "site identity not found", e.Message)
+	}
 }

@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -25,15 +25,13 @@ type HeroSlideUsecase interface {
 type heroSlideUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.HeroSlide]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewHeroSlideUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) HeroSlideUsecase {
+func NewHeroSlideUsecase(db *gorm.DB, validate *validator.Validate) HeroSlideUsecase {
 	return &heroSlideUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.HeroSlide]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -44,7 +42,8 @@ func (u *heroSlideUsecase) GetAll(entityType string) ([]model.HeroSlideResponse,
 	if entityType != "" {
 		query = query.Where("entity_type = ?", entityType)
 	}
-	if err := query.Find(&slides).Error; err != nil {
+
+	if err := u.repo.FindAll(query, &slides); err != nil {
 		return nil, err
 	}
 	responses := make([]model.HeroSlideResponse, 0, len(slides))
@@ -60,7 +59,8 @@ func (u *heroSlideUsecase) GetPublic(entityType string) ([]model.HeroSlideRespon
 	if entityType != "" {
 		query = query.Where("entity_type = ?", entityType)
 	}
-	if err := query.Find(&slides).Error; err != nil {
+
+	if err := u.repo.FindAll(query, &slides); err != nil {
 		return nil, err
 	}
 	responses := make([]model.HeroSlideResponse, 0, len(slides))
@@ -73,6 +73,9 @@ func (u *heroSlideUsecase) GetPublic(entityType string) ([]model.HeroSlideRespon
 func (u *heroSlideUsecase) GetByID(id string) (*model.HeroSlideResponse, error) {
 	var s entity.HeroSlide
 	if err := u.repo.FindById(u.db, &s, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("hero slide not found")
+		}
 		return nil, err
 	}
 	resp := converter.ToHeroSlideResponse(s)
@@ -107,6 +110,9 @@ func (u *heroSlideUsecase) Update(id string, req model.HeroSlideRequest) (*model
 
 	var s entity.HeroSlide
 	if err := u.repo.FindById(u.db, &s, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("hero slide not found")
+		}
 		return nil, err
 	}
 
@@ -126,6 +132,9 @@ func (u *heroSlideUsecase) Update(id string, req model.HeroSlideRequest) (*model
 func (u *heroSlideUsecase) Delete(id string) error {
 	var s entity.HeroSlide
 	if err := u.repo.FindById(u.db, &s, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("hero slide not found")
+		}
 		return err
 	}
 	return u.repo.Delete(u.db, &s)

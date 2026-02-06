@@ -5,13 +5,11 @@ import (
 	"context"
 	"errors"
 	"io"
+	mock2 "pura-agung-kertajaya-backend/internal/repository/mock"
 	"testing"
 
-	mock2 "pura-agung-kertajaya-backend/internal/repository/mock"
 	"pura-agung-kertajaya-backend/internal/usecase"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -27,9 +25,7 @@ var minimalPNG = []byte{
 
 func TestStorageUsecase_UploadFile_Success(t *testing.T) {
 	mockRepo := mock2.NewMockStorageRepository()
-	log := logrus.New()
-	validate := validator.New()
-	u := usecase.NewStorageUsecase(mockRepo, log, validate)
+	u := usecase.NewStorageUsecase(mockRepo)
 
 	ctx := context.Background()
 	filename := "test.png"
@@ -37,9 +33,8 @@ func TestStorageUsecase_UploadFile_Success(t *testing.T) {
 	contentType := "image/png"
 	fileSize := int64(len(minimalPNG))
 
-	mockRepo.On("Upload", ctx, mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int64")).
-		Return("uploads/test_variant.webp", nil).
-		Maybe()
+	mockRepo.On("Upload", ctx, mock.AnythingOfType("string"), mock.Anything, "image/webp", mock.AnythingOfType("int64")).
+		Return("uploads/test_variant.webp", nil)
 
 	result, err := u.UploadFile(ctx, filename, file, contentType, fileSize)
 
@@ -52,9 +47,7 @@ func TestStorageUsecase_UploadFile_Success(t *testing.T) {
 
 func TestStorageUsecase_UploadFile_InvalidImage(t *testing.T) {
 	mockRepo := mock2.NewMockStorageRepository()
-	log := logrus.New()
-	validate := validator.New()
-	u := usecase.NewStorageUsecase(mockRepo, log, validate)
+	u := usecase.NewStorageUsecase(mockRepo)
 
 	ctx := context.Background()
 	filename := "test.png"
@@ -66,16 +59,14 @@ func TestStorageUsecase_UploadFile_InvalidImage(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "invalid image format")
+	assert.Contains(t, err.Error(), "image processing failed")
 
 	mockRepo.AssertNotCalled(t, "Upload")
 }
 
-func TestStorageUsecase_UploadFile_ProcessImageError(t *testing.T) {
+func TestStorageUsecase_UploadFile_UploadError_RollbackTriggered(t *testing.T) {
 	mockRepo := mock2.NewMockStorageRepository()
-	log := logrus.New()
-	validate := validator.New()
-	u := usecase.NewStorageUsecase(mockRepo, log, validate)
+	u := usecase.NewStorageUsecase(mockRepo)
 
 	ctx := context.Background()
 	filename := "test.png"
@@ -83,23 +74,23 @@ func TestStorageUsecase_UploadFile_ProcessImageError(t *testing.T) {
 	contentType := "image/png"
 	fileSize := int64(len(minimalPNG))
 
-	mockRepo.On("Upload", ctx, mock.AnythingOfType("string"), mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int64")).
-		Return("", errors.New("upload failed")).
-		Maybe()
+	mockRepo.On("Upload", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return("", errors.New("s3 connection error"))
+
+	mockRepo.On("Delete", mock.Anything, mock.Anything).Return(nil).Maybe()
 
 	result, err := u.UploadFile(ctx, filename, file, contentType, fileSize)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "image processing failed")
 
 	mockRepo.AssertExpectations(t)
 }
 
 func TestStorageUsecase_DeleteFile_Success(t *testing.T) {
 	mockRepo := mock2.NewMockStorageRepository()
-	log := logrus.New()
-	validate := validator.New()
-	u := usecase.NewStorageUsecase(mockRepo, log, validate)
+	u := usecase.NewStorageUsecase(mockRepo)
 
 	ctx := context.Background()
 	key := "uploads/test.jpg"
@@ -114,9 +105,7 @@ func TestStorageUsecase_DeleteFile_Success(t *testing.T) {
 
 func TestStorageUsecase_DeleteFile_Error(t *testing.T) {
 	mockRepo := mock2.NewMockStorageRepository()
-	log := logrus.New()
-	validate := validator.New()
-	u := usecase.NewStorageUsecase(mockRepo, log, validate)
+	u := usecase.NewStorageUsecase(mockRepo)
 
 	ctx := context.Background()
 	key := "uploads/test.jpg"
@@ -133,9 +122,7 @@ func TestStorageUsecase_DeleteFile_Error(t *testing.T) {
 
 func TestStorageUsecase_GetPresignedURL_Success(t *testing.T) {
 	mockRepo := mock2.NewMockStorageRepository()
-	log := logrus.New()
-	validate := validator.New()
-	u := usecase.NewStorageUsecase(mockRepo, log, validate)
+	u := usecase.NewStorageUsecase(mockRepo)
 
 	ctx := context.Background()
 	key := "uploads/test.jpg"
@@ -153,9 +140,7 @@ func TestStorageUsecase_GetPresignedURL_Success(t *testing.T) {
 
 func TestStorageUsecase_DownloadFile_Success(t *testing.T) {
 	mockRepo := mock2.NewMockStorageRepository()
-	log := logrus.New()
-	validate := validator.New()
-	u := usecase.NewStorageUsecase(mockRepo, log, validate)
+	u := usecase.NewStorageUsecase(mockRepo)
 
 	ctx := context.Background()
 	key := "uploads/test.jpg"

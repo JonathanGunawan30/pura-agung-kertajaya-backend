@@ -1,6 +1,8 @@
 package http
 
 import (
+	"errors"
+	"fmt"
 	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
@@ -18,11 +20,36 @@ func NewActivityController(usecase usecase.ActivityUsecase, log *logrus.Logger) 
 	return &ActivityController{UseCase: usecase, Log: log}
 }
 
+func (c *ActivityController) getLogger(ctx *fiber.Ctx) *logrus.Entry {
+	user := middleware.GetUser(ctx)
+
+	userID := "guest"
+	userRole := "unknown"
+
+	if user != nil {
+		userID = fmt.Sprintf("%d", user.ID)
+		userRole = user.Role
+	}
+
+	return c.Log.WithFields(logrus.Fields{
+		"user_id":   userID,
+		"user_role": userRole,
+		"ip":        ctx.IP(),
+		"req_id":    ctx.Get("X-Request-ID"),
+	})
+}
+
 func (c *ActivityController) GetAll(ctx *fiber.Ctx) error {
-	entityType := ctx.Locals(middleware.CtxEntityType).(string)
+	val := ctx.Locals(middleware.CtxEntityType)
+	entityType, ok := val.(string)
+	if !ok {
+		c.getLogger(ctx).Error("entity_type missing from context locals")
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: "Internal Configuration Error"})
+	}
+
 	data, err := c.UseCase.GetAll(entityType)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to fetch activities")
+		c.getLogger(ctx).WithError(err).Error("failed to fetch activities")
 		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
@@ -32,7 +59,7 @@ func (c *ActivityController) GetAllPublic(ctx *fiber.Ctx) error {
 	entityType := ctx.Query("entity_type")
 	data, err := c.UseCase.GetPublic(entityType)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to fetch public activities")
+		c.getLogger(ctx).WithError(err).Error("failed to fetch public activities")
 		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
@@ -43,9 +70,15 @@ func (c *ActivityController) GetByID(ctx *fiber.Ctx) error {
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
+
 	data, err := c.UseCase.GetByID(id)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to get activity by id")
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code == fiber.StatusNotFound {
+			c.getLogger(ctx).WithField("activity_id", id).Warn("activity not found")
+		} else {
+			c.getLogger(ctx).WithField("activity_id", id).WithError(err).Error("failed to get activity by id")
+		}
 		return err
 	}
 	return ctx.JSON(model.WebResponse[any]{Data: data})
@@ -53,16 +86,31 @@ func (c *ActivityController) GetByID(ctx *fiber.Ctx) error {
 
 func (c *ActivityController) Create(ctx *fiber.Ctx) error {
 	var req model.CreateActivityRequest
-	entityType := ctx.Locals(middleware.CtxEntityType).(string)
+
+	val := ctx.Locals(middleware.CtxEntityType)
+	entityType, ok := val.(string)
+	if !ok {
+		c.getLogger(ctx).Error("entity_type missing from context locals during create")
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{Errors: "Internal Configuration Error"})
+	}
 
 	if err := ctx.BodyParser(&req); err != nil {
+		c.getLogger(ctx).Warnf("invalid request body: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
+
 	data, err := c.UseCase.Create(entityType, req)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to create activity")
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code < fiber.StatusInternalServerError {
+			c.getLogger(ctx).WithField("payload", req).Warnf("failed to create activity: %s", e.Message)
+		} else {
+			c.getLogger(ctx).WithField("payload", req).WithError(err).Error("failed to create activity")
+		}
 		return err
 	}
+
+	c.getLogger(ctx).WithField("activity_id", data.ID).Info("activity created successfully")
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse[any]{Data: data})
 }
 
@@ -71,15 +119,34 @@ func (c *ActivityController) Update(ctx *fiber.Ctx) error {
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
+
 	var req model.UpdateActivityRequest
 	if err := ctx.BodyParser(&req); err != nil {
+		c.getLogger(ctx).Warnf("invalid request body: %v", err)
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid request body"})
 	}
+
 	data, err := c.UseCase.Update(id, req)
 	if err != nil {
-		c.Log.WithError(err).Error("failed to update activity")
+		var e *model.ResponseError
+		if errors.As(err, &e) {
+			if e.Code == fiber.StatusNotFound {
+				c.getLogger(ctx).WithField("activity_id", id).Warn("attempted update on non-existent activity")
+			} else if e.Code == fiber.StatusBadRequest {
+				c.getLogger(ctx).WithField("activity_id", id).Warnf("invalid update payload: %s", e.Message)
+			} else {
+				c.getLogger(ctx).WithField("activity_id", id).Warnf("business error: %s", e.Message)
+			}
+		} else {
+			c.getLogger(ctx).WithFields(logrus.Fields{
+				"activity_id": id,
+				"payload":     req,
+			}).WithError(err).Error("failed to update activity")
+		}
 		return err
 	}
+
+	c.getLogger(ctx).WithField("activity_id", data.ID).Info("activity updated successfully")
 	return ctx.JSON(model.WebResponse[any]{Data: data})
 }
 
@@ -88,9 +155,17 @@ func (c *ActivityController) Delete(ctx *fiber.Ctx) error {
 	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
+
 	if err := c.UseCase.Delete(id); err != nil {
-		c.Log.WithError(err).Error("failed to delete activity")
+		var e *model.ResponseError
+		if errors.As(err, &e) && e.Code == fiber.StatusNotFound {
+			c.getLogger(ctx).WithField("activity_id", id).Warn("attempted delete non-existent activity")
+		} else {
+			c.getLogger(ctx).WithField("activity_id", id).WithError(err).Error("failed to delete activity")
+		}
 		return err
 	}
+
+	c.getLogger(ctx).WithField("activity_id", id).Info("activity deleted successfully")
 	return ctx.JSON(model.WebResponse[string]{Data: "Activity deleted successfully"})
 }

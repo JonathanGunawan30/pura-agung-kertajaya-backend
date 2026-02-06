@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -21,15 +20,13 @@ type OrganizationDetailUsecase interface {
 type organizationDetailUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.OrganizationDetail]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewOrganizationDetailUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) OrganizationDetailUsecase {
+func NewOrganizationDetailUsecase(db *gorm.DB, validate *validator.Validate) OrganizationDetailUsecase {
 	return &organizationDetailUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.OrganizationDetail]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -89,31 +86,14 @@ func (u *organizationDetailUsecase) Update(entityType string, req model.UpdateOr
 	} else if err != nil {
 		return nil, err
 	} else {
-		if req.Vision != "" {
-			detail.Vision = req.Vision
-		}
-		if req.Mission != "" {
-			detail.Mission = req.Mission
-		}
-		if req.Rules != "" {
-			detail.Rules = req.Rules
-		}
-		if req.WorkProgram != "" {
-			detail.WorkProgram = req.WorkProgram
-		}
-		if req.VisionMissionImageURL != "" {
-			detail.VisionMissionImageURL = req.VisionMissionImageURL
-		}
-		if req.WorkProgramImageURL != "" {
-			detail.WorkProgramImageURL = req.WorkProgramImageURL
-		}
-		if req.RulesImageURL != "" {
-			detail.RulesImageURL = req.RulesImageURL
-		}
-
-		if req.StructureImageURL != "" {
-			detail.StructureImageURL = req.StructureImageURL
-		}
+		detail.Vision = req.Vision
+		detail.Mission = req.Mission
+		detail.Rules = req.Rules
+		detail.WorkProgram = req.WorkProgram
+		detail.VisionMissionImageURL = req.VisionMissionImageURL
+		detail.WorkProgramImageURL = req.WorkProgramImageURL
+		detail.RulesImageURL = req.RulesImageURL
+		detail.StructureImageURL = req.StructureImageURL
 
 		if err := u.repo.Update(u.db, &detail); err != nil {
 			return nil, err

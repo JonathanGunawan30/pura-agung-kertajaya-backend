@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/model/converter"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -24,15 +24,13 @@ type RemarkUsecase interface {
 type remarkUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.Remark]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewRemarkUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) RemarkUsecase {
+func NewRemarkUsecase(db *gorm.DB, validate *validator.Validate) RemarkUsecase {
 	return &remarkUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.Remark]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -64,6 +62,9 @@ func (u *remarkUsecase) GetPublic(entityType string) ([]model.RemarkResponse, er
 func (u *remarkUsecase) GetByID(id string) (*model.RemarkResponse, error) {
 	var r entity.Remark
 	if err := u.repo.FindById(u.db, &r, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("remark not found")
+		}
 		return nil, err
 	}
 
@@ -106,6 +107,9 @@ func (u *remarkUsecase) Update(id string, req model.UpdateRemarkRequest) (*model
 
 	var r entity.Remark
 	if err := u.repo.FindById(u.db, &r, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("remark not found")
+		}
 		return nil, err
 	}
 
@@ -127,6 +131,9 @@ func (u *remarkUsecase) Update(id string, req model.UpdateRemarkRequest) (*model
 func (u *remarkUsecase) Delete(id string) error {
 	var r entity.Remark
 	if err := u.repo.FindById(u.db, &r, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.ErrNotFound("remark not found")
+		}
 		return err
 	}
 	return u.repo.Delete(u.db, &r)

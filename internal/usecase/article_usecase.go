@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"pura-agung-kertajaya-backend/internal/entity"
 	"pura-agung-kertajaya-backend/internal/model"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gosimple/slug"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -28,15 +28,13 @@ type ArticleUsecase interface {
 type articleUsecase struct {
 	db       *gorm.DB
 	repo     *repository.Repository[entity.Article]
-	log      *logrus.Logger
 	validate *validator.Validate
 }
 
-func NewArticleUsecase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate) ArticleUsecase {
+func NewArticleUsecase(db *gorm.DB, validate *validator.Validate) ArticleUsecase {
 	return &articleUsecase{
 		db:       db,
 		repo:     &repository.Repository[entity.Article]{DB: db},
-		log:      log,
 		validate: validate,
 	}
 }
@@ -80,6 +78,9 @@ func (u *articleUsecase) GetByID(id string) (*model.ArticleResponse, error) {
 	query := u.db.Preload("Category").Where("id = ?", id)
 
 	if err := query.First(&article).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("article not found")
+		}
 		return nil, err
 	}
 
@@ -93,6 +94,10 @@ func (u *articleUsecase) GetBySlug(slug string) (*model.ArticleResponse, error) 
 	if err := u.db.Preload("Category").
 		Where("slug = ? AND status = ?", slug, entity.ArticleStatusPublished).
 		First(&article).Error; err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("article not found")
+		}
 		return nil, err
 	}
 
@@ -160,6 +165,9 @@ func (u *articleUsecase) Update(id string, req model.UpdateArticleRequest) (*mod
 
 	var article entity.Article
 	if err := u.repo.FindById(u.db, &article, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, model.ErrNotFound("article not found")
+		}
 		return nil, err
 	}
 
@@ -209,9 +217,12 @@ func (u *articleUsecase) Update(id string, req model.UpdateArticleRequest) (*mod
 }
 
 func (u *articleUsecase) Delete(id string) error {
-	var article entity.Article
-	if err := u.repo.FindById(u.db, &article, id); err != nil {
+	exists, err := u.repo.CountById(u.db, id)
+	if err != nil {
 		return err
 	}
-	return u.repo.Delete(u.db, &article)
+	if exists == 0 {
+		return model.ErrNotFound("article not found")
+	}
+	return u.repo.Delete(u.db, &entity.Article{ID: id})
 }

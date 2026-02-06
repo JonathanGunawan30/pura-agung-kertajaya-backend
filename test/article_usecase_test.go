@@ -7,7 +7,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -31,7 +30,7 @@ func setupMockArticleUsecase(t *testing.T) (usecase.ArticleUsecase, sqlmock.Sqlm
 		t.Fatalf("failed to open gorm: %v", err)
 	}
 
-	u := usecase.NewArticleUsecase(gormDB, logrus.New(), validator.New())
+	u := usecase.NewArticleUsecase(gormDB, validator.New())
 	return u, mock
 }
 
@@ -75,6 +74,46 @@ func TestArticleUsecase_GetBySlug(t *testing.T) {
 	if assert.NotNil(t, res) {
 		assert.Equal(t, "Upacara Ngaben", res.Title)
 		assert.Equal(t, "img1.jpg", res.Images.Lg)
+	}
+}
+
+func TestArticleUsecase_GetBySlug_NotFound(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+	slug := "missing-slug"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE slug = ? AND status = ? ORDER BY `articles`.`id` LIMIT ?")).
+		WithArgs(slug, entity.ArticleStatusPublished, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.GetBySlug(slug)
+
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "article not found", e.Message)
+	}
+}
+
+func TestArticleUsecase_GetByID_NotFound(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+	id := "missing-id"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE id = ? ORDER BY `articles`.`id` LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	res, err := u.GetByID(id)
+
+	assert.Error(t, err)
+	assert.Nil(t, res)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "article not found", e.Message)
 	}
 }
 
@@ -227,14 +266,42 @@ func TestArticleUsecase_Update(t *testing.T) {
 	}
 }
 
+func TestArticleUsecase_Update_NotFound(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+	id := "missing-id"
+
+	req := model.UpdateArticleRequest{
+		Title:      "Valid Title",
+		Content:    "Ini konten yang panjangnya harus mencukupi sesuai aturan validasi min tag",
+		Excerpt:    "Ini excerpt valid",
+		AuthorName: "Valid Author",
+		Status:     "DRAFT",
+		Images:     map[string]string{"lg": "https://img.com/valid.jpg"},
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE id = ? LIMIT ?")).
+		WithArgs(id, 1).
+		WillReturnRows(sqlmock.NewRows(nil))
+
+	updated, err := u.Update(id, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, updated)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "article not found", e.Message)
+	}
+}
+
 func TestArticleUsecase_Delete(t *testing.T) {
 	u, mock := setupMockArticleUsecase(t)
 	id := "del-1"
 
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `articles` WHERE id = ? LIMIT ?")).
-		WithArgs(id, 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "images"}).
-			AddRow(id, "To Delete", []byte(`{}`)))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE id = ?")).
+		WithArgs(id).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("DELETE FROM `articles` WHERE `articles`.`id` = ?")).
@@ -244,4 +311,22 @@ func TestArticleUsecase_Delete(t *testing.T) {
 
 	err := u.Delete(id)
 	assert.NoError(t, err)
+}
+
+func TestArticleUsecase_Delete_NotFound(t *testing.T) {
+	u, mock := setupMockArticleUsecase(t)
+	id := "missing-id"
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `articles` WHERE id = ?")).
+		WithArgs(id).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	err := u.Delete(id)
+	assert.Error(t, err)
+
+	var e *model.ResponseError
+	if assert.ErrorAs(t, err, &e) {
+		assert.Equal(t, 404, e.Code)
+		assert.Equal(t, "article not found", e.Message)
+	}
 }

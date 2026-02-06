@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -24,12 +24,12 @@ type UserUsecaseMock struct {
 	mock.Mock
 }
 
-func (m *UserUsecaseMock) Login(ctx context.Context, req *model.LoginUserRequest, fiberCtx *fiber.Ctx) (*model.UserResponse, error) {
-	args := m.Called(ctx, req, fiberCtx)
+func (m *UserUsecaseMock) Login(ctx context.Context, req *model.LoginUserRequest) (*model.UserResponse, string, error) {
+	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, "", args.Error(2)
 	}
-	return args.Get(0).(*model.UserResponse), args.Error(1)
+	return args.Get(0).(*model.UserResponse), args.String(1), args.Error(2)
 }
 
 func (m *UserUsecaseMock) Current(ctx context.Context, userID int) (*model.UserResponse, error) {
@@ -48,27 +48,28 @@ func (m *UserUsecaseMock) UpdateProfile(ctx context.Context, userID int, req *mo
 	return args.Get(0).(*model.UserResponse), args.Error(1)
 }
 
-func (m *UserUsecaseMock) Logout(ctx context.Context, fiberCtx *fiber.Ctx) (bool, error) {
-	args := m.Called(ctx, fiberCtx)
-	return args.Bool(0), args.Error(1)
+func (m *UserUsecaseMock) Logout(ctx context.Context, tokenString string) error {
+	args := m.Called(ctx, tokenString)
+	return args.Error(0)
 }
 
 func setupUserController(t *testing.T) (*fiber.App, *UserUsecaseMock) {
 	mockUC := new(UserUsecaseMock)
-	controller := httpdelivery.NewUserController(mockUC, logrus.New())
 
-	app := fiber.New()
+	cfg := viper.New()
+	cfg.Set("cookie.domain", "localhost")
+
+	app, logger, _ := NewTestApp()
+
+	controller := httpdelivery.NewUserController(mockUC, logger, cfg)
 
 	app.Post("/api/users/_login", controller.Login)
 
-	// FIX: Middleware Mock dipasang eksplisit
-	// Ini memastikan user ter-inject untuk route protected
 	authMiddleware := func(c *fiber.Ctx) error {
-		c.Locals("user", &middleware.Auth{ID: 1}) // Inject Mock User ID = 1
+		c.Locals("user", &middleware.Auth{ID: 1, Role: "admin"})
 		return c.Next()
 	}
 
-	// Terapkan middleware langsung pada definisi route agar lebih aman
 	app.Get("/api/users/_current", authMiddleware, controller.Current)
 	app.Patch("/api/users/_current", authMiddleware, controller.UpdateProfile)
 	app.Post("/api/users/_logout", authMiddleware, controller.Logout)
@@ -85,16 +86,27 @@ func TestUserController_Login_Success(t *testing.T) {
 		RecaptchaToken: "dummy",
 	}
 	expectedUser := &model.UserResponse{ID: 1, Email: reqBody.Email, Name: "Admin"}
+	expectedToken := "mock-jwt-token"
 
-	mockUC.On("Login", mock.Anything, mock.AnythingOfType("*model.LoginUserRequest"), mock.Anything).
-		Return(expectedUser, nil)
+	mockUC.On("Login", mock.Anything, mock.AnythingOfType("*model.LoginUserRequest")).
+		Return(expectedUser, expectedToken, nil)
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, _ := app.Test(req)
+	resp, _ := app.Test(req, -1)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	cookies := resp.Cookies()
+	found := false
+	for _, c := range cookies {
+		if c.Name == "access_token" && c.Value == expectedToken {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "Access token cookie should be set")
 }
 
 func TestUserController_Login_Fail(t *testing.T) {
@@ -105,15 +117,15 @@ func TestUserController_Login_Fail(t *testing.T) {
 		Password: "wrong",
 	}
 
-	mockUC.On("Login", mock.Anything, mock.AnythingOfType("*model.LoginUserRequest"), mock.Anything).
-		Return(nil, errors.New("invalid credentials"))
+	mockUC.On("Login", mock.Anything, mock.AnythingOfType("*model.LoginUserRequest")).
+		Return((*model.UserResponse)(nil), "", errors.New("invalid credentials"))
 
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/api/users/_login", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, _ := app.Test(req)
-	// FIX: Controller mengembalikan 500 jika error tidak spesifik (seperti yang terlihat di log error)
+	resp, _ := app.Test(req, -1)
+
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 }
 
@@ -129,7 +141,7 @@ func TestUserController_Current_Success(t *testing.T) {
 	mockUC.On("Current", mock.Anything, 1).Return(expectedUser, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/users/_current", nil)
-	resp, _ := app.Test(req)
+	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -153,17 +165,30 @@ func TestUserController_UpdateProfile_Success(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPatch, "/api/users/_current", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, _ := app.Test(req)
+	resp, _ := app.Test(req, -1)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestUserController_Logout_Success(t *testing.T) {
 	app, mockUC := setupUserController(t)
 
-	mockUC.On("Logout", mock.Anything, mock.Anything).Return(true, nil)
+	tokenString := "valid-token"
+
+	mockUC.On("Logout", mock.Anything, tokenString).Return(nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/users/_logout", nil)
-	resp, _ := app.Test(req)
+	req.AddCookie(&http.Cookie{Name: "access_token", Value: tokenString})
+
+	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	cookies := resp.Cookies()
+	cleared := false
+	for _, c := range cookies {
+		if c.Name == "access_token" && (c.MaxAge < 0 || c.Value == "") {
+			cleared = true
+			break
+		}
+	}
+	assert.True(t, cleared, "Access token cookie should be cleared")
 }
