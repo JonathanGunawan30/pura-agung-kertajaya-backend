@@ -62,7 +62,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	//domain := c.Config.GetString("cookie.domain")
+	domain := c.Config.GetString("cookie.domain")
 
 	ctx.Cookie(&fiber.Cookie{
 		Name:     "access_token",
@@ -71,8 +71,8 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		SameSite: "Lax",
 		Secure:   false,
 		Path:     "/",
-		//Domain:   domain,
-		MaxAge: 86400,
+		Domain:   domain,
+		MaxAge:   86400,
 	})
 
 	c.getLogger(ctx).WithFields(logrus.Fields{
