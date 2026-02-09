@@ -3,7 +3,7 @@ package model
 import "time"
 
 type UserResponse struct {
-	ID        int       `json:"id,omitempty"`
+	ID        string    `json:"id,omitempty"`
 	Name      string    `json:"name,omitempty"`
 	Email     string    `json:"email,omitempty"`
 	Role      string    `json:"role,omitempty"`
@@ -24,11 +24,11 @@ type LoginUserRequest struct {
 }
 
 type UpdateUserRequest struct {
-	ID       int    `json:"-"`
+	ID       string `json:"-"`
 	Name     string `json:"name,omitempty" validate:"max=100"`
 	Password string `json:"password,omitempty" validate:"max=100"`
 }
 
 type GetUserRequest struct {
-	ID int `json:"id" validate:"required"`
+	ID string `json:"id" validate:"required"`
 }

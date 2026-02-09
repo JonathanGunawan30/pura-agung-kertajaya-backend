@@ -12,7 +12,7 @@ type TestimonialRequest struct {
 }
 
 type TestimonialResponse struct {
-	ID         int       `json:"id"`
+	ID         string    `json:"id"`
 	Name       string    `json:"name"`
 	AvatarURL  string    `json:"avatar_url"`
 	Rating     int       `json:"rating"`

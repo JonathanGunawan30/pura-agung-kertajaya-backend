@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
@@ -30,7 +29,7 @@ func (c *TestimonialController) getLogger(ctx *fiber.Ctx) *logrus.Entry {
 	userRole := "unknown"
 
 	if user != nil {
-		userID = fmt.Sprintf("%d", user.ID)
+		userID = user.ID
 		userRole = user.Role
 	}
 
@@ -61,8 +60,8 @@ func (c *TestimonialController) GetAllPublic(ctx *fiber.Ctx) error {
 }
 
 func (c *TestimonialController) GetByID(ctx *fiber.Ctx) error {
-	id, err := ctx.ParamsInt("id")
-	if err != nil || id <= 0 {
+	id := ctx.Params("id")
+	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
 
@@ -100,8 +99,8 @@ func (c *TestimonialController) Create(ctx *fiber.Ctx) error {
 }
 
 func (c *TestimonialController) Update(ctx *fiber.Ctx) error {
-	id, err := ctx.ParamsInt("id")
-	if err != nil || id <= 0 {
+	id := ctx.Params("id")
+	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
 
@@ -128,8 +127,8 @@ func (c *TestimonialController) Update(ctx *fiber.Ctx) error {
 }
 
 func (c *TestimonialController) Delete(ctx *fiber.Ctx) error {
-	id, err := ctx.ParamsInt("id")
-	if err != nil || id <= 0 {
+	id := ctx.Params("id")
+	if id == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{Errors: "Invalid ID"})
 	}
 

@@ -2,10 +2,13 @@ package entity
 
 import (
 	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Testimonial struct {
-	ID         int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID         string    `gorm:"column:id;primaryKey;type:varchar(100)" json:"id"`
 	Name       string    `gorm:"type:varchar(100);not null" json:"name" validate:"required"`
 	AvatarURL  string    `gorm:"type:text" json:"avatar_url"`
 	Rating     int       `gorm:"type:int;not null;check:rating>=1 AND rating<=5" json:"rating" validate:"required,min=1,max=5"`
@@ -18,4 +21,11 @@ type Testimonial struct {
 
 func (Testimonial) TableName() string {
 	return "testimonials"
+}
+
+func (t *Testimonial) BeforeCreate(tx *gorm.DB) (err error) {
+	if t.ID == "" {
+		t.ID = uuid.New().String()
+	}
+	return
 }

@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"pura-agung-kertajaya-backend/internal/delivery/http/middleware"
 	"pura-agung-kertajaya-backend/internal/model"
 	"pura-agung-kertajaya-backend/internal/usecase"
@@ -33,7 +32,7 @@ func (c *UserController) getLogger(ctx *fiber.Ctx) *logrus.Entry {
 	userRole := "unknown"
 
 	if user != nil {
-		userID = fmt.Sprintf("%d", user.ID)
+		userID = user.ID
 		userRole = user.Role
 	}
 
@@ -63,7 +62,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	domain := c.Config.GetString("cookie.domain")
+	//domain := c.Config.GetString("cookie.domain")
 
 	ctx.Cookie(&fiber.Cookie{
 		Name:     "access_token",
@@ -72,11 +71,15 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		SameSite: "Lax",
 		Secure:   false,
 		Path:     "/",
-		Domain:   domain,
-		MaxAge:   86400,
+		//Domain:   domain,
+		MaxAge: 86400,
 	})
 
-	c.getLogger(ctx).Info("User logged in successfully")
+	c.getLogger(ctx).WithFields(logrus.Fields{
+		"user_id":   response.ID,
+		"user_role": response.Role,
+	}).Info("User logged in successfully")
+
 	return ctx.JSON(model.WebResponse[*model.UserResponse]{Data: response})
 }
 

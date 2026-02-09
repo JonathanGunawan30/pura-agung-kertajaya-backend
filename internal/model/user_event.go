@@ -1,12 +1,11 @@
 package model
 
 import (
-	"fmt"
 	"time"
 )
 
 type UserEvent struct {
-	ID        int       `json:"id,omitempty"`
+	ID        string    `json:"id,omitempty"`
 	Name      string    `json:"name,omitempty"`
 	Email     string    `json:"email,omitempty"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
@@ -14,5 +13,5 @@ type UserEvent struct {
 }
 
 func (u *UserEvent) GetId() string {
-	return fmt.Sprintf("%d", u.ID)
+	return u.ID
 }

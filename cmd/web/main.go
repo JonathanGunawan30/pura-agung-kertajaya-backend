@@ -85,7 +85,7 @@ func main() {
 	}
 	logger.Info("Database migration completed")
 
-	if viperConfig.GetBool("db.seed_on_start") {
+	if viperConfig.GetBool("database.seed_on_start") {
 		seeder.SeedUsers(db)
 		logger.Info("Seeding completed")
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 type Auth struct {
-	ID   int
+	ID   string
 	Role string
 }
 

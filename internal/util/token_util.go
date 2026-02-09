@@ -44,7 +44,7 @@ func (t *TokenUtil) CreateToken(ctx context.Context, auth *model.Auth) (string, 
 	key := "session:" + jti
 
 	data := map[string]string{
-		"user_id":   strconv.Itoa(auth.ID),
+		"user_id":   auth.ID,
 		"email":     auth.Email,
 		"role":      auth.Role,
 		"issued_at": strconv.FormatInt(time.Now().Unix(), 10),
@@ -75,7 +75,7 @@ func (t *TokenUtil) ParseToken(ctx context.Context, jwtToken string) (*model.Aut
 	}
 
 	jti, _ := claims["jti"].(string)
-	id, _ := claims["id"].(float64)
+	id, _ := claims["id"].(string)
 	role, _ := claims["role"].(string)
 
 	key := "session:" + jti
@@ -88,7 +88,7 @@ func (t *TokenUtil) ParseToken(ctx context.Context, jwtToken string) (*model.Aut
 	}
 
 	return &model.Auth{
-		ID:   int(id),
+		ID:   id,
 		Role: role,
 	}, jti, nil
 }

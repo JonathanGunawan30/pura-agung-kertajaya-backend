@@ -16,8 +16,8 @@ import (
 
 type UserUseCase interface {
 	Login(ctx context.Context, req *model.LoginUserRequest) (*model.UserResponse, string, error)
-	Current(ctx context.Context, userID int) (*model.UserResponse, error)
-	UpdateProfile(ctx context.Context, userID int, req *model.UpdateUserRequest) (*model.UserResponse, error)
+	Current(ctx context.Context, userID string) (*model.UserResponse, error)
+	UpdateProfile(ctx context.Context, userID string, req *model.UpdateUserRequest) (*model.UserResponse, error)
 	Logout(ctx context.Context, tokenString string) error
 }
 
@@ -67,8 +67,9 @@ func (c *userUseCase) Login(ctx context.Context, req *model.LoginUserRequest) (*
 	}
 
 	token, _, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
-		ID:   user.ID,
-		Role: user.Role,
+		ID:    user.ID,
+		Role:  user.Role,
+		Email: req.Email,
 	})
 	if err != nil {
 		return nil, "", err
@@ -94,7 +95,7 @@ func (c *userUseCase) Logout(ctx context.Context, tokenString string) error {
 	return nil
 }
 
-func (c *userUseCase) Current(ctx context.Context, userID int) (*model.UserResponse, error) {
+func (c *userUseCase) Current(ctx context.Context, userID string) (*model.UserResponse, error) {
 	var user entity.User
 	if err := c.UserRepository.FindById(c.DB, &user, userID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -105,7 +106,7 @@ func (c *userUseCase) Current(ctx context.Context, userID int) (*model.UserRespo
 	return converter.UserToResponse(&user), nil
 }
 
-func (c *userUseCase) UpdateProfile(ctx context.Context, userID int, req *model.UpdateUserRequest) (*model.UserResponse, error) {
+func (c *userUseCase) UpdateProfile(ctx context.Context, userID string, req *model.UpdateUserRequest) (*model.UserResponse, error) {
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()
 

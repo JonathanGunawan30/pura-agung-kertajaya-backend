@@ -21,7 +21,8 @@
       "idle": 0,
       "max": 0,
       "lifetime": 0
-    }
+    },
+    "seed_on_start": false
   },
   "redis": {
     "host": "",

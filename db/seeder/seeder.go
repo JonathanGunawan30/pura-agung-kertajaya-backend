@@ -23,11 +23,31 @@ func SeedUsers(db *gorm.DB) {
 			Name:     "Administrator",
 			Email:    "admin@puraagungkertajaya.com",
 			Password: string(password),
+			Role:     "super",
 		},
 		{
 			Name:     "Jonathan",
 			Email:    "jonathan@puraagungkertajaya.com",
 			Password: string(password),
+			Role:     "super",
+		},
+		{
+			Name:     "Admin Pura",
+			Email:    "pura@puraagungkertajaya.com",
+			Password: string(password),
+			Role:     "pura",
+		},
+		{
+			Name:     "Admin Yayasan",
+			Email:    "yayasan@puraagungkertajaya.com",
+			Password: string(password),
+			Role:     "yayasan",
+		},
+		{
+			Name:     "Admin Pasraman",
+			Email:    "pasraman@puraagungkertajaya.com",
+			Password: string(password),
+			Role:     "pasraman",
 		},
 	}
 

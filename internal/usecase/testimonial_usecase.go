@@ -14,10 +14,10 @@ import (
 type TestimonialUsecase interface {
 	GetAll() ([]model.TestimonialResponse, error)
 	GetPublic() ([]model.TestimonialResponse, error)
-	GetByID(id int) (*model.TestimonialResponse, error)
+	GetByID(id string) (*model.TestimonialResponse, error)
 	Create(req model.TestimonialRequest) (*model.TestimonialResponse, error)
-	Update(id int, req model.TestimonialRequest) (*model.TestimonialResponse, error)
-	Delete(id int) error
+	Update(id string, req model.TestimonialRequest) (*model.TestimonialResponse, error)
+	Delete(id string) error
 }
 
 type testimonialUsecase struct {
@@ -58,7 +58,7 @@ func (u *testimonialUsecase) GetPublic() ([]model.TestimonialResponse, error) {
 	return converter.ToTestimonialResponses(testimonials), nil
 }
 
-func (u *testimonialUsecase) GetByID(id int) (*model.TestimonialResponse, error) {
+func (u *testimonialUsecase) GetByID(id string) (*model.TestimonialResponse, error) {
 	var t entity.Testimonial
 	if err := u.repo.FindById(u.db, &t, id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -93,7 +93,7 @@ func (u *testimonialUsecase) Create(req model.TestimonialRequest) (*model.Testim
 	return &response, nil
 }
 
-func (u *testimonialUsecase) Update(id int, req model.TestimonialRequest) (*model.TestimonialResponse, error) {
+func (u *testimonialUsecase) Update(id string, req model.TestimonialRequest) (*model.TestimonialResponse, error) {
 	if err := u.validate.Struct(req); err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (u *testimonialUsecase) Update(id int, req model.TestimonialRequest) (*mode
 	return &response, nil
 }
 
-func (u *testimonialUsecase) Delete(id int) error {
+func (u *testimonialUsecase) Delete(id string) error {
 	var t entity.Testimonial
 	if err := u.repo.FindById(u.db, &t, id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
