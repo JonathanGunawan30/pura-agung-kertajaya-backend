@@ -69,6 +69,7 @@ func (c *RouteConfig) SetupAuthRoute() {
 
 	storage := auth.Group("/storage", c.StorageRateLimiter)
 	storage.Post("/upload", c.StorageController.Upload)
+	storage.Post("/upload/single", c.StorageController.UploadSingle)
 	storage.Delete("/delete", c.StorageController.Delete)
 	storage.Get("/presigned-url", c.StorageController.GetPresignedURL)
 

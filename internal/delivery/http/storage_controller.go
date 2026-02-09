@@ -31,7 +31,7 @@ func (c *StorageController) getLogger(ctx *fiber.Ctx) *logrus.Entry {
 	userRole := "unknown"
 
 	if user != nil {
-		userID = fmt.Sprintf("%d", user.ID)
+		userID = fmt.Sprintf("%v", user.ID)
 		userRole = user.Role
 	}
 
@@ -107,6 +107,77 @@ func (c *StorageController) Upload(ctx *fiber.Ctx) error {
 			"message":  "File uploaded and processed successfully",
 			"filename": file.Filename,
 			"variants": variants,
+		},
+	})
+}
+
+func (c *StorageController) UploadSingle(ctx *fiber.Ctx) error {
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		c.getLogger(ctx).Warnf("failed to get file from form: %v", err)
+		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
+			Errors: "No file uploaded",
+		})
+	}
+
+	contentType := file.Header.Get("Content-Type")
+	if !isValidImageType(contentType) {
+		c.getLogger(ctx).WithField("content_type", contentType).Warn("invalid file type upload attempt")
+		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
+			Errors: "Only image files are allowed (JPEG, PNG, WEBP)",
+		})
+	}
+
+	if file.Size > 1*1024*1024 {
+		c.getLogger(ctx).WithField("size", file.Size).Warn("file too large upload attempt")
+		return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
+			Errors: "File size must not exceed 10MB",
+		})
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		c.getLogger(ctx).WithError(err).Error("failed to open file stream")
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
+			Errors: "Cannot open file",
+		})
+	}
+
+	defer src.Close()
+
+	uploadedKey, uploadedURL, err := c.UseCase.UploadSingleFile(
+		ctx.Context(),
+		file.Filename,
+		src,
+		contentType,
+		file.Size,
+	)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid image") || strings.Contains(err.Error(), "format") {
+			c.getLogger(ctx).WithError(err).Warn("image processing failed")
+			return ctx.Status(fiber.StatusBadRequest).JSON(model.WebResponse[any]{
+				Errors: "Invalid image format or corrupted file",
+			})
+		}
+
+		c.getLogger(ctx).WithError(err).Error("failed to upload/process single file")
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.WebResponse[any]{
+			Errors: "Internal server error during file upload",
+		})
+	}
+
+	c.getLogger(ctx).WithFields(logrus.Fields{
+		"filename": file.Filename,
+		"key":      uploadedKey,
+	}).Info("Single file uploaded successfully")
+
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse[fiber.Map]{
+		Data: fiber.Map{
+			"message":  "File uploaded successfully",
+			"filename": file.Filename,
+			"key":      uploadedKey,
+			"url":      uploadedURL,
 		},
 	})
 }

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	_ "image/gif"  // Penting untuk decode image
-	_ "image/jpeg" // Penting untuk decode image
-	_ "image/png"  // Penting untuk decode image
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"path/filepath"
 	"strings"
@@ -16,7 +16,7 @@ import (
 	"pura-agung-kertajaya-backend/internal/repository"
 	"pura-agung-kertajaya-backend/internal/util"
 
-	_ "golang.org/x/image/webp" // Penting untuk decode/encode webp
+	_ "golang.org/x/image/webp"
 )
 
 type StorageUsecase interface {
@@ -24,6 +24,7 @@ type StorageUsecase interface {
 	DownloadFile(ctx context.Context, key string) (io.ReadCloser, error)
 	DeleteFile(ctx context.Context, key string) error
 	GetPresignedURL(ctx context.Context, key string, expiration int) (string, error)
+	UploadSingleFile(ctx context.Context, filename string, file io.Reader, contentType string, fileSize int64) (string, string, error)
 }
 
 type storageUsecase struct {
@@ -75,6 +76,34 @@ func (u *storageUsecase) UploadFile(ctx context.Context, filename string, file i
 	return uploadedKeys, nil
 }
 
+func (u *storageUsecase) UploadSingleFile(ctx context.Context, filename string, file io.Reader, contentType string, fileSize int64) (string, string, error) {
+	ext := filepath.Ext(filename)
+	nameWithoutExt := strings.TrimSuffix(filename, ext)
+	timestamp := time.Now().Unix()
+
+	key := fmt.Sprintf("uploads/%s_%d.webp", nameWithoutExt, timestamp)
+
+	var finalUrl string
+
+	onProcessed := func(data []byte) error {
+		pSize := int64(len(data))
+
+		uploadedUrl, err := u.storageRepo.Upload(ctx, key, bytes.NewReader(data), "image/webp", pSize)
+		if err != nil {
+			return fmt.Errorf("failed to upload single file: %w", err)
+		}
+
+		finalUrl = uploadedUrl
+		return nil
+	}
+
+	err := util.ProcessSingleImage(file, 0, 90, onProcessed)
+	if err != nil {
+		return "", "", fmt.Errorf("single image processing failed: %w", err)
+	}
+
+	return key, finalUrl, nil
+}
 func (u *storageUsecase) DownloadFile(ctx context.Context, key string) (io.ReadCloser, error) {
 	return u.storageRepo.Download(ctx, key)
 }

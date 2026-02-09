@@ -77,3 +77,26 @@ func ProcessAndHandleImage(r io.Reader, presets []ImagePreset, onProcessed Proce
 
 	return nil
 }
+
+func ProcessSingleImage(r io.Reader, width int, quality float32, onProcessed func(data []byte) error) error {
+	srcImage, _, err := image.Decode(r)
+	if err != nil {
+		return err
+	}
+
+	var finalImage image.Image = srcImage
+	if width > 0 && srcImage.Bounds().Dx() > width {
+		finalImage = imaging.Resize(srcImage, width, 0, imaging.Lanczos)
+	}
+
+	var buf bytes.Buffer
+	err = webp.Encode(&buf, finalImage, &webp.Options{
+		Lossless: false,
+		Quality:  quality,
+	})
+	if err != nil {
+		return err
+	}
+
+	return onProcessed(buf.Bytes())
+}
