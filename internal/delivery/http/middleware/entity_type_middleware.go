@@ -4,6 +4,10 @@ import "github.com/gofiber/fiber/v2"
 
 const CtxEntityType = "entity_type"
 
+type entityTypeBody struct {
+	EntityType string `json:"entity_type"`
+}
+
 func EntityTypeMiddleware() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		user := GetUser(ctx)
@@ -12,6 +16,13 @@ func EntityTypeMiddleware() fiber.Handler {
 		}
 
 		entityType := ctx.Query("entity_type")
+
+		if entityType == "" && (ctx.Method() == fiber.MethodPost || ctx.Method() == fiber.MethodPut || ctx.Method() == fiber.MethodPatch) {
+			var payloadBody entityTypeBody
+			if err := ctx.BodyParser(&payloadBody); err == nil {
+				entityType = payloadBody.EntityType
+			}
+		}
 
 		valid := map[string]bool{
 			"pura":     true,
