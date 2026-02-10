@@ -48,6 +48,7 @@ func TestTestimonialUsecase_Create_Success(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `testimonials`")).
 		WithArgs(
+			sqlmock.AnyArg(),
 			"John Doe",
 			"https://example.com/avatar.jpg",
 			5,
@@ -65,6 +66,7 @@ func TestTestimonialUsecase_Create_Success(t *testing.T) {
 	assert.NotNil(t, res)
 	assert.Equal(t, req.Name, res.Name)
 	assert.Equal(t, req.Rating, res.Rating)
+	assert.NotEmpty(t, res.ID)
 }
 
 func TestTestimonialUsecase_Create_ValidationError(t *testing.T) {
@@ -85,8 +87,8 @@ func TestTestimonialUsecase_GetAll(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
 
 	rows := sqlmock.NewRows([]string{"id", "name", "rating", "order_index"}).
-		AddRow(2, "B", 4, 1).
-		AddRow(1, "A", 5, 2)
+		AddRow("uuid-2", "B", 4, 1).
+		AddRow("uuid-1", "A", 5, 2)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` ORDER BY order_index ASC")).
 		WillReturnRows(rows)
@@ -94,13 +96,14 @@ func TestTestimonialUsecase_GetAll(t *testing.T) {
 	list, err := u.GetAll()
 	assert.NoError(t, err)
 	assert.Len(t, list, 2)
+	assert.Equal(t, "uuid-2", list[0].ID)
 }
 
 func TestTestimonialUsecase_GetPublic(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
 
 	rows := sqlmock.NewRows([]string{"id", "name", "is_active"}).
-		AddRow(1, "Public User", true)
+		AddRow("uuid-public", "Public User", true)
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` WHERE is_active = ? ORDER BY order_index ASC")).
 		WithArgs(true).
@@ -113,7 +116,7 @@ func TestTestimonialUsecase_GetPublic(t *testing.T) {
 
 func TestTestimonialUsecase_GetByID_Success(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
-	targetID := 10
+	targetID := "uuid-found-me"
 
 	rows := sqlmock.NewRows([]string{"id", "name"}).AddRow(targetID, "Found Me")
 
@@ -129,12 +132,13 @@ func TestTestimonialUsecase_GetByID_Success(t *testing.T) {
 
 func TestTestimonialUsecase_GetByID_NotFound(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
+	targetID := "non-existent-uuid"
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` WHERE id = ? LIMIT ?")).
-		WithArgs(999, 1).
+		WithArgs(targetID, 1).
 		WillReturnRows(sqlmock.NewRows(nil))
 
-	res, err := u.GetByID(999)
+	res, err := u.GetByID(targetID)
 
 	assert.Error(t, err)
 	assert.Nil(t, res)
@@ -148,7 +152,7 @@ func TestTestimonialUsecase_GetByID_NotFound(t *testing.T) {
 
 func TestTestimonialUsecase_Update_Success(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
-	targetID := 1
+	targetID := "uuid-to-update"
 	now := time.Now()
 
 	req := model.TestimonialRequest{
@@ -189,7 +193,7 @@ func TestTestimonialUsecase_Update_Success(t *testing.T) {
 
 func TestTestimonialUsecase_Update_NotFound(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
-	targetID := 99
+	targetID := "non-existent-uuid"
 
 	req := model.TestimonialRequest{
 		Name:    "Valid Name",
@@ -215,7 +219,7 @@ func TestTestimonialUsecase_Update_NotFound(t *testing.T) {
 
 func TestTestimonialUsecase_Delete_Success(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
-	targetID := 1
+	targetID := "uuid-to-delete"
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).
@@ -233,7 +237,7 @@ func TestTestimonialUsecase_Delete_Success(t *testing.T) {
 
 func TestTestimonialUsecase_Delete_NotFound(t *testing.T) {
 	u, mock := setupMockTestimonialUsecase(t)
-	targetID := 99
+	targetID := "non-existent-uuid"
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `testimonials` WHERE id = ? LIMIT ?")).
 		WithArgs(targetID, 1).

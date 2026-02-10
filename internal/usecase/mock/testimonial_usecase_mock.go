@@ -26,7 +26,7 @@ func (m *TestimonialUsecaseMock) GetPublic() ([]model.TestimonialResponse, error
 	return args.Get(0).([]model.TestimonialResponse), args.Error(1)
 }
 
-func (m *TestimonialUsecaseMock) GetByID(id int) (*model.TestimonialResponse, error) {
+func (m *TestimonialUsecaseMock) GetByID(id string) (*model.TestimonialResponse, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -42,7 +42,7 @@ func (m *TestimonialUsecaseMock) Create(req model.TestimonialRequest) (*model.Te
 	return args.Get(0).(*model.TestimonialResponse), args.Error(1)
 }
 
-func (m *TestimonialUsecaseMock) Update(id int, req model.TestimonialRequest) (*model.TestimonialResponse, error) {
+func (m *TestimonialUsecaseMock) Update(id string, req model.TestimonialRequest) (*model.TestimonialResponse, error) {
 	args := m.Called(id, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -50,7 +50,7 @@ func (m *TestimonialUsecaseMock) Update(id int, req model.TestimonialRequest) (*
 	return args.Get(0).(*model.TestimonialResponse), args.Error(1)
 }
 
-func (m *TestimonialUsecaseMock) Delete(id int) error {
+func (m *TestimonialUsecaseMock) Delete(id string) error {
 	args := m.Called(id)
 	return args.Error(0)
 }

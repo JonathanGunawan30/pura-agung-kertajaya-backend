@@ -1,12 +1,12 @@
 package test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	usecase "pura-agung-kertajaya-backend/internal/usecase/mock"
 	"strings"
 	"testing"
 
@@ -20,41 +20,8 @@ import (
 	"pura-agung-kertajaya-backend/internal/model"
 )
 
-type UserUsecaseMock struct {
-	mock.Mock
-}
-
-func (m *UserUsecaseMock) Login(ctx context.Context, req *model.LoginUserRequest) (*model.UserResponse, string, error) {
-	args := m.Called(ctx, req)
-	if args.Get(0) == nil {
-		return nil, "", args.Error(2)
-	}
-	return args.Get(0).(*model.UserResponse), args.String(1), args.Error(2)
-}
-
-func (m *UserUsecaseMock) Current(ctx context.Context, userID int) (*model.UserResponse, error) {
-	args := m.Called(ctx, userID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*model.UserResponse), args.Error(1)
-}
-
-func (m *UserUsecaseMock) UpdateProfile(ctx context.Context, userID int, req *model.UpdateUserRequest) (*model.UserResponse, error) {
-	args := m.Called(ctx, userID, req)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*model.UserResponse), args.Error(1)
-}
-
-func (m *UserUsecaseMock) Logout(ctx context.Context, tokenString string) error {
-	args := m.Called(ctx, tokenString)
-	return args.Error(0)
-}
-
-func setupUserController(t *testing.T) (*fiber.App, *UserUsecaseMock) {
-	mockUC := new(UserUsecaseMock)
+func setupUserController(t *testing.T) (*fiber.App, *usecase.UserUsecaseMock) {
+	mockUC := &usecase.UserUsecaseMock{}
 
 	cfg := viper.New()
 	cfg.Set("cookie.domain", "localhost")
@@ -66,7 +33,7 @@ func setupUserController(t *testing.T) (*fiber.App, *UserUsecaseMock) {
 	app.Post("/api/users/_login", controller.Login)
 
 	authMiddleware := func(c *fiber.Ctx) error {
-		c.Locals("user", &middleware.Auth{ID: 1, Role: "admin"})
+		c.Locals("user", &middleware.Auth{ID: "user-uuid", Role: "admin"})
 		return c.Next()
 	}
 
@@ -85,7 +52,8 @@ func TestUserController_Login_Success(t *testing.T) {
 		Password:       "rahasia",
 		RecaptchaToken: "dummy",
 	}
-	expectedUser := &model.UserResponse{ID: 1, Email: reqBody.Email, Name: "Admin"}
+
+	expectedUser := &model.UserResponse{ID: "user-uuid", Email: reqBody.Email, Name: "Admin"}
 	expectedToken := "mock-jwt-token"
 
 	mockUC.On("Login", mock.Anything, mock.AnythingOfType("*model.LoginUserRequest")).
@@ -133,12 +101,12 @@ func TestUserController_Current_Success(t *testing.T) {
 	app, mockUC := setupUserController(t)
 
 	expectedUser := &model.UserResponse{
-		ID:    1,
+		ID:    "user-uuid",
 		Name:  "Admin Test",
 		Email: "admin@puraagungkertajaya.com",
 	}
 
-	mockUC.On("Current", mock.Anything, 1).Return(expectedUser, nil)
+	mockUC.On("Current", mock.Anything, "user-uuid").Return(expectedUser, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/users/_current", nil)
 	resp, _ := app.Test(req, -1)
@@ -150,15 +118,16 @@ func TestUserController_Current_Success(t *testing.T) {
 	json.Unmarshal(bytes, &webResp)
 
 	assert.Equal(t, expectedUser.Email, webResp.Data.Email)
+	assert.Equal(t, "user-uuid", webResp.Data.ID)
 }
 
 func TestUserController_UpdateProfile_Success(t *testing.T) {
 	app, mockUC := setupUserController(t)
 
 	reqBody := model.UpdateUserRequest{Name: "New Name"}
-	expectedUser := &model.UserResponse{ID: 1, Name: "New Name"}
+	expectedUser := &model.UserResponse{ID: "user-uuid", Name: "New Name"}
 
-	mockUC.On("UpdateProfile", mock.Anything, 1, mock.AnythingOfType("*model.UpdateUserRequest")).
+	mockUC.On("UpdateProfile", mock.Anything, "user-uuid", mock.AnythingOfType("*model.UpdateUserRequest")).
 		Return(expectedUser, nil)
 
 	body, _ := json.Marshal(reqBody)

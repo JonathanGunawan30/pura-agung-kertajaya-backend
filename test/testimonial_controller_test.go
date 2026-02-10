@@ -37,7 +37,10 @@ func TestTestimonialController_GetAllPublic_Success(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	items := []model.TestimonialResponse{{ID: 1, Name: "A"}, {ID: 2, Name: "B"}}
+	items := []model.TestimonialResponse{
+		{ID: "uuid-1", Name: "A"},
+		{ID: "uuid-2", Name: "B"},
+	}
 	mockUC.On("GetPublic").Return(items, nil)
 
 	req := httptest.NewRequest("GET", "/api/public/testimonials", nil)
@@ -63,7 +66,10 @@ func TestTestimonialController_GetAll_Success(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	items := []model.TestimonialResponse{{ID: 1, Name: "A"}, {ID: 2, Name: "B"}}
+	items := []model.TestimonialResponse{
+		{ID: "uuid-1", Name: "A"},
+		{ID: "uuid-2", Name: "B"},
+	}
 	mockUC.On("GetAll").Return(items, nil)
 
 	req := httptest.NewRequest("GET", "/api/testimonials", nil)
@@ -76,36 +82,30 @@ func TestTestimonialController_GetByID_Success(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	item := &model.TestimonialResponse{ID: 10, Name: "X"}
-	mockUC.On("GetByID", 10).Return(item, nil)
+	targetID := "uuid-10"
+	item := &model.TestimonialResponse{ID: targetID, Name: "X"}
 
-	req := httptest.NewRequest("GET", "/api/testimonials/10", nil)
+	mockUC.On("GetByID", targetID).Return(item, nil)
+
+	req := httptest.NewRequest("GET", "/api/testimonials/uuid-10", nil)
 	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
 	var response model.WebResponse[*model.TestimonialResponse]
 	json.NewDecoder(resp.Body).Decode(&response)
-	assert.Equal(t, 10, response.Data.ID)
-}
 
-func TestTestimonialController_GetByID_InvalidID(t *testing.T) {
-	mockUC := &usecasemock.TestimonialUsecaseMock{}
-	app := setupTestimonialController(mockUC)
-
-	req := httptest.NewRequest("GET", "/api/testimonials/abc", nil)
-	resp, _ := app.Test(req, -1)
-
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, targetID, response.Data.ID)
 }
 
 func TestTestimonialController_GetByID_NotFound(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	mockUC.On("GetByID", 999).Return((*model.TestimonialResponse)(nil), model.ErrNotFound("testimonial not found"))
+	targetID := "non-existent-uuid"
+	mockUC.On("GetByID", targetID).Return((*model.TestimonialResponse)(nil), model.ErrNotFound("testimonial not found"))
 
-	req := httptest.NewRequest("GET", "/api/testimonials/999", nil)
+	req := httptest.NewRequest("GET", "/api/testimonials/non-existent-uuid", nil)
 	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
@@ -116,7 +116,7 @@ func TestTestimonialController_Create_Success(t *testing.T) {
 	app := setupTestimonialController(mockUC)
 
 	reqBody := model.TestimonialRequest{Name: "John", Rating: 5, Comment: "Good", IsActive: true, OrderIndex: 1}
-	resBody := &model.TestimonialResponse{ID: 1, Name: "John"}
+	resBody := &model.TestimonialResponse{ID: "new-uuid-1", Name: "John"}
 
 	mockUC.On("Create", reqBody).Return(resBody, nil)
 
@@ -155,14 +155,14 @@ func TestTestimonialController_Update_Success(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	idToUpdate := 2
+	idToUpdate := "uuid-2"
 	reqBody := model.TestimonialRequest{Name: "Jane", Rating: 4, Comment: "Nice", IsActive: true, OrderIndex: 1}
-	resBody := &model.TestimonialResponse{ID: 2, Name: "Jane"}
+	resBody := &model.TestimonialResponse{ID: idToUpdate, Name: "Jane"}
 
 	mockUC.On("Update", idToUpdate, reqBody).Return(resBody, nil)
 
 	b, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest("PUT", "/api/testimonials/2", bytes.NewReader(b))
+	req := httptest.NewRequest("PUT", "/api/testimonials/uuid-2", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req, -1)
@@ -173,13 +173,13 @@ func TestTestimonialController_Update_NotFound(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	idToUpdate := 99
+	idToUpdate := "non-existent-uuid"
 	reqBody := model.TestimonialRequest{Name: "Jane"}
 
 	mockUC.On("Update", idToUpdate, reqBody).Return((*model.TestimonialResponse)(nil), model.ErrNotFound("testimonial not found"))
 
 	b, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest("PUT", "/api/testimonials/99", bytes.NewReader(b))
+	req := httptest.NewRequest("PUT", "/api/testimonials/non-existent-uuid", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req, -1)
@@ -190,10 +190,10 @@ func TestTestimonialController_Delete_Success(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	idToDelete := 7
+	idToDelete := "uuid-7"
 	mockUC.On("Delete", idToDelete).Return(nil)
 
-	req := httptest.NewRequest("DELETE", "/api/testimonials/7", nil)
+	req := httptest.NewRequest("DELETE", "/api/testimonials/uuid-7", nil)
 	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -203,10 +203,10 @@ func TestTestimonialController_Delete_NotFound(t *testing.T) {
 	mockUC := &usecasemock.TestimonialUsecaseMock{}
 	app := setupTestimonialController(mockUC)
 
-	idToDelete := 8
+	idToDelete := "uuid-8"
 	mockUC.On("Delete", idToDelete).Return(model.ErrNotFound("testimonial not found"))
 
-	req := httptest.NewRequest("DELETE", "/api/testimonials/8", nil)
+	req := httptest.NewRequest("DELETE", "/api/testimonials/uuid-8", nil)
 	resp, _ := app.Test(req, -1)
 
 	assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)

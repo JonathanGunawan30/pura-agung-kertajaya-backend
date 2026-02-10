@@ -24,6 +24,11 @@ type StorageUsecaseMock struct {
 	mock.Mock
 }
 
+func (m *StorageUsecaseMock) UploadSingleFile(ctx context.Context, filename string, file io.Reader, contentType string, fileSize int64) (string, string, error) {
+	args := m.Called(ctx, filename, file, contentType, fileSize)
+	return args.String(0), args.String(1), args.Error(2)
+}
+
 func (m *StorageUsecaseMock) UploadFile(ctx context.Context, filename string, file io.Reader, contentType string, fileSize int64) (map[string]string, error) {
 	args := m.Called(ctx, filename, file, contentType, fileSize)
 	if args.Get(0) == nil {
@@ -57,6 +62,7 @@ func setupStorageController(mockUsecase *StorageUsecaseMock) *fiber.App {
 	app.Post("/api/storage/upload", controller.Upload)
 	app.Delete("/api/storage/delete", controller.Delete)
 	app.Get("/api/storage/url", controller.GetPresignedURL)
+	app.Post("/api/storage/upload/single", controller.UploadSingle)
 
 	return app
 }
@@ -278,4 +284,42 @@ func TestStorageController_GetPresignedURL_NoKey(t *testing.T) {
 	var response model.WebResponse[any]
 	json.NewDecoder(resp.Body).Decode(&response)
 	assert.Equal(t, "Key parameter is required", response.Errors)
+}
+
+func TestStorageController_UploadSingle_Success(t *testing.T) {
+	mockUsecase := new(StorageUsecaseMock)
+	app := setupStorageController(mockUsecase)
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", "avatar.png"))
+	h.Set("Content-Type", "image/png")
+	part, _ := writer.CreatePart(h)
+	part.Write([]byte("dummy content"))
+	writer.Close()
+
+	expectedKey := "uploads/avatar.png"
+	expectedURL := "https://storage.com/uploads/avatar.png"
+
+	mockUsecase.On("UploadSingleFile", mock.Anything, "avatar.png", mock.Anything, "image/png", mock.Anything).
+		Return(expectedKey, expectedURL, nil)
+
+	req := httptest.NewRequest("POST", "/api/storage/upload/single", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, _ := app.Test(req, -1)
+
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+	var response model.WebResponse[map[string]interface{}]
+	json.NewDecoder(resp.Body).Decode(&response)
+
+	assert.Equal(t, "File uploaded successfully", response.Data["message"])
+	assert.Equal(t, "avatar.png", response.Data["filename"])
+	assert.Equal(t, expectedKey, response.Data["key"])
+	assert.Equal(t, expectedURL, response.Data["url"])
+
+	mockUsecase.AssertExpectations(t)
 }
